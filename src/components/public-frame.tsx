@@ -15,6 +15,6 @@ export async function PublicFrame({tenant,demo,children,property}:{tenant:Public
   {demo?<PreviewBanner/>:<PageView/>}
   {children}
   <SiteFooter tenant={tenant} links={links} templateKey={template.key}/>
-  <FloatingWhatsapp tenant={tenant} property={property} templateKey={template.key}/>
+  <FloatingWhatsapp tenant={tenant} property={property}/>
  </div>;
 }
