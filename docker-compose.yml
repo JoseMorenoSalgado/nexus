@@ -1,0 +1,61 @@
+# Ambiente de STAGING aislado de Edvorya. No publica puertos al host.
+# Variables requeridas en Dockploy:
+# MARIADB_PASSWORD, MARIADB_ROOT_PASSWORD, INSTALLER_TOKEN; DATABASE_URL opcional
+# DATABASE_URL: mysql://webappecloud:URL_ENCODED_PASSWORD@db:3306/webappecloud
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      NEXT_TELEMETRY_DISABLED: "1"
+      DATABASE_URL: ${DATABASE_URL:-}
+      INSTALLER_TOKEN: ${INSTALLER_TOKEN:-}
+      APP_CONFIG_DIR: /app/.runtime
+      SITE_PREVIEW_MODE: ${SITE_PREVIEW_MODE:-false}
+      SITE_PREVIEW_HOST: ${SITE_PREVIEW_HOST:-inmo.elearningcloud.org}
+    volumes:
+      - webapp-config:/app/.runtime
+    expose:
+      - "3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - webapp-internal
+    # No maps ports: Dockploy configurará dominio TLS al servicio app:3000.
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+  db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: webappecloud
+      MARIADB_USER: webappecloud
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:?Configura MARIADB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:?Configura MARIADB_ROOT_PASSWORD}
+    volumes:
+      - webapp-mariadb:/var/lib/mysql
+    healthcheck:
+      test: ["CMD","healthcheck.sh","--connect","--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - webapp-internal
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+volumes:
+  webapp-config:
+  webapp-mariadb:
+networks:
+  webapp-internal:
+    driver: bridge

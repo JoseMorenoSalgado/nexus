@@ -1,0 +1,98 @@
+/* Personalizar sitio: una sola navegación y formularios compactos.
+   Mantener estilos acotados para no afectar el sitio público ni el CRM. */
+.admin-shell .cms-toolbar-unified{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:7px;margin:0 0 14px;border:1px solid #e5eaf0;border-radius:11px;box-shadow:none}
+.admin-shell .cms-toolbar-unified>a{display:inline-flex;align-items:center;gap:8px;min-height:42px;padding:9px 13px;border-radius:8px;color:#485a72;font-size:13px;text-decoration:none;white-space:nowrap}
+.admin-shell .cms-toolbar-unified>a.cms-toolbar-current{background:#fff1f3;color:#a51c2a}
+.admin-shell .cms-toolbar-unified>a:focus-visible,.admin-shell .cms-clear-search:focus-visible,.admin-shell .cms-menu-preview-collapsible>summary:focus-visible{outline:3px solid #1764a0;outline-offset:2px}
+.admin-shell .cms-clear-search{display:inline-flex;align-items:center;gap:5px;padding:7px 4px;min-height:38px;color:#596c82;font-size:12px;font-weight:700;text-decoration:none}
+.admin-shell .cms-list-panel{box-shadow:none}
+.admin-shell .cms-list-controls{gap:10px;padding:12px 15px}
+.admin-shell .cms-list-footer{padding:11px 15px;color:#6a798a;font-size:12px}
+.admin-shell .cms-status-tabs{gap:10px}
+.admin-shell .cms-status-tabs>a{padding:6px 9px;border-radius:7px;min-height:36px}
+.admin-shell .cms-status-tabs>a[aria-current=page]{background:#fff1f3}
+.admin-shell .cms-page-table th,.admin-shell .cms-page-table td{padding-block:12px}
+.admin-shell .site-menu-panel{box-shadow:none;padding:21px;max-width:940px}
+.admin-shell .site-menu-editor{gap:13px}
+.admin-shell .cms-menu-preview-collapsible{display:block;padding:0;border:1px solid #e2e8ef;border-radius:10px;background:#f8fafc;overflow:hidden}
+.admin-shell .cms-menu-preview-collapsible>summary{display:flex;align-items:center;gap:9px;min-height:43px;padding:10px 14px;cursor:pointer;color:#374b63;font-size:13px;font-weight:750;list-style:none}
+.admin-shell .cms-menu-preview-collapsible>summary::-webkit-details-marker{display:none}
+.admin-shell .cms-menu-preview-collapsible>div{display:flex;flex-wrap:wrap;gap:8px;padding:12px 14px;border-top:1px solid #e5eaf0}
+.admin-shell .cms-menu-preview-collapsible>div>span{display:inline-flex;align-items:center;padding:6px 10px;border-radius:7px;background:white;border:1px solid #e3e8f0;font-size:12px}
+.admin-shell .site-menu-list{gap:8px}
+.admin-shell .site-menu-edit-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;background:white;box-shadow:none}
+.admin-shell .site-menu-controls{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.admin-shell .site-menu-controls button{min-width:38px;min-height:38px;width:auto;padding:0 9px}
+.admin-shell .site-menu-controls .cms-menu-remove{display:flex;align-items:center;gap:5px;color:#a32635}
+.admin-shell .cms-menu-remove>span{font-size:11px;font-weight:750}
+.admin-shell .site-menu-available{padding-top:12px;gap:7px}
+.admin-shell .site-menu-available>h3{margin:0}
+.admin-shell .site-menu-available>.property-help{margin:0 0 4px}
+.admin-shell .cms-menu-save-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding-top:10px;border-top:1px solid #e6ebf1}
+.admin-shell .site-editor-images,.admin-shell .site-identity-panel{box-shadow:none;margin-bottom:13px;padding:20px}
+.admin-shell .site-image-grid{gap:13px}
+.admin-shell .site-empty-logo{display:grid;justify-items:center;gap:8px;max-width:230px;color:#596b7e;text-align:center;font-size:12px;line-height:1.4;padding:18px}
+.admin-shell .cms-page-editor-form{box-shadow:none}
+@media(max-width:800px){
+ .admin-shell .cms-toolbar-unified{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;padding:5px}
+ .admin-shell .cms-toolbar-unified>a{flex:0 0 auto;min-height:43px;font-size:12px;padding:9px 11px}
+ .admin-shell .cms-toolbar-unified>a.cms-toolbar-visit{margin-left:0}
+ .admin-shell .cms-page-workspace{grid-template-columns:minmax(0,1fr)}
+ .admin-shell .cms-live-preview{position:static;max-height:490px;overflow-y:auto}
+ .admin-shell .cms-page-editor-form{padding:16px!important}
+ .admin-shell .cms-search input{width:min(160px,35vw)}
+}
+@media(max-width:620px){
+ .admin-shell .cms-toolbar-unified>a>svg{width:16px;height:16px}
+ .admin-shell .cms-list-controls{padding:10px;gap:8px}
+ .admin-shell .cms-search{display:flex;flex-wrap:wrap;gap:7px}
+ .admin-shell .cms-search label{flex:1 1 150px}
+ .admin-shell .cms-search input{width:100%}
+ .admin-shell .cms-search button{flex:0 0 auto}
+ .admin-shell .cms-page-table tr{padding:12px}
+ .admin-shell .site-menu-panel{padding:13px}
+ .admin-shell .site-menu-edit-row{grid-template-columns:minmax(0,1fr);gap:8px}
+ .admin-shell .site-menu-controls{justify-content:flex-start;gap:6px}
+ .admin-shell .site-menu-controls button{min-height:42px;min-width:42px}
+ .admin-shell .site-editor-images,.admin-shell .site-identity-panel{padding:14px}
+ .admin-shell .cms-menu-save-actions .btn:first-child{flex:1}
+ .admin-shell .cms-live-preview{max-height:360px}
+}
+@media(prefers-reduced-motion:reduce){.admin-shell .cms-toolbar-unified{scroll-behavior:auto}}
+
+
+/* Publicar != mostrar en el menú: explicación accesible en índice CMS. */
+.admin-shell .cms-publication-guide{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:12px 15px;margin:0 0 14px;background:#f7fafc;border:1px solid #e2e8ef;border-radius:10px;color:#42586f;font-size:12px;line-height:1.55}
+.admin-shell .cms-publication-guide strong{font-weight:780;color:#2a3d54}
+.admin-shell .cms-publication-guide span{flex:1 1 360px}
+.admin-shell .cms-publication-guide a,.admin-shell .property-help a{color:#265b87;text-decoration:underline;text-underline-offset:3px}
+.admin-shell .cms-row-actions button:disabled{opacity:.62;cursor:progress}
+.admin-shell .cms-publication-guide a:focus-visible{outline:3px solid #1764a0;outline-offset:3px}
+@media(max-width:620px){.admin-shell .cms-publication-guide{display:block;padding:12px}.admin-shell .cms-publication-guide span{display:block;margin-top:4px}.admin-shell .cms-row-actions button{min-height:40px}}
+
+
+/* A dedicated CMS entry keeps the new NEXUS business line discoverable
+   when the visitor filters the table to published pages only. */
+.admin-shell .cms-advisory-highlight{
+ display:flex;align-items:flex-start;justify-content:space-between;gap:20px;
+ padding:21px 23px;margin:15px 0 18px;border:1px solid #dce5ec;
+ border-radius:12px;background:#fff;box-shadow:0 4px 18px #17283c08;
+}
+.admin-shell .cms-advisory-highlight-copy{min-width:0;max-width:730px}
+.admin-shell .cms-advisory-kicker{display:block;font-size:10px;letter-spacing:.13em;font-weight:850;color:#a32639}
+.admin-shell .cms-advisory-highlight h2{margin:7px 0;font-size:21px;font-weight:850;letter-spacing:-.025em;color:#293c53}
+.admin-shell .cms-advisory-highlight p{font-size:12px;line-height:1.7;margin:0 0 11px;color:#607286}
+.admin-shell .cms-advisory-highlight .inline-link{font-size:12px;font-weight:800;display:inline-flex;align-items:center;gap:6px;min-height:40px}
+.admin-shell .cms-advisory-highlight-actions{display:flex;align-items:flex-start;flex-direction:column;gap:11px;max-width:225px;min-width:172px}
+.admin-shell .cms-advisory-highlight-actions>form button{cursor:pointer;border:0;border-radius:8px;background:#b6293c;color:#fff;font-size:12px;font-weight:800;min-height:42px;padding:10px 17px}
+.admin-shell .cms-advisory-highlight-actions>form button:hover{background:#982335}
+.admin-shell .cms-advisory-highlight-actions>form button:disabled{opacity:.6;cursor:wait}
+.admin-shell .cms-advisory-highlight-actions small{font-size:11px;line-height:1.6;color:#62778a}
+.admin-shell .cms-advisory-highlight :is(a,button):focus-visible{outline:3px solid #c84558;outline-offset:3px}
+@media(max-width:650px){.admin-shell .cms-advisory-highlight{display:grid;padding:18px 17px;gap:14px}.admin-shell .cms-advisory-highlight-actions{max-width:none;min-width:0}}
+
+.admin-shell .cms-advisory-editor-publication{display:flex;gap:10px;align-items:center;margin:0 0 20px}
+.admin-shell .cms-advisory-editor-publication button{display:inline-flex;align-items:center;justify-content:center;padding:11px 18px;min-height:42px;border-radius:8px;border:1px solid #cbd5df;background:#fff;color:#33475c;font-size:12px;font-weight:800;cursor:pointer}
+.admin-shell .cms-advisory-editor-publication button:hover{background:#f7f9fb}
+.admin-shell .cms-advisory-editor-publication button:focus-visible{outline:3px solid #c84558;outline-offset:3px}
+.admin-shell .cms-advisory-editor-publication button:disabled{opacity:.6;cursor:wait}

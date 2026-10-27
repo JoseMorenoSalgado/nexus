@@ -1,0 +1,48 @@
+/* Modular custom-page editor · compact cards only for editable blocks. */
+.admin-shell .cms-block-editor{min-width:0;border-top:1px solid #e6eaf0;padding-top:18px}
+.admin-shell .cms-block-editor-head{display:flex;justify-content:space-between;gap:10px;align-items:start;margin-bottom:14px}
+.admin-shell .cms-block-editor-head h3{font-size:16px!important;margin:0 0 4px!important;padding:0!important;border:0!important;letter-spacing:-.025em;color:#24384c}
+.admin-shell .cms-block-editor-head p{margin:0;color:#6c7b8c;font-size:12px;line-height:1.5}
+.admin-shell .cms-block-editor-head>span{font-size:12px;white-space:nowrap;color:#697a90;font-variant-numeric:tabular-nums}
+.admin-shell .cms-block-list{display:grid;gap:12px}
+.admin-shell .cms-block-row{display:grid;gap:12px;padding:15px;border:1px solid #e1e6ed;border-radius:11px;background:#fff}
+.admin-shell .cms-block-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid #edf0f3;padding-bottom:10px}
+.admin-shell .cms-block-toolbar strong{font-size:12px;color:#33485f;font-weight:760}
+.admin-shell .cms-block-actions{display:flex;align-items:center;gap:5px}
+.admin-shell .cms-block-actions button{display:grid;place-items:center;width:34px;height:34px;padding:5px;color:#40556d;background:#f8fafb;border:1px solid #e4e9f0;border-radius:8px}
+.admin-shell .cms-block-actions button:disabled{opacity:.34;cursor:not-allowed}
+.admin-shell .cms-block-actions button:last-child{color:#a52d3b}
+.admin-shell .cms-block-actions button:focus-visible{outline:3px solid #2674ae;outline-offset:2px}
+.admin-shell .cms-block-row>label,.admin-shell .cms-block-image>label:not(.cms-block-image-pick){display:grid;gap:6px;font-size:12px;font-weight:740;color:#40536a;min-width:0}
+.admin-shell .cms-block-row :is(input:not([type=file]),textarea){width:100%;min-width:0;border:1px solid #dce4ec;border-radius:8px;padding:10px 12px;background:white;color:#23364c;font-size:14px;font-weight:400;line-height:1.5}
+.admin-shell .cms-block-row :is(input,textarea):focus-visible{outline:3px solid #91b5d4;outline-offset:1px}
+.admin-shell .cms-block-row textarea{resize:vertical;min-height:105px}
+.admin-shell .cms-block-image{display:grid;gap:12px}
+.admin-shell .cms-block-image-pick{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:9px 13px;border:1px solid #d7e2ec;border-radius:9px;min-height:44px;max-width:max-content;font-size:12px;font-weight:750;color:#245477;background:#f5f9fc;cursor:pointer}
+.admin-shell .cms-block-image-pick:focus-within{outline:3px solid #2674ae;outline-offset:2px}
+.admin-shell .cms-block-image-pick input{position:absolute;opacity:0;width:1px;height:1px;overflow:hidden}
+.admin-shell .cms-block-image>img{max-width:100%;width:100%;max-height:250px;object-fit:contain;background:#f5f7f9;border-radius:9px}
+.admin-shell .cms-block-image>small,.admin-shell .cms-block-image-help{font-size:11px;font-weight:450;color:#6f7e8e;line-height:1.5;margin:0}
+.admin-shell .cms-block-empty{padding:18px;border:1px dashed #d9e2e9;border-radius:10px;color:#617187;font-size:12px;line-height:1.6;margin:0;background:#fbfcfd}
+.admin-shell .cms-block-add{display:flex;flex-wrap:wrap;gap:8px;padding-top:13px}
+.admin-shell .cms-block-add button{display:inline-flex;align-items:center;gap:7px;min-height:44px;border:1px solid #dce5ed;border-radius:8px;background:#fff;color:#31516c;padding:9px 13px;font-size:12px;font-weight:760}
+.admin-shell .cms-block-add button:hover:not(:disabled){background:#f7fafb}
+.admin-shell .cms-block-add button:disabled{opacity:.43;cursor:not-allowed}
+.admin-shell .cms-block-add button:focus-visible{outline:3px solid #2674ae;outline-offset:2px}
+@media(max-width:720px){.admin-shell .cms-block-row{padding:12px}.admin-shell .cms-block-add button{flex:1 1 110px;justify-content:center}.admin-shell .cms-block-row :is(input:not([type=file]),textarea){font-size:16px}.admin-shell .cms-block-toolbar{flex-wrap:wrap}}
+@media(prefers-reduced-motion:reduce){.admin-shell .cms-block-add button{transition:none}}
+
+
+/* Fingers and keyboard need equally reliable reordering/removal targets. */
+.admin-shell .cms-block-actions button{width:44px;height:44px;min-width:44px;min-height:44px}
+.admin-shell .cms-block-row>label{line-height:1.45}
+@media(max-width:720px){
+ .admin-shell .cms-page-workspace,.admin-shell .cms-extras-workspace{width:100%;min-width:0}
+ .admin-shell .cms-page-editor-form,.admin-shell .cms-extras-panel{min-width:0}
+ .admin-shell .cms-block-image-pick{max-width:100%}
+ .admin-shell .cms-block-image{min-width:0}
+ .admin-shell .cms-block-image>img{max-height:220px}
+ .admin-shell .cms-block-toolbar{gap:6px}
+ .admin-shell .cms-block-toolbar strong{min-width:70px}
+ .admin-shell .cms-editor-actions button,.admin-shell .cms-extra-save button{min-height:48px}
+}

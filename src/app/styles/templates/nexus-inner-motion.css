@@ -1,0 +1,59 @@
+/*
+ * NEXUS classic inner pages: quiet motion complementing the approved Home.
+ * Pages only opt in using data-nexus-inner-motion. No layout or media changes,
+ * and never touch input fields, gallery gestures, menus or contact forms.
+ */
+@keyframes nexus-inner-enter{
+ from{opacity:.15;transform:translate3d(0,12px,0)}
+ to{opacity:1;transform:translate3d(0,0,0)}
+}
+@media(prefers-reduced-motion:no-preference){
+ .public-site:not(.public-site-organization) [data-nexus-inner-motion] .nexus-inner-hero .nexus-section-kicker{
+  animation:nexus-inner-enter 360ms cubic-bezier(.2,.7,.2,1) 25ms both;
+ }
+ .public-site:not(.public-site-organization) [data-nexus-inner-motion] .nexus-inner-hero h1{
+  animation:nexus-inner-enter 420ms cubic-bezier(.2,.7,.2,1) 80ms both;
+ }
+ .public-site:not(.public-site-organization) [data-nexus-inner-motion] .nexus-inner-hero p{
+  animation:nexus-inner-enter 420ms cubic-bezier(.2,.7,.2,1) 140ms both;
+ }
+ .public-site:not(.public-site-organization) [data-nexus-inner-motion="detalle"] .property-detail-header{
+  animation:nexus-inner-enter 390ms cubic-bezier(.2,.7,.2,1) 60ms both;
+ }
+ .public-site:not(.public-site-organization) [data-nexus-inner-motion="catalogo"] .nexus-catalog-filter-card{
+  animation:nexus-inner-enter 400ms cubic-bezier(.2,.7,.2,1) 140ms both;
+ }
+}
+.public-site:not(.public-site-organization) [data-nexus-inner-motion] .nexus-featured-grid .property-card,
+.public-site:not(.public-site-organization) [data-nexus-inner-motion] .nexus-service-details article,
+.public-site:not(.public-site-organization) [data-nexus-inner-motion] .nexus-contact-method{
+ transition:box-shadow 150ms ease,border-color 150ms ease,transform 150ms ease,background-color 150ms ease;
+}
+.public-site:not(.public-site-organization) [data-nexus-inner-motion] :is(.nexus-text-link,.nexus-back-link,.nexus-contact-method,.property-detail-pdf,.catalog-reset-filters):focus-visible{
+ outline:3px solid rgba(203,45,62,.48);
+ outline-offset:3px;
+}
+@media(hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference){
+ .public-site:not(.public-site-organization) [data-nexus-inner-motion="catalogo"] .nexus-featured-grid .property-card:hover{
+  transform:translate3d(0,-2px,0);
+  box-shadow:0 14px 29px rgba(21,43,58,.12);
+ }
+ .public-site:not(.public-site-organization) [data-nexus-inner-motion="servicios"] .nexus-service-details article:hover{
+  box-shadow:0 5px 17px rgba(21,43,58,.055);
+ }
+ .public-site:not(.public-site-organization) [data-nexus-inner-motion="contacto"] a.nexus-contact-method:hover{
+  transform:translate3d(2px,0,0);
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ .public-site:not(.public-site-organization) [data-nexus-inner-motion] .nexus-inner-hero :is(.nexus-section-kicker,h1,p),
+ .public-site:not(.public-site-organization) [data-nexus-inner-motion="detalle"] .property-detail-header,
+ .public-site:not(.public-site-organization) [data-nexus-inner-motion="catalogo"] .nexus-catalog-filter-card{
+  animation:none!important;
+ }
+ .public-site:not(.public-site-organization) [data-nexus-inner-motion] .nexus-featured-grid .property-card,
+ .public-site:not(.public-site-organization) [data-nexus-inner-motion] .nexus-service-details article,
+ .public-site:not(.public-site-organization) [data-nexus-inner-motion] .nexus-contact-method{
+  transition:none!important;
+ }
+}

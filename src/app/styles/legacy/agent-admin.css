@@ -1,0 +1,166 @@
+/* Gestión de usuarios y roles */
+.user-management{display:grid;gap:18px}
+.user-management .admin-panel{min-width:0}
+.user-create-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:end}
+.user-create-form label{display:grid;gap:6px;font-size:12px;font-weight:750;color:#43536a}
+.user-create-form input,.user-create-form select,.user-actions select{width:100%;min-width:0;min-height:42px;border:1px solid #dce3eb;border-radius:8px;padding:9px 11px;background:white;color:#26364c}
+.user-create-form button{justify-self:start}
+.user-table-wrap{overflow-x:auto;max-width:100%}
+.user-email{font-size:12px;color:#738196;overflow-wrap:anywhere}
+.user-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.user-actions form{display:flex;align-items:center;gap:7px}
+.user-actions select{max-width:175px}
+.user-actions button{min-height:39px;padding:8px 10px;background:#f7f9fb;border:1px solid #dce3eb;border-radius:8px;color:#33455b;font-weight:750;font-size:12px}
+@media(max-width:700px){.user-create-form{grid-template-columns:1fr}.user-actions form{flex-wrap:wrap}}
+
+/* Multiple roles in Clients and agents */
+.user-role-options{display:flex;flex-wrap:wrap;align-items:center;gap:9px;padding:12px;border:1px solid #dce3eb;border-radius:9px;min-width:0}
+.user-role-options legend{padding:0 5px;font-size:12px;font-weight:750;color:#43536a}
+.user-role-options label{display:inline-flex;align-items:center;gap:6px;padding:7px 9px;border:1px solid #e5e9ef;border-radius:7px;font-size:12px;font-weight:650;color:#45566a;white-space:nowrap}
+.user-role-options input[type=checkbox]{width:16px;height:16px;min-height:0;accent-color:#b52838}
+.user-role-inline{max-width:370px}
+.user-actions form{align-items:flex-end}
+@media(max-width:700px){.user-role-options{gap:6px}.user-role-options label{white-space:normal}.user-role-inline{max-width:100%}}
+
+/* Header branding: preserve complete logo in public site and dashboard on every viewport. */
+.admin-sidebar .brand,.public-site .nexus-brand{min-width:0;align-items:center}
+.admin-sidebar .brand-icon,.public-site .nexus-brand .brand-icon{
+ box-sizing:border-box;display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+ width:62px;height:62px;min-width:62px;overflow:visible;background:transparent;border:0;border-radius:0;
+}
+.admin-sidebar .brand-icon img,.public-site .nexus-brand .brand-icon img{
+ display:block;width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;object-position:center;
+}
+.public-site .nexus-brand>span:last-child,.admin-sidebar .brand>span:last-child{min-width:0}
+.public-site .nexus-brand strong,.admin-sidebar .brand strong{overflow:visible;white-space:normal;overflow-wrap:anywhere}
+@media(max-width:720px){
+ .admin-sidebar .brand-icon,.public-site .nexus-brand .brand-icon{
+  width:48px;height:52px;min-width:48px;flex-basis:48px;
+ }
+ .admin-sidebar .brand-icon img,.public-site .nexus-brand .brand-icon img{
+  width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;
+ }
+ .admin-sidebar .brand strong{font-size:18px;max-width:none;white-space:normal;line-height:1.05}
+ .public-site .nexus-brand strong{font-size:clamp(17px,4.9vw,23px)}
+ .admin-sidebar{isolation:isolate}
+ .admin-nav-mobile[open]{z-index:80}
+ .admin-nav-mobile .admin-nav{box-shadow:0 20px 55px rgba(16,30,45,.22)}
+}
+
+/* Accessible off-canvas dashboard navigation */
+@media(max-width:720px){
+ .admin-nav-mobile{position:relative;display:block;z-index:90}
+ .admin-nav-mobile .admin-mobile-trigger{display:flex;align-items:center;gap:9px;min-height:44px;padding:9px 12px;border:1px solid #e2e6ec;border-radius:10px;background:#fff;color:#273243;font-size:14px;font-weight:750}
+ .admin-mobile-overlay{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;border:0!important;background:rgba(12,23,36,.52)!important;z-index:900!important}
+ .admin-mobile-drawer{position:fixed!important;right:0;top:0;bottom:0;width:min(360px,88vw);height:100dvh;background:white;border-radius:0;z-index:901;box-shadow:-18px 0 55px rgba(12,23,36,.27);display:flex;flex-direction:column;padding:20px 14px;overflow:auto}
+ .admin-mobile-drawer-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:5px 8px 18px;border-bottom:1px solid #e7ecf1;margin-bottom:10px}
+ .admin-mobile-drawer-head strong{font-size:18px;color:#243349}
+ .admin-mobile-drawer-head button{padding:8px 10px;background:#f3f5f8;border:1px solid #e2e7ee;border-radius:8px}
+ .admin-nav-mobile .admin-mobile-drawer .admin-nav{display:grid!important;position:static!important;top:auto!important;right:auto!important;width:100%!important;max-width:none!important;max-height:none!important;box-shadow:none!important;border:0!important;padding:0!important;overflow:visible!important;gap:5px!important}
+ .admin-nav-mobile .admin-mobile-drawer .admin-nav a{min-height:47px;font-size:14px}
+}
+
+.client-agent-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.client-agent-summary>div{border:1px solid #e5eaf0;border-radius:12px;padding:18px;background:#fff;display:grid;align-content:start;gap:4px}.client-agent-summary strong{font-size:27px;color:#27384b;line-height:1.2}.client-agent-summary span{font-size:12px;color:#697b90}.client-agent-summary a{font-size:12px;color:#b52839;font-weight:750;margin-top:6px}@media(max-width:700px){.client-agent-summary{grid-template-columns:1fr}.client-agent-summary>div{padding:13px 16px}}
+
+/* Clients and agents: clean directory and individual commercial profiles. */
+.agent-directory{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.agent-directory-card{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid #e5eaf0;border-radius:12px;min-width:0;background:#fff}
+.agent-directory-avatar{width:43px;height:43px;flex-shrink:0;display:grid;place-items:center;background:#f9e9ec;color:#a82839;border-radius:11px;font-size:20px;font-weight:850}
+.agent-directory-card>div{display:grid;gap:2px;flex:1;min-width:0}
+.agent-directory-card strong{font-size:14px;color:#263548;overflow-wrap:anywhere}
+.agent-directory-card small{font-size:11px;color:#728195;overflow-wrap:anywhere}
+.agent-directory-card>div>span{font-size:11px;color:#57677c}
+.agent-directory-card .btn{min-height:37px;font-size:11px;white-space:nowrap;padding:8px 10px}
+.agent-profile-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.agent-profile-summary>div{background:#fff;border:1px solid #e4eaf0;border-radius:12px;padding:17px;display:grid;gap:5px}
+.agent-profile-summary svg{color:#b12b3a}
+.agent-profile-summary span{font-size:12px;color:#6b7c90}
+.agent-profile-summary strong{font-size:20px;color:#263548;overflow-wrap:anywhere}
+.agent-profile-grid{display:grid;grid-template-columns:minmax(280px,.85fr) minmax(0,1.15fr);gap:16px;align-items:start}
+.agent-profile-grid .admin-panel{min-width:0}
+.agent-profile-leads{grid-column:1/-1}
+.agent-profile-contact{display:flex;gap:8px;align-items:center;font-size:13px;color:#495971;overflow-wrap:anywhere}
+.agent-profile-edit{display:grid;gap:12px;padding-top:16px;border-top:1px solid #e9edf1}
+.agent-profile-edit h3{font-size:16px;margin:0}
+.agent-profile-edit label{display:grid;gap:5px;font-size:12px;font-weight:750;color:#45566b}
+.agent-profile-edit input{width:100%;min-height:42px;padding:10px;border:1px solid #dfe5ec;border-radius:8px;background:#fff}
+.agent-profile-edit button{justify-self:start}
+.agent-profile-edit small{font-size:11px;color:#748397}
+.agent-profile-items{display:grid;gap:0}
+.agent-profile-items>div{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #e9edf2;min-width:0}
+.agent-profile-items>div:last-child{border-bottom:0}
+.agent-profile-items>div>div{display:grid;min-width:0;gap:2px}
+.agent-profile-items strong{font-size:13px;color:#29394d;overflow-wrap:anywhere}
+.agent-profile-items small{font-size:11px;color:#748297}
+.agent-profile-items a{display:inline-flex;align-items:center;gap:4px;flex-shrink:0;color:#b22b3c;font-size:11px;font-weight:800}
+@media(max-width:950px){.agent-directory{grid-template-columns:1fr}}
+@media(max-width:700px){.agent-profile-summary,.agent-profile-grid{grid-template-columns:minmax(0,1fr)}.agent-profile-leads{grid-column:auto}.agent-directory-card{flex-wrap:wrap}.agent-directory-card .btn{margin-left:55px}.agent-profile-summary{gap:8px}}
+
+/* CRM individual agent assignment and immutable history */
+.crm-owner-label{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:10px 0 15px;color:#394c62;font-size:13px}
+.crm-agent-assignment{margin-top:20px;padding-top:20px;border-top:1px solid #e7ebf0;display:grid;gap:10px}
+.crm-agent-assignment h3{font-size:14px;color:#27394e;margin:0;font-weight:800}
+.crm-agent-assignment form{display:grid;gap:10px;margin:0}
+.crm-agent-assignment form label{display:grid;gap:6px;color:#53667d;font-size:12px;font-weight:750}
+.crm-agent-assignment form select{background:#fff;border:1px solid #dbe4ec;border-radius:8px;padding:10px;min-height:44px;max-width:100%;color:#27394e}
+.crm-agent-assignment form button{justify-self:start}
+.crm-assignment-history{padding:0;margin:0;list-style:none;display:grid;gap:0}
+.crm-assignment-history li{padding:10px 0;border-bottom:1px solid #edf1f5;display:grid;gap:4px}
+.crm-assignment-history li:last-child{border-bottom:0}
+.crm-assignment-history strong{color:#293a4d;font-size:12px;overflow-wrap:anywhere}
+.crm-assignment-history small{font-size:11px;color:#778698}
+.crm-assigned-preview{display:block;font-size:11px;color:#627389;margin-top:3px}
+
+/* Responsive CRM cards and assigned-agent filter */
+.crm-lead-property{display:grid;grid-template-columns:17px minmax(0,1fr);column-gap:7px;row-gap:2px;align-content:center}
+.crm-lead-property>svg{grid-column:1;grid-row:1/3}
+.crm-lead-property>span,.crm-lead-property>.crm-assigned-preview{grid-column:2;min-width:0}
+.crm-filters-with-agents{grid-template-columns:minmax(180px,2fr) minmax(145px,1fr) minmax(145px,1fr) auto}
+@media(max-width:1050px){
+ .crm-filters-with-agents{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .crm-filters-with-agents>.btn{justify-self:start}
+}
+@media(max-width:650px){
+ .crm-filters-with-agents{grid-template-columns:minmax(0,1fr)}
+}
+
+/* Agent performance dashboard: clean responsive management analytics */
+.agent-performance{display:grid;gap:18px;min-width:0}
+.agent-report-header-links{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.agent-report-controls{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.agent-report-controls form{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.agent-report-controls form label{color:#566a80;font-weight:750;font-size:12px}
+.agent-report-controls select{background:white;border:1px solid #dfe6ee;border-radius:9px;min-height:42px;max-width:240px;min-width:150px;padding:9px 12px;color:#2d4055}
+.agent-report-controls .btn{min-height:42px}
+.agent-performance-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.agent-performance-metrics>div{min-width:0;border:1px solid #e5eaf1;background:white;border-radius:13px;padding:17px;display:grid;align-content:start;gap:5px}
+.agent-performance-metrics svg{color:#b32a39}
+.agent-performance-metrics span{font-size:12px;color:#5c6e83;font-weight:650}
+.agent-performance-metrics strong{font-size:29px;letter-spacing:-.7px;line-height:1.15;color:#25364b}
+.agent-performance-metrics small{color:#79879a;font-size:11px;line-height:1.5}
+.agent-report-table{min-width:900px}
+.agent-report-table th,.agent-report-table td{text-align:left}
+.agent-report-table td>span{display:block;color:#8290a0;font-size:11px}
+.agent-report-table td>.inline-link{display:inline-flex;align-items:center;gap:3px;font-size:11px}
+.agent-report-alert{color:#b42336;font-weight:800}
+.agent-stage-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:10px}
+.agent-stage-grid>div{padding:12px;background:#f7f9fc;border:1px solid #ebeff3;border-radius:10px;display:grid;gap:3px}
+.agent-stage-grid span{color:#5d7085;font-size:12px}
+.agent-stage-grid strong{font-size:23px;color:#2a3d53}
+.agent-report-agenda{display:grid}
+.agent-report-agenda>div{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:12px;border-bottom:1px solid #edf1f4;padding:12px 0}
+.agent-report-agenda>div:last-child{border-bottom:none}
+.agent-report-agenda>div>div{display:grid;gap:3px;min-width:0}
+.agent-report-agenda strong{font-size:13px;color:#293b50;overflow-wrap:anywhere}
+.agent-report-agenda small{font-size:11px;color:#66778c}
+.agent-report-agenda>div>span{font-size:12px;font-weight:700;color:#41556a}
+@media(max-width:920px){.agent-performance-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){
+ .agent-performance-metrics,.agent-stage-grid{grid-template-columns:minmax(0,1fr)}
+ .agent-report-controls form{width:100%}
+ .agent-report-controls select{flex:1;max-width:none}
+ .agent-report-agenda>div{grid-template-columns:minmax(0,1fr) auto}
+ .agent-report-agenda>div>a{grid-column:1/-1;justify-self:start}
+ .agent-report-header-links{width:100%}
+}
+

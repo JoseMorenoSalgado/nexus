@@ -1,0 +1,13 @@
+/* Catalog controls: lightweight native HTML, no client-side runtime. */
+.public-site .catalog-primary-filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.public-site .catalog-extra-filters{margin-top:14px;border-top:1px solid #e5e9ef;padding-top:12px}
+.public-site .catalog-extra-filters summary{cursor:pointer;font-weight:700;color:#25364a;padding:7px 0;list-style-position:inside}
+.public-site .catalog-extra-filters summary:focus-visible,.public-site .catalog-reset-filters:focus-visible{outline:3px solid #446bc4;outline-offset:3px}
+.public-site .catalog-extra-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:11px}
+.public-site .catalog-extra-grid label{display:flex;flex-direction:column;gap:7px;font-size:13px;font-weight:700}
+.public-site .catalog-extra-grid input{width:100%;min-width:0;min-height:45px;padding:9px 11px;border:1px solid #d9e0e9;border-radius:8px;background:white}
+.public-site .catalog-filter-actions{display:flex;align-items:center;gap:15px;flex-wrap:wrap;margin-top:16px}
+.public-site .catalog-reset-filters{display:inline-flex;align-items:center;gap:6px;padding:10px 4px;font-size:14px;font-weight:700;color:#45566a}
+.public-site .catalog-reset-filters:hover{text-decoration:underline}
+@media(max-width:960px){.public-site .catalog-primary-filters,.public-site .catalog-extra-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:540px){.public-site .catalog-primary-filters,.public-site .catalog-extra-grid{grid-template-columns:1fr}.public-site .catalog-filter-actions{align-items:stretch;flex-direction:column}.public-site .catalog-filter-actions .btn,.public-site .catalog-reset-filters{justify-content:center;width:100%;min-height:44px}.public-site .catalog-extra-filters{margin-top:8px}}

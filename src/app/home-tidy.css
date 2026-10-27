@@ -1,0 +1,8 @@
+/* Inicio público: jerarquía clara, menos bloques decorativos y alturas más contenidas. */
+.public-site .nexus-hero-layout-simple{grid-template-columns:minmax(0,760px);gap:0;min-height:470px;padding-top:58px;padding-bottom:72px}
+.public-site .nexus-hero-layout-simple .nexus-hero-copy{max-width:730px}
+.public-site main#contenido>.nexus-section{padding-block:clamp(42px,5.8vw,72px)}
+.public-site .nexus-services-preview .nexus-service-card{min-height:220px;padding:23px;gap:7px}
+.public-site .nexus-services-preview .nexus-service-top{margin-bottom:3px}
+.public-site .nexus-section-heading{margin-bottom:26px}
+@media(max-width:720px){.public-site .nexus-hero-layout-simple{min-height:420px;padding-block:62px 82px}.public-site .nexus-services-preview .nexus-service-card{min-height:0}}

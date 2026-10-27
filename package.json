@@ -1,0 +1,41 @@
+{
+  "name": "webappecloud",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -H 0.0.0.0",
+    "build": "npm run db:generate && next build",
+    "start": "next start -H 0.0.0.0 -p ${PORT:-3000}",
+    "db:generate": "node scripts/generate-prisma-clients.mjs",
+    "db:migrate": "prisma migrate deploy",
+    "db:dev": "prisma migrate dev",
+    "installation:restore": "node scripts/restore-installation.mjs",
+    "test:recovery": "node --test scripts/restore-installation.test.mjs",
+    "db:seed": "tsx prisma/seed.ts",
+    "predev": "npm run db:generate"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.3.0",
+    "lucide-react": "^0.468.0",
+    "next": "^15.3.0",
+    "pdf-lib": "^1.17.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "recharts": "^2.15.0",
+    "server-only": "^0.0.1",
+    "sharp": "^0.34.4",
+    "embla-carousel-react": "^8.6.0",
+    "yet-another-react-lightbox": "^3.32.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "prisma": "^6.3.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "tailwindcss": "^3.4.17",
+    "postcss": "^8.4.49",
+    "autoprefixer": "^10.4.20"
+  }
+}

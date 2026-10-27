@@ -1,0 +1,14 @@
+/* FIX: both home featured cards and public property catalog use a full-bleed cover.
+   Previous override only targeted .property-grid; home uses .nexus-featured-grid. */
+.public-site .property-card>.property-photo{
+ display:block!important;position:relative!important;
+ width:100%!important;height:auto!important;
+ aspect-ratio:16/10;overflow:hidden;background:#e9eef3;
+}
+.public-site .property-card>.property-photo>img{
+ display:block!important;width:100%!important;height:100%!important;
+ position:absolute;inset:0;max-width:none!important;max-height:none!important;
+ object-fit:cover!important;object-position:50% 50%!important;
+}
+.public-site .property-card>.property-photo>.property-status{z-index:2}
+

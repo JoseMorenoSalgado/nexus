@@ -1,0 +1,263 @@
+/* Catálogo privado de inmuebles — patrón SaaS limpio de la referencia aprobada */
+.property-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:0 0 18px}
+.property-summary>div{display:flex;align-items:baseline;gap:10px;background:white;border:1px solid var(--border);border-radius:12px;padding:15px 19px;min-width:0}
+.property-summary strong{font-size:26px;color:#19202b}
+.property-summary span{color:var(--muted);font-size:13px}
+.property-filters{display:grid;grid-template-columns:minmax(250px,2fr) minmax(140px,1fr) minmax(140px,1fr) auto;gap:12px;align-items:end;padding:18px;background:#fff;border:1px solid var(--border);border-radius:13px;margin:0 0 17px}
+.property-filters label{display:grid;gap:6px;color:#506077;font-size:12px;font-weight:700;min-width:0}
+.property-filters input,.property-filters select{width:100%;min-height:44px;border:1px solid #dce1e7;border-radius:9px;padding:9px 12px;background:white;color:#243044;min-width:0}
+.property-search{display:flex;align-items:center;gap:8px;border:1px solid #dce1e7;border-radius:9px;padding-left:12px}
+.property-search input{border:0}
+.property-search svg{flex:0 0 auto;color:#768296}
+.property-result-heading{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:20px 0 12px;color:#566174;font-size:13px}
+.property-result-heading strong{color:#212b39}
+.property-admin-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.property-admin-card{background:white;border:1px solid #e6e9ee;border-radius:14px;overflow:hidden;box-shadow:0 6px 23px #1b263308;min-width:0}
+.property-admin-photo{aspect-ratio:16/10;background:#f1f3f6;position:relative;overflow:hidden}
+.property-admin-photo img{height:100%;width:100%;object-fit:cover}
+.property-photo-placeholder{height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:#8b94a4;font-size:13px}
+.property-admin-status{position:absolute;top:12px;left:12px;padding:5px 10px;font-size:11px;font-weight:800;border-radius:30px}
+.is-published{background:#e4f8ef;color:#08794d}.is-draft{background:#fff6e4;color:#93610a}
+.property-admin-content{padding:17px}
+.property-admin-code{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:800;color:#9c2430;letter-spacing:.03em}
+.property-admin-code span{color:#576376;font-weight:600;letter-spacing:0}
+.property-admin-content h2{font-size:18px;letter-spacing:-.025em;line-height:1.3;margin:10px 0 7px;min-height:46px}
+.property-admin-location{display:flex;align-items:center;gap:6px;font-size:12px;color:#647084;line-height:1.35}
+.property-admin-price{display:block;color:#ba1926;font-size:23px;margin:12px 0;font-weight:850}
+.property-admin-facts{display:flex;gap:12px;flex-wrap:wrap;padding-bottom:15px;border-bottom:1px solid #edf0f3;color:#58657a;font-size:12px}
+.property-admin-facts span{display:flex;align-items:center;gap:4px}
+.property-admin-actions{display:flex;align-items:center;gap:9px;margin-top:15px}
+.property-admin-actions .btn{font-size:12px;padding:8px 13px;min-height:39px}
+.property-admin-actions form{margin-left:auto}
+.property-admin-view{display:grid;place-items:center;min-width:38px;min-height:38px;color:#546276}
+.btn-text{border:1px solid #e7d5d8!important;color:#ba1926;background:#fff!important}
+.property-empty{display:grid;justify-items:center;gap:12px;padding:60px 16px;text-align:center;background:white;border:1px solid var(--border);border-radius:14px;color:#677589}
+.property-empty h2{font-size:22px;margin:0;color:#263241}
+.property-empty p{margin:0}
+.property-pagination{display:flex;justify-content:center;gap:10px;margin:22px 0}
+.property-editor{max-width:900px;gap:0}
+.property-form-section{display:grid;gap:14px;margin-bottom:12px;padding:0 0 20px}
+.property-form-section+.property-form-section{border-top:1px solid #e9edf1;padding-top:20px}
+.property-form-section h2{font-size:19px;margin:0;color:#233044}
+.property-form-section>p{font-size:13px;color:#667389;margin:0}
+.property-form-section label{min-width:0}
+.property-form-section textarea{width:100%;background:white}
+.property-form-grid-three{grid-template-columns:repeat(2,minmax(0,1fr))}
+.property-check{display:flex!important;align-items:center;gap:10px;font-weight:600!important}
+.property-check input{width:18px!important;height:18px}
+.property-help{font-size:13px!important;color:#667389;margin:0}
+.property-editor-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}
+.property-success{background:#edf9f2;border:1px solid #bde9d1;color:#16764c;border-radius:9px;padding:12px 15px;margin:0 0 14px}
+.property-photo-panel{max-width:900px;margin:18px 0}
+.property-photo-panel>p{font-size:13px;color:#647084}
+.property-upload-area{display:grid;gap:14px}
+.property-upload-button{display:inline-flex;justify-self:start;align-items:center;gap:9px;padding:11px 15px;border:1px solid #e6b4b9;border-radius:10px;background:#fff6f6;color:#af1a27;font-size:14px;font-weight:750;cursor:pointer}
+.property-upload-button input{position:absolute;clip:rect(0,0,0,0);width:1px;height:1px;opacity:0}
+.property-upload-button:focus-within{outline:3px solid #cf202b;outline-offset:2px}
+.property-photo-count{font-size:12px;color:#68778a}
+.property-upload-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}
+.property-upload-tile{position:relative;aspect-ratio:4/3;border-radius:10px;overflow:hidden;background:#eff1f4}
+.property-upload-tile img{width:100%;height:100%;object-fit:cover}
+.property-cover-label{position:absolute;top:7px;left:7px;border-radius:5px;background:#193043c9;color:white;padding:3px 7px;font-size:11px}
+.property-upload-tile button{position:absolute;top:7px;right:7px;display:grid;place-items:center;width:32px;height:32px;border:0;border-radius:7px;background:#fff;color:#c21f2b}
+.property-danger{max-width:900px;padding:16px;background:#fff;border:1px solid #f1cbd0;border-radius:12px;color:#782b35;margin-bottom:20px}
+.property-danger summary{display:flex;align-items:center;gap:9px;cursor:pointer;font-weight:750}
+.property-danger p{color:#70565b;font-size:13px;margin:16px 0}
+.property-danger label{display:grid;gap:7px;font-size:13px;font-weight:650}
+.property-danger input{width:100%;max-width:350px;padding:12px;border:1px solid #d9d9db;border-radius:8px}
+.property-danger button{margin-top:15px}
+.btn-danger{background:#a51624;color:#fff}
+@media(max-width:1150px){.property-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.property-filters{grid-template-columns:2fr 1fr 1fr}.property-filters .btn{grid-column:1/-1}}
+@media(max-width:720px){.property-summary{gap:8px}.property-summary>div{padding:12px;flex-direction:column;gap:1px}.property-summary strong{font-size:24px}.property-summary span{font-size:11px;line-height:1.3}.property-admin-grid{grid-template-columns:1fr;gap:13px}.property-filters{grid-template-columns:1fr 1fr;padding:13px}.property-filters label:first-child{grid-column:1/-1}.property-filters .btn{grid-column:1/-1}.property-admin-content h2{min-height:0}.property-upload-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.property-editor-actions>.btn{width:100%}.property-photo-panel{padding:16px}.property-form-section{gap:10px}}
+@media(max-width:370px){.property-filters{grid-template-columns:1fr}.property-filters label:first-child{grid-column:auto}}
+
+
+/* Galería pública de inmuebles */
+.public-gallery{display:grid;gap:12px;margin-bottom:18px}
+.public-gallery-main{height:clamp(270px,49vw,510px);background:#f2f4f6;border-radius:14px;overflow:hidden;position:relative}
+.public-gallery-main>img{display:block;width:100%;height:100%;object-fit:cover}
+.public-gallery-controls{position:absolute;right:16px;bottom:16px;display:flex;align-items:center;gap:10px;background:#172534c9;color:white;border-radius:12px;padding:7px}
+.public-gallery-controls button{width:38px;height:38px;display:grid;place-items:center;border:0;border-radius:9px;background:#fff;color:#273243}
+.public-gallery-controls>span{font-size:13px;font-weight:750;min-width:48px;text-align:center}
+.public-gallery-thumbs{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x mandatory}
+.public-gallery-thumbs button{flex:0 0 110px;height:75px;padding:0;border:2px solid transparent;border-radius:8px;overflow:hidden;background:#f0f2f4;scroll-snap-align:start}
+.public-gallery-thumbs button.selected{border-color:#c91c29}
+.public-gallery-thumbs img{height:100%;width:100%;object-fit:cover}
+.public-gallery-thumbs button:focus-visible{outline:3px solid #c91c29;outline-offset:2px}
+.detail-image-empty{display:grid;place-items:center;align-content:center;gap:12px;color:#8593a3}
+@media(max-width:720px){.public-gallery-main{height:265px}.public-gallery-thumbs button{flex-basis:86px;height:64px}.public-gallery-controls{right:8px;bottom:8px}}
+
+/* Fichas técnicas inmobiliarias: PDF automático + documento corporativo */
+.property-pdf-heading h2{margin:0 0 5px;font-size:18px}
+.property-pdf-heading p{color:var(--muted);font-size:13px;line-height:1.5;margin:0 0 14px}
+.property-pdf-auto{display:flex;align-items:center;justify-content:space-between;gap:15px;border:1px solid #e5e9ee;border-radius:11px;background:#fafbfc;padding:15px;margin-bottom:15px}
+.property-pdf-auto>div{display:grid;gap:4px;min-width:0}
+.property-pdf-auto strong,.property-document-status strong{font-size:14px;color:#1b2638}
+.property-pdf-auto span,.property-document-status span{display:block;color:var(--muted);font-size:12px;line-height:1.5}
+.property-document-manager{display:grid;gap:12px;min-width:0}
+.property-document-status{display:flex;gap:12px;align-items:start;color:#b81e29}
+.property-document-status>svg{flex:0 0 auto}
+.property-document-status>div{display:grid;gap:4px;min-width:0}
+.property-document-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.property-document-actions .btn{min-height:44px;font-size:13px}
+.property-pdf-downloads{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:15px}
+.property-pdf-downloads .btn{min-width:205px}
+@media(max-width:720px){.property-pdf-auto{flex-direction:column;align-items:stretch}.property-pdf-auto .btn{width:100%}.property-document-actions>*{width:100%;justify-content:center}.property-pdf-downloads{flex-direction:column;align-items:stretch}.property-pdf-downloads .btn{width:100%}}
+
+
+/* CRM comercial NEXUS — responsive and accessible, aligned with the existing admin. */
+.crm-activation{max-width:790px;display:grid;justify-items:start;gap:12px;padding:26px}
+.crm-activation h2{font-size:24px;margin:0}
+.crm-activation p{color:#5a697b;font-size:14px;max-width:62ch;margin:0 0 8px}
+.crm-overview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:8px 0 20px}
+.crm-overview>div{display:grid;gap:3px;background:#fff;border:1px solid #e6eaf0;border-radius:13px;padding:19px;min-width:0;position:relative;box-shadow:0 5px 16px #14253a06}
+.crm-overview>div>span{font-size:13px;color:#657286}
+.crm-overview>div>strong{font-size:29px;font-weight:800;color:#243146}
+.crm-overview>div>svg{position:absolute;right:18px;top:18px;color:#bf2633}
+.crm-filters{display:grid;grid-template-columns:minmax(220px,2fr) minmax(160px,1fr) auto;gap:12px;align-items:end;padding:17px;background:#fff;border:1px solid #e6eaf0;border-radius:13px}
+.crm-filters label{display:grid;gap:6px;font-size:12px;font-weight:700;color:#58667a;min-width:0}
+.crm-filters select{min-height:45px;border:1px solid #dce1e7;border-radius:9px;background:#fff;padding:9px 12px;color:#28344a;width:100%}
+.crm-filters .btn{min-height:45px}
+.crm-list{display:grid;gap:11px}
+.crm-lead-card{display:grid;grid-template-columns:minmax(200px,1.35fr) minmax(130px,1fr) minmax(210px,1fr);align-items:center;gap:14px;background:#fff;border:1px solid #e6eaf0;border-radius:13px;padding:18px;box-shadow:0 3px 13px #15293e07;min-width:0}
+.crm-lead-main{display:flex;align-items:center;gap:12px;min-width:0}
+.crm-avatar{width:44px;height:44px;display:grid;place-items:center;flex:0 0 auto;border-radius:12px;background:#fff0f1;color:#b91f2b;font-weight:800;font-size:17px}
+.crm-lead-name{display:grid;gap:3px;min-width:0}
+.crm-lead-name>strong{color:#283244;font-size:15px;overflow-wrap:anywhere}
+.crm-lead-name>span{color:#536176;font-size:12px;overflow-wrap:anywhere}
+.crm-lead-name>small{color:#818b99;font-size:11px}
+.crm-lead-property{display:flex;align-items:flex-start;gap:7px;color:#58677a;font-size:12px;line-height:1.6;min-width:0}
+.crm-lead-property svg{flex:0 0 auto;margin-top:3px}
+.crm-lead-property span{overflow-wrap:anywhere}
+.crm-lead-side{display:grid;justify-items:end;gap:7px}
+.crm-lead-side>small{font-size:11px;color:#566476}
+.crm-status{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:800;border-radius:999px;padding:5px 11px;white-space:nowrap;background:#f1f3f6;color:#4d5a6e}
+.crm-status-nuevo{background:#fff3df;color:#94600b}
+.crm-status-contactado{background:#edf4ff;color:#1d539c}
+.crm-status-visita{background:#e9f5ff;color:#16739c}
+.crm-status-negociacion{background:#faf0ff;color:#7b3099}
+.crm-status-cerrado{background:#e5f7ed;color:#137445}
+.crm-status-descartado{background:#f0f0f2;color:#657081}
+.crm-lead-actions{display:flex;justify-content:flex-end;gap:8px;align-items:center;flex-wrap:wrap}
+.crm-whatsapp-link{display:inline-flex;align-items:center;gap:6px;background:#e6f8ee;border:1px solid #b8ebd0;color:#077d47;padding:9px 11px;border-radius:9px;font-size:12px;font-weight:800;min-height:40px}
+.crm-lead-actions .btn{min-height:40px;padding:9px 11px;font-size:12px}
+.crm-detail-head{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:16px}
+.crm-detail-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(240px,1fr);align-items:start;gap:18px}
+.crm-detail-primary{display:grid;gap:18px;min-width:0}
+.crm-detail-grid .admin-panel h2{font-size:19px;display:flex;align-items:center;gap:9px;margin:0 0 16px}
+.crm-contact-data{display:grid;gap:12px;margin-bottom:18px}
+.crm-contact-data>span{display:flex;align-items:center;gap:11px;font-size:13px;color:#364459;overflow-wrap:anywhere}
+.crm-contact-data>span>svg{color:#b91e2a;flex-shrink:0}
+.crm-original-message{background:#f7f8fb;border:1px solid #e8ebef;padding:15px;border-radius:10px;margin-top:16px}
+.crm-original-message>strong{font-size:12px;color:#40506a}
+.crm-original-message>p{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;color:#3e4b60;margin:6px 0 0}
+.crm-contact-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.crm-whatsapp-btn{background:#108c54;color:#fff}
+.crm-followup-panel>p{font-size:13px;color:#647186;line-height:1.5}
+.crm-followup-form,.crm-note-form{display:grid;gap:14px}
+.crm-followup-form label,.crm-note-form label{display:grid;gap:6px;color:#4a586d;font-size:13px;font-weight:700}
+.crm-followup-form select,.crm-followup-form input,.crm-note-form textarea{width:100%;border:1px solid #d8dfe8;border-radius:9px;background:#fff;color:#26364b;padding:11px;min-height:44px}
+.crm-note-form textarea{min-height:104px;resize:vertical;line-height:1.5}
+.crm-followup-panel .inline-link{margin-top:22px}
+.crm-note-list{margin-top:22px;display:grid;gap:11px}
+.crm-note{border:1px solid #e8ebef;border-radius:10px;background:#fbfcfd;padding:13px 15px}
+.crm-note>div{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.crm-note strong{font-size:12px;color:#243248}
+.crm-note time{font-size:11px;color:#718096}
+.crm-note p{margin:7px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;color:#40516a}
+@media(max-width:1050px){.crm-lead-card{grid-template-columns:minmax(160px,1fr) minmax(160px,1fr)}.crm-lead-property{grid-column:1;grid-row:2}.crm-lead-side{grid-column:2;grid-row:1 / span 2}.crm-detail-grid{grid-template-columns:1fr}}
+@media(max-width:720px){.crm-overview{gap:8px}.crm-overview>div{padding:12px}.crm-overview>div>strong{font-size:24px}.crm-overview>div>span{font-size:11px;line-height:1.35;padding-right:6px}.crm-overview>div>svg{position:static;margin-top:3px;width:16px;height:16px}.crm-filters{grid-template-columns:1fr;padding:13px}.crm-lead-card{grid-template-columns:1fr;gap:12px;padding:15px}.crm-lead-main{grid-column:auto;grid-row:auto}.crm-lead-property{grid-column:auto;grid-row:auto}.crm-lead-side{grid-column:auto;grid-row:auto;justify-items:start;border-top:1px solid #edf0f4;padding-top:10px}.crm-lead-actions{justify-content:flex-start;width:100%}.crm-lead-actions>*{flex:1;justify-content:center;min-width:0}.crm-contact-actions>*{width:100%;justify-content:center}.crm-detail-grid .admin-panel{padding:17px}.crm-note>div{align-items:flex-start;flex-direction:column;gap:0}}
+
+
+/* Reportes comerciales para NEXUS / inmobiliarias multicliente */
+.reports-toolbar{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin:3px 0 21px}
+.reports-toolbar>span{font-size:12px;color:#718096}
+.reports-periods{display:flex;gap:5px;background:#fff;border:1px solid #e0e5eb;border-radius:10px;padding:5px}
+.reports-periods a{padding:8px 14px;font-size:13px;font-weight:750;color:#526075;border-radius:7px}
+.reports-periods a.selected{background:#b91f2d;color:white}
+.reports-periods a:focus-visible{outline:3px solid #d02431;outline-offset:2px}
+.report-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin-bottom:17px}
+.report-kpi{background:white;border:1px solid #e3e7ee;border-radius:13px;padding:19px;min-width:0;box-shadow:0 5px 17px #15253d08}
+.report-kpi-heading{display:flex;justify-content:space-between;gap:9px;align-items:flex-start;color:#566478;font-size:13px;line-height:1.4}
+.report-kpi-heading svg{color:#c52130;flex-shrink:0}
+.report-kpi>strong{font-size:29px;font-weight:850;display:block;color:#1d293b;margin:8px 0 2px;line-height:1.2}
+.report-kpi>small{color:#718094;font-size:11px;line-height:1.45;display:block}
+.report-ratios{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin:0 0 18px}
+.report-ratios>div{display:grid;align-content:start;gap:5px;border:1px solid #e2e6ee;border-radius:12px;padding:17px;background:#f8fafc}
+.report-ratios span{font-size:12px;color:#52627a;font-weight:750}
+.report-ratios strong{font-size:23px;color:#b7212f;line-height:1.3}
+.report-ratios small{font-size:11px;color:#68788e;line-height:1.5}
+.report-setup-info{display:flex;align-items:center;gap:15px;border:1px solid #e8d3ac;background:#fffaf1;border-radius:12px;padding:16px;margin-bottom:18px;color:#8c5a10}
+.report-setup-info>svg{flex:0 0 auto}
+.report-setup-info>div{flex:1;min-width:0}
+.report-setup-info strong{font-size:13px}
+.report-setup-info p{margin:4px 0 0;color:#785e39;font-size:12px}
+.reports-panels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-bottom:18px}
+.report-breakdown h2{font-size:19px;margin:0 0 6px}
+.report-breakdown>p{font-size:12px;color:#697589;margin:0 0 20px}
+.report-breakdown>small{display:block;color:#697589;font-size:11px;margin-top:19px}
+.report-bars{display:grid;gap:15px}
+.report-bar-row{display:grid;gap:5px}
+.report-bar-row>div:first-child{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.report-bar-row span{font-size:12px;color:#40516b}
+.report-bar-row strong{font-size:12px;color:#24354a}
+.report-bar-track{height:9px;background:#edf1f5;border-radius:20px;overflow:hidden}
+.report-bar-track>span{display:block;height:100%;border-radius:20px;background:#cb2836;min-width:0}
+.reports-panels .report-breakdown:nth-child(2) .report-bar-track>span{background:#536e96}
+.report-property-panel{min-width:0}
+.report-property-panel .heading-row{align-items:start}
+.report-property-panel .heading-row h2{font-size:19px;margin:0 0 6px}
+.report-property-panel .heading-row p{font-size:12px;color:#69778a;margin:0 0 18px}
+.report-table-scroll{overflow-x:auto;max-width:100%}
+.report-table{border-collapse:collapse;width:100%;min-width:690px;font-size:12px}
+.report-table th{text-align:left;background:#f7f9fb;color:#536074;font-weight:800;border-bottom:1px solid #e4eaf0;padding:12px 9px;white-space:nowrap}
+.report-table th:not(:first-child),.report-table td:not(:first-child){text-align:right}
+.report-table td{border-bottom:1px solid #edf0f4;padding:12px 9px;color:#38465c;vertical-align:top}
+.report-table tr:last-child td{border-bottom:0}
+.report-table td:first-child a{display:grid;gap:2px}
+.report-table td:first-child strong{color:#b4202e;font-size:12px}
+.report-table td:first-child span{display:block;color:#5a687d;font-size:11px;overflow-wrap:anywhere;max-width:245px}
+.reports-disclaimer{font-size:12px;color:#6a788c;line-height:1.7;margin:17px 0}
+@media(max-width:950px){.report-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.report-ratios{grid-template-columns:repeat(2,minmax(0,1fr))}.reports-panels{grid-template-columns:1fr}}
+@media(max-width:600px){.report-kpis{gap:9px}.report-kpi{padding:13px}.report-kpi>strong{font-size:25px}.report-kpi-heading{font-size:11px}.report-kpi-heading svg{width:17px;height:17px}.report-ratios{grid-template-columns:1fr;gap:9px}.report-ratios>div{padding:13px}.report-setup-info{align-items:flex-start;flex-wrap:wrap}.report-setup-info .btn{width:100%}.reports-periods{width:100%;justify-content:space-around}.reports-periods a{flex:1;text-align:center}.reports-toolbar>span{font-size:11px}.report-property-panel .heading-row{display:grid;gap:10px}}
+
+
+/* Editor visual del sitio inmobiliario; compatible con el panel y con móviles */
+.hero.has-custom-hero:before{background-image:url("/api/site-media/hero")}
+.site-editor-images,.site-editor-form>.admin-panel{margin-bottom:18px}
+.site-editor-form{display:grid;gap:0}
+.site-section-heading{display:flex;align-items:flex-start;gap:13px;margin-bottom:19px;color:#bd202c}
+.site-section-heading>svg{flex:0 0 auto;margin-top:2px}
+.site-section-heading h2{font-size:20px;color:#243247;margin:0 0 5px}
+.site-section-heading p{margin:0;font-size:13px;color:#68788a;line-height:1.5}
+.site-image-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:18px}
+.site-image-grid>div{min-width:0}
+.site-image-grid h3{font-size:15px;color:#2d3a4d;letter-spacing:-.01em;margin:0 0 10px}
+.site-image-manager{display:grid;gap:12px}
+.site-image-preview{background:#f5f6f8;border:1px solid #e1e6ed;border-radius:11px;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center}
+.site-image-preview img{height:100%;width:100%;object-fit:cover}
+.site-preview-hero{aspect-ratio:16/9}
+.site-preview-hero>span{display:grid;place-items:center;background:linear-gradient(135deg,#23323c,#697684);width:100%;height:100%;color:#fff;font-size:13px;font-weight:650;padding:15px;text-align:center}
+.site-preview-logo{aspect-ratio:16/9;background:#fff}
+.site-preview-logo img{object-fit:contain;padding:20px}
+.site-image-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.site-image-actions>.btn{font-size:13px}
+.site-editor-form>.admin-panel{min-width:0}
+.site-form-fields{display:grid;gap:16px}
+.site-form-fields label{display:grid;gap:7px;min-width:0;font-weight:700;font-size:13px;color:#48566d}
+.site-form-fields input,.site-form-fields textarea{width:100%;min-height:46px;padding:11px 13px;border:1px solid #dce2e9;border-radius:9px;background:white;color:#25344b;outline:none}
+.site-form-fields textarea{min-height:92px;resize:vertical}
+.site-form-fields input:focus-visible,.site-form-fields textarea:focus-visible,.site-image-actions button:focus-visible{border-color:#bd2632;outline:3px solid #cf202b3a}
+.site-form-fields input[type=color]{max-width:150px;min-height:51px;padding:5px;cursor:pointer}
+.site-featured-picker{border:1px solid #e1e6ec;background:#fafbfc;border-radius:11px;padding:16px;display:grid;gap:12px;max-height:345px;overflow-y:auto}
+.site-featured-picker>strong{display:flex;gap:8px;align-items:center;font-size:14px;color:#253347}
+.site-featured-picker>p{font-size:12px;color:#67758a;margin:0}
+.site-featured-picker label{display:flex;align-items:flex-start;gap:9px;font-size:13px;font-weight:500;color:#43536a;line-height:1.5}
+.site-featured-picker label input{height:18px;width:18px;min-height:18px;flex:0 0 auto;margin-top:2px;accent-color:#b91e2d}
+.site-featured-picker label strong{font-size:12px;color:#b91e2d}
+.site-save-bar{position:sticky;bottom:10px;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:15px;padding:15px 18px;border:1px solid #e3e8ed;border-radius:12px;background:#fffffff5;box-shadow:0 6px 26px #111f2c18;margin:0 0 22px}
+.site-save-bar p{font-size:12px;line-height:1.4;color:#67748a;margin:0;max-width:420px}
+@media(max-width:850px){.site-image-grid{grid-template-columns:1fr}}
+@media(max-width:620px){.site-save-bar{bottom:0;flex-direction:column;align-items:stretch;padding:12px}.site-save-bar .btn{width:100%}.site-section-heading h2{font-size:18px}.site-image-actions>.property-upload-button{flex:1;justify-content:center}.site-image-actions>.btn{flex:1}}
+
+

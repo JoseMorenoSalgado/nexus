@@ -1,0 +1,84 @@
+import assert from "node:assert/strict";
+
+const origin=process.env.TEST_ORIGIN||"http://localhost:3000";
+assert.equal(new URL(origin).hostname,"localhost","Notification tests are restricted to local CI instances.");
+async function request(path,cookie){return fetch(origin+path,{headers:cookie?{Cookie:cookie}:{},redirect:"manual"});}
+async function post(path,form,cookie){return fetch(origin+path,{method:"POST",headers:{Origin:origin,...(cookie?{Cookie:cookie}:{})},body:form,redirect:"manual"});}
+async function login(email,password){
+ const form=new FormData();form.set("email",email);form.set("password",password);
+ const response=await post("/api/admin/session",form);
+ assert.equal(response.status,303);
+ const cookie=response.headers.getSetCookie().find(value=>value.startsWith("webappecloud_session="));
+ assert.ok(cookie);
+ return cookie.split(";")[0];
+}
+const admin=await login(process.env.ADMIN_EMAIL,process.env.ADMIN_PASSWORD),stamp=Date.now().toString(36);
+const page=await request("/admin/notificaciones",admin);
+assert.equal(page.status,200);
+assert.match(await page.text(),/Centro de notificaciones/);
+const leadForm=new FormData();leadForm.set("name","Cliente avisos CI "+stamp);
+leadForm.set("phone","88887777");leadForm.set("source","telefono");leadForm.set("consent","on");
+const created=await post("/api/admin/crm/leads",leadForm,admin);
+assert.equal(created.status,303);
+const leadId=new URL(created.headers.get("location"),origin).pathname.split("/").at(-1);
+assert.match(leadId,/^[a-z0-9]{20,40}$/);
+const upcoming=new Date(Date.now()+45*60000).toISOString();
+const overdue=new Date(Date.now()-2*3600000).toISOString();
+function activity(title,start){
+ const data=new FormData();
+ data.set("leadId",leadId);data.set("type","llamada");data.set("title",title);
+ data.set("startsAt",start);data.set("durationMinutes","30");data.set("notes","");
+ data.set("location","");return data;
+}
+const overdueTitle="Llamada vencida CI "+stamp, upcomingTitle="Llamada proxima CI "+stamp;
+const first=await post("/api/admin/agenda",activity(overdueTitle,overdue),admin);
+assert.match(first.headers.get("location")||"",/created=1/);
+const second=await post("/api/admin/agenda",activity(upcomingTitle,upcoming),admin);
+assert.match(second.headers.get("location")||"",/created=1/);
+const all=await request("/admin/notificaciones",admin),html=await all.text();
+assert.equal(all.status,200);
+assert.ok(html.includes(overdueTitle),"Overdue activity missing from admin notifications.");
+assert.ok(html.includes(upcomingTitle),"Upcoming activity missing from admin notifications.");
+assert.ok(html.includes("Prospectos sin atender"));
+const filtered=await (await request("/admin/notificaciones?categoria=proximas",admin)).text();
+assert.ok(filtered.includes(upcomingTitle));
+assert.ok(!filtered.includes(overdueTitle),"Category filter did not remove overdue item.");
+const dashboard=await (await request("/admin",admin)).text();
+assert.match(dashboard,/admin-nav-count/,"Alertas deben tener contador en el menú de navegación");
+assert.ok(!dashboard.includes("admin-notification-trigger"),"No debe repetirse la campana en encabezados");
+const day=new Date(upcoming),selectedDate=day.toISOString().slice(0,10);
+const dayView=await request("/admin/agenda?vista=dia&fecha="+selectedDate+"&mes="+selectedDate.slice(0,7),admin);
+assert.equal(dayView.status,200);
+const dayHtml=await dayView.text();
+assert.match(dayHtml,/Calendario comercial/);
+assert.match(dayHtml,/vista=semana/);
+assert.match(dayHtml,/agenda-view-switch/);
+const weekView=await request("/admin/agenda?vista=semana&fecha="+selectedDate+"&mes="+selectedDate.slice(0,7),admin);
+assert.equal(weekView.status,200);
+assert.match(await weekView.text(),/vista=dia/);
+const agentEmail="notices-"+stamp+"@example.test",pass="Long-password-for-alerts-CI-2026";
+const userForm=new FormData();userForm.set("intent","create");userForm.set("name","Agente avisos CI");
+userForm.set("email",agentEmail);userForm.set("password",pass);userForm.append("roles","agente");
+const createdAgent=await post("/api/admin/users",userForm,admin);
+assert.match(createdAgent.headers.get("location")||"",/status=creado/);
+const directory=await (await request("/admin/clientes-agentes",admin)).text();
+const index=directory.indexOf(agentEmail);
+assert.ok(index>=0);
+const agentId=directory.slice(index,index+1600).match(/href="\/admin\/clientes-agentes\/agentes\/([a-z0-9]{20,40})"/)?.[1];
+assert.ok(agentId);
+const agent=await login(agentEmail,pass);
+const before=await (await request("/admin/notificaciones",agent)).text();
+assert.ok(!before.includes(overdueTitle),"Agent saw another account's overdue agenda item.");
+const assign=new FormData();assign.set("intent","assign");assign.set("assignedAgentId",agentId);
+assert.match((await post("/api/admin/crm/leads/"+leadId,assign,admin)).headers.get("location")||"",/assigned=1/);
+const after=await (await request("/admin/notificaciones",agent)).text();
+assert.ok(after.includes(overdueTitle),"Assigned agent is missing their overdue activity.");
+assert.ok(after.includes(upcomingTitle),"Assigned agent is missing their upcoming activity.");
+const filterByAgent=await request("/admin/agenda?agente="+agentId,admin);
+assert.equal(filterByAgent.status,200);
+assert.ok((await filterByAgent.text()).includes("Toda la inmobiliaria"));
+const unassign=new FormData();unassign.set("intent","assign");unassign.set("assignedAgentId","");
+await post("/api/admin/crm/leads/"+leadId,unassign,admin);
+const lost=await (await request("/admin/notificaciones",agent)).text();
+assert.ok(!lost.includes(overdueTitle),"Agent retained access after lead ownership transfer.");
+console.log("Notifications, calendar day/week, pending counts and tenant-scoped agent visibility passed.");

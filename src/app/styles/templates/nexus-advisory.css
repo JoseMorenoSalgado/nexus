@@ -1,0 +1,509 @@
+/*
+ * NEXUS · Asesoría empresarial (opt-in public service page).
+ * Keeps the approved dark navy/red real-estate identity, adds an informative
+ * compliance diagram and editable tenant-owned media below the introduction.
+ */
+.public-site:not(.public-site-organization) [data-nexus-advisory],
+.public-site:not(.public-site-organization) [data-nexus-inner-motion="asesoria"]{
+ --na-ink:#203247;
+ --na-muted:#647487;
+ --na-line:#e0e7ec;
+ color:var(--na-ink);
+}
+.public-site:not(.public-site-organization) .nexus-advisory-hero{
+ background:#152b3c;
+ overflow:hidden;
+ color:white;
+ padding:clamp(64px,7.4vw,102px) 0;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-hero::before{
+ content:"";
+ position:absolute;
+ inset:0;
+ pointer-events:none;
+ background:
+  radial-gradient(circle at 82% 26%,rgba(192,55,66,.19),transparent 34%),
+  linear-gradient(115deg,rgba(11,27,40,.5),transparent 75%);
+}
+.public-site:not(.public-site-organization) .nexus-advisory-hero-grid{
+ display:grid;
+ grid-template-columns:minmax(0,1.22fr) minmax(290px,.78fr);
+ align-items:center;
+ gap:clamp(24px,5vw,82px);
+ position:relative;
+ z-index:1;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-hero h1{
+ color:#fff;
+ font-size:clamp(39px,4.65vw,66px);
+ line-height:1.06;
+ letter-spacing:-.06em;
+ margin:18px 0 22px;
+ max-width:780px;
+ overflow-wrap:break-word;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-hero h1 em{
+ color:#ffacb3;
+ font-style:normal;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-hero p{
+ max-width:700px;
+ color:#e0e9ef;
+ font-size:clamp(15px,1.3vw,17px);
+ line-height:1.8;
+ margin-bottom:26px;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-hero-actions{
+ display:flex;
+ flex-wrap:wrap;
+ gap:18px;
+ align-items:center;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-hero-actions a{min-height:49px}
+.public-site:not(.public-site-organization) .nexus-advisory-visual{
+ background:rgba(11,30,44,.68);
+ border:1px solid rgba(255,255,255,.24);
+ border-radius:15px;
+ box-shadow:0 22px 48px rgba(0,0,0,.18);
+ padding:clamp(19px,3vw,34px);
+ color:#fff;
+ display:grid;
+ gap:25px;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-visual-heading{
+ display:flex;
+ align-items:center;
+ gap:13px;
+ padding-bottom:20px;
+ border-bottom:1px solid rgba(255,255,255,.17);
+ font-size:11px;
+ letter-spacing:.16em;
+ font-weight:780;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-visual-heading svg{color:#ffb2bb;flex:none}
+.public-site:not(.public-site-organization) .nexus-advisory-visual-grid{display:grid;gap:12px}
+.public-site:not(.public-site-organization) .nexus-advisory-visual-grid span{
+ display:flex;
+ align-items:center;
+ gap:15px;
+ font-size:15px;
+ font-weight:720;
+ border:1px solid rgba(255,255,255,.17);
+ border-radius:9px;
+ background:rgba(255,255,255,.07);
+ padding:15px 16px;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-visual-grid svg{color:#f9a6b1}
+.public-site:not(.public-site-organization) .nexus-advisory-visual small{
+ line-height:1.6;
+ color:#cbd9e3;
+ font-size:12px;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-services{
+ background:#fff;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-services .nexus-section-heading{
+ max-width:900px;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-service-grid{
+ display:grid;
+ grid-template-columns:repeat(3,minmax(0,1fr));
+ gap:20px;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-service{
+ border:1px solid var(--na-line);
+ border-radius:12px;
+ padding:clamp(22px,2.4vw,29px);
+ display:flex;
+ flex-direction:column;
+ min-width:0;
+ box-shadow:0 8px 27px rgba(15,36,56,.045);
+}
+.public-site:not(.public-site-organization) .nexus-advisory-service-icon{
+ display:grid;
+ place-items:center;
+ width:54px;
+ height:54px;
+ border-radius:12px;
+ color:var(--red);
+ background:#fff0f1;
+ margin-bottom:24px;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-service h3{
+ margin:0 0 15px;
+ font-size:clamp(22px,2vw,25px);
+ line-height:1.23;
+ letter-spacing:-.04em;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-service p{
+ color:var(--na-muted);
+ line-height:1.72;
+ font-size:14px;
+ margin:0 0 22px;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-service ul{
+ border-top:1px solid #e8eef0;
+ padding:19px 0 0;
+ margin:auto 0 0;
+ list-style:none;
+ display:grid;
+ gap:12px;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-service li{
+ display:flex;
+ gap:9px;
+ align-items:flex-start;
+ color:#526476;
+ font-size:12px;
+ line-height:1.65;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-service li svg{color:var(--red);min-width:16px;margin-top:2px}
+.public-site:not(.public-site-organization) .nexus-advisory-framework{
+ background:#f5f7f9;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-framework-grid{
+ display:grid;
+ grid-template-columns:minmax(0,1fr) minmax(270px,.86fr);
+ gap:clamp(30px,6vw,85px);
+ align-items:center;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-framework h2{
+ margin:14px 0 23px;
+ max-width:660px;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-framework p{
+ color:var(--na-muted);
+ font-size:15px;
+ line-height:1.82;
+ margin:0 0 17px;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-framework strong{color:var(--na-ink)}
+.public-site:not(.public-site-organization) .nexus-advisory-framework a{
+ display:inline-flex;
+ align-items:center;
+ min-height:44px;
+ gap:10px;
+ margin-top:6px;
+ white-space:normal;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-process{
+ border-radius:13px;
+ padding:clamp(20px,2.9vw,31px);
+ background:#fff;
+ border:1px solid var(--na-line);
+ display:grid;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-process>div{
+ display:grid;
+ grid-template-columns:44px minmax(0,1fr);
+ gap:12px;
+ padding:19px 0;
+ border-bottom:1px solid #e8eef0;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-process>div:last-child{border-bottom:0}
+.public-site:not(.public-site-organization) .nexus-advisory-process>div>span{
+ color:var(--red);
+ font-size:14px;
+ font-weight:820;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-process svg{color:var(--red)}
+.public-site:not(.public-site-organization) .nexus-advisory-process h3{
+ color:var(--na-ink);
+ font-size:17px;
+ margin:9px 0 6px;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-process p{
+ font-size:13px;
+ line-height:1.6;
+ margin:0;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-resources{
+ padding-block:clamp(42px,5vw,72px);
+ background:#fff;
+ border-bottom:1px solid #e5eaf0;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-resources-inner{
+ display:grid;
+ grid-template-columns:69px minmax(0,1fr);
+ gap:clamp(19px,3vw,38px);
+ align-items:start;
+ max-width:1040px;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-resources-icon{
+ border-radius:14px;
+ display:grid;
+ place-items:center;
+ width:65px;
+ height:65px;
+ color:var(--red);
+ background:#fff0f1;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-resources h2{
+ font-size:clamp(29px,3.25vw,43px);
+ letter-spacing:-.045em;
+ margin:11px 0 15px;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-resources p{
+ color:var(--na-muted);
+ font-size:14px;
+ line-height:1.76;
+ max-width:750px;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-resources-note{
+ font-size:12px!important;
+}
+.public-site:not(.public-site-organization) [data-nexus-inner-motion="asesoria"] .cms-public-additions{
+ padding-block:clamp(37px,5vw,67px);
+}
+.public-site:not(.public-site-organization) [data-nexus-inner-motion="asesoria"] .site-content-figure{
+ max-width:900px;
+ margin:24px auto;
+}
+.public-site:not(.public-site-organization) [data-nexus-inner-motion="asesoria"] .site-content-figure img{
+ max-width:100%;
+ width:100%;
+ height:auto;
+ object-fit:contain;
+ border-radius:10px;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-contact{
+ background:#152b3c;
+ color:#fff;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-contact-grid{
+ display:grid;
+ grid-template-columns:minmax(0,1fr) minmax(310px,.82fr);
+ gap:clamp(28px,5vw,80px);
+ align-items:start;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-contact h2{
+ font-size:clamp(36px,3.6vw,49px);
+ letter-spacing:-.055em;
+ color:#fff;
+ margin:13px 0 22px;
+ line-height:1.08;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-contact h2 em{
+ color:#ffacb5;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-contact-copy>p{
+ color:#d9e4ed;
+ font-size:15px;
+ line-height:1.8;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-schedule-note{
+ display:flex;
+ gap:11px;
+ align-items:flex-start;
+ font-size:13px!important;
+ padding:18px 0;
+ margin-top:19px;
+ border-top:1px solid rgba(255,255,255,.2);
+}
+.public-site:not(.public-site-organization) .nexus-advisory-schedule-note svg{flex:none;color:#ffb9bf}
+.public-site:not(.public-site-organization) .nexus-advisory-whatsapp,
+.public-site:not(.public-site-organization) .nexus-advisory-contact-general{
+ display:inline-flex;
+ align-items:center;
+ gap:10px;
+ color:#fff;
+ font-weight:760;
+ font-size:14px;
+ min-height:48px;
+ margin-right:17px;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-whatsapp:hover,
+.public-site:not(.public-site-organization) .nexus-advisory-contact-general:hover{color:#ffb5c2}
+.public-site:not(.public-site-organization) .nexus-advisory-form-card{
+ background:#fff;
+ color:var(--na-ink);
+ border-radius:12px;
+ padding:clamp(21px,3.2vw,38px);
+ border:1px solid #e9edf0;
+ box-shadow:0 19px 44px rgba(4,16,26,.17);
+ min-width:0;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-form-card h3{
+ font-size:clamp(24px,2.4vw,33px);
+ margin:9px 0 22px;
+ letter-spacing:-.045em;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-form-card :is(input,textarea){
+ max-width:100%;
+ min-width:0;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-form-card .contact-form :is(input:not([type="checkbox"]),textarea){
+ font-size:16px;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-privacy{
+ color:#63758a;
+ margin-top:14px;
+ display:flex;
+ gap:8px;
+ align-items:flex-start;
+ font-size:12px;
+ line-height:1.6;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-privacy svg{flex:none;margin-top:2px;color:var(--red)}
+.public-site:not(.public-site-organization) [data-nexus-inner-motion="asesoria"] :is(a,button,input,textarea,summary):focus-visible{
+ outline:3px solid rgba(229,87,100,.58);
+ outline-offset:3px;
+}
+@media(min-width:821px) and (hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference){
+ .public-site:not(.public-site-organization) .nexus-advisory-service{
+  transition:box-shadow 150ms ease,border-color 150ms ease;
+ }
+ .public-site:not(.public-site-organization) .nexus-advisory-service:hover{
+  box-shadow:0 15px 34px rgba(15,36,56,.085);
+  border-color:#d4dfe5;
+ }
+}
+@media(max-width:960px){
+ .public-site:not(.public-site-organization) .nexus-advisory-hero-grid,
+ .public-site:not(.public-site-organization) .nexus-advisory-framework-grid,
+ .public-site:not(.public-site-organization) .nexus-advisory-contact-grid{
+  grid-template-columns:minmax(0,1fr);
+ }
+ .public-site:not(.public-site-organization) .nexus-advisory-visual{max-width:700px}
+ .public-site:not(.public-site-organization) .nexus-advisory-service-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:640px){
+ .public-site:not(.public-site-organization) .nexus-advisory-hero{padding-block:58px}
+ .public-site:not(.public-site-organization) .nexus-advisory-hero h1{font-size:clamp(36px,9vw,46px)}
+ .public-site:not(.public-site-organization) .nexus-advisory-hero-actions{
+  display:grid;
+  justify-items:start;
+  gap:9px;
+ }
+ .public-site:not(.public-site-organization) .nexus-advisory-visual{gap:15px}
+ .public-site:not(.public-site-organization) .nexus-advisory-service-grid{grid-template-columns:minmax(0,1fr)}
+ .public-site:not(.public-site-organization) .nexus-advisory-framework-grid{gap:25px}
+ .public-site:not(.public-site-organization) .nexus-advisory-resources-inner{
+  grid-template-columns:minmax(0,1fr);
+  gap:17px;
+ }
+ .public-site:not(.public-site-organization) .nexus-advisory-contact-grid{gap:26px}
+ .public-site:not(.public-site-organization) .nexus-advisory-form-card{padding:21px 18px}
+}
+@media(prefers-reduced-motion:reduce){
+ .public-site:not(.public-site-organization) .nexus-advisory-service{transition:none}
+}
+
+
+/* Optional Home promotion: only appears for a tenant that publishes Advisory. */
+.public-site:not(.public-site-organization) .nexus-advisory-home{
+ background:#f6f8fa;
+ border-top:1px solid #e9edf1;
+ border-bottom:1px solid #e9edf1;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-home-row{
+ display:grid;
+ grid-template-columns:70px minmax(0,1fr) auto;
+ align-items:center;
+ gap:clamp(17px,3vw,38px);
+}
+.public-site:not(.public-site-organization) .nexus-advisory-home-mark{
+ width:64px;height:64px;
+ border-radius:13px;
+ display:grid;
+ place-items:center;
+ color:var(--red);
+ background:#fff;
+ box-shadow:0 4px 19px rgba(25,45,58,.08);
+}
+.public-site:not(.public-site-organization) .nexus-advisory-home h2{
+ font-size:clamp(27px,3vw,40px);
+ line-height:1.14;
+ letter-spacing:-.052em;
+ margin:9px 0 11px;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-home p{
+ color:#607287;
+ line-height:1.73;
+ max-width:720px;
+ margin:0;
+ font-size:14px;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-home-button{
+ min-height:48px;
+ border-radius:8px;
+ background:var(--red);
+ color:#fff;
+ display:inline-flex;
+ gap:8px;
+ align-items:center;
+ justify-content:center;
+ padding:12px 19px;
+ white-space:normal;
+}
+@media(max-width:950px){
+ .public-site:not(.public-site-organization) .nexus-advisory-home-row{
+  grid-template-columns:58px minmax(0,1fr);
+ }
+ .public-site:not(.public-site-organization) .nexus-advisory-home-mark{
+  width:55px;height:55px;
+ }
+ .public-site:not(.public-site-organization) .nexus-advisory-home-button{
+  grid-column:2;
+  justify-self:start;
+ }
+}
+@media(max-width:540px){
+ .public-site:not(.public-site-organization) .nexus-advisory-home-row{
+  grid-template-columns:minmax(0,1fr);
+ }
+ .public-site:not(.public-site-organization) .nexus-advisory-home-button{
+  grid-column:1;
+  justify-self:stretch;
+ }
+}
+
+
+/* Contextual discovery in Services without replacing the existing offers. */
+.public-site:not(.public-site-organization) .nexus-advisory-services-teaser{
+ background:#f8f9fa;
+ border-top:1px solid #e2e9ee;
+ border-bottom:1px solid #e2e9ee;
+ padding-block:clamp(27px,3.8vw,45px);
+}
+.public-site:not(.public-site-organization) .nexus-advisory-services-teaser-inner{
+ display:grid;
+ grid-template-columns:62px minmax(0,1fr) auto;
+ align-items:center;
+ gap:clamp(18px,3vw,32px);
+}
+.public-site:not(.public-site-organization) .nexus-advisory-service-teaser-icon{
+ display:grid;
+ place-items:center;
+ width:60px;height:60px;
+ background:#fff0f1;
+ color:var(--red);
+ border-radius:12px;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-services-teaser h2{
+ color:#253449;
+ font-size:clamp(24px,2.7vw,32px);
+ margin:8px 0;
+ letter-spacing:-.045em;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-services-teaser p{
+ color:#5b6c7b;
+ max-width:690px;
+ line-height:1.7;
+ font-size:13px;
+ margin:0;
+}
+@media(max-width:860px){
+ .public-site:not(.public-site-organization) .nexus-advisory-services-teaser-inner{
+  grid-template-columns:60px minmax(0,1fr);
+ }
+ .public-site:not(.public-site-organization) .nexus-advisory-services-teaser .nexus-advisory-home-button{
+  grid-column:2;justify-self:start;
+ }
+}
+@media(max-width:540px){
+ .public-site:not(.public-site-organization) .nexus-advisory-services-teaser-inner{grid-template-columns:minmax(0,1fr)}
+ .public-site:not(.public-site-organization) .nexus-advisory-services-teaser .nexus-advisory-home-button{
+  grid-column:1;justify-self:stretch;
+ }
+}

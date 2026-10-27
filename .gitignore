@@ -1,0 +1,16 @@
+node_modules
+.next
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+coverage
+
+# Credenciales y bloqueo persistentes del instalador
+.runtime/
+*.installer.lock
+installation.json
+
+# PostgreSQL Prisma Client generated during npm install/build
+/src/generated/

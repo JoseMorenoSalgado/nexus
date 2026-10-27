@@ -1,0 +1,26 @@
+node_modules
+.next
+.git
+.github
+.env
+.env.*
+!.env.example
+*.log
+*.zip
+*.png
+*.jpg
+*.jpeg
+*.webp
+!public/**
+coverage
+reference
+*.md
+!README.md
+
+# Credenciales y bloqueo persistentes del instalador
+.runtime/
+*.installer.lock
+installation.json
+
+# Skills de agentes: herramientas de desarrollo, fuera de producción
+.agents/

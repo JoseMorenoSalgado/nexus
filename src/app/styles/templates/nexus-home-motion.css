@@ -1,0 +1,68 @@
+/*
+ * WebAppECloud design Skill / Persuade: NEXUS Home animation polish.
+ * This stylesheet is intentionally isolated to the original dark, full-photo
+ * real-estate Home. No global layout changes or animation dependencies.
+ *
+ * Motion direction: subtle one-time arrival, 120-160ms hover feedback,
+ * opacity/transform only. Scroll reveals are progressive (WAAPI).
+ */
+@keyframes nexus-home-arrive{
+ from{opacity:0;transform:translate3d(0,12px,0)}
+ to{opacity:1;transform:translate3d(0,0,0)}
+}
+@keyframes nexus-home-search-arrive{
+ from{opacity:0;transform:translate3d(0,9px,0)}
+ to{opacity:1;transform:translate3d(0,0,0)}
+}
+@media(prefers-reduced-motion:no-preference){
+ .public-site:not(.public-site-organization) [data-nexus-home-motion] .nexus-hero-copy .nexus-eyebrow-on-dark{
+  animation:nexus-home-arrive 410ms cubic-bezier(.2,.7,.2,1) 40ms both;
+ }
+ .public-site:not(.public-site-organization) [data-nexus-home-motion] .nexus-hero-copy h1{
+  animation:nexus-home-arrive 490ms cubic-bezier(.2,.7,.2,1) 95ms both;
+ }
+ .public-site:not(.public-site-organization) [data-nexus-home-motion] .nexus-hero-copy .nexus-hero-lead{
+  animation:nexus-home-arrive 490ms cubic-bezier(.2,.7,.2,1) 150ms both;
+ }
+ .public-site:not(.public-site-organization) [data-nexus-home-motion] .nexus-hero-copy .nexus-hero-actions{
+  animation:nexus-home-arrive 450ms cubic-bezier(.2,.7,.2,1) 205ms both;
+ }
+ .public-site:not(.public-site-organization) [data-nexus-home-motion] .nexus-search-wrap>.container{
+  animation:nexus-home-search-arrive 400ms cubic-bezier(.2,.7,.2,1) 210ms both;
+ }
+}
+
+/* Keep original photos, cards, sections, header and brand exactly in place. */
+.public-site:not(.public-site-organization) [data-nexus-home-motion] .nexus-hero-primary,
+.public-site:not(.public-site-organization) [data-nexus-home-motion] .nexus-search-form .btn{
+ transition:background-color 150ms ease,box-shadow 150ms ease,transform 150ms ease;
+}
+.public-site:not(.public-site-organization) [data-nexus-home-motion] .nexus-service-card{
+ transition:border-color 150ms ease,box-shadow 150ms ease,transform 150ms ease;
+}
+.public-site:not(.public-site-organization) [data-nexus-home-motion] :is(.nexus-hero-primary,.nexus-search-form .btn,.nexus-service-card):focus-visible{
+ outline:3px solid rgba(255,157,169,.9);
+ outline-offset:3px;
+}
+@media(hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference){
+ .public-site:not(.public-site-organization) [data-nexus-home-motion] .nexus-hero-primary:hover,
+ .public-site:not(.public-site-organization) [data-nexus-home-motion] .nexus-search-form .btn:hover{
+  transform:translate3d(0,-2px,0);
+  box-shadow:0 12px 26px rgba(7,28,41,.2);
+ }
+ .public-site:not(.public-site-organization) [data-nexus-home-motion] .nexus-service-card:hover{
+  transform:translate3d(0,-2px,0);
+  box-shadow:0 13px 26px rgba(21,41,57,.09);
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ .public-site:not(.public-site-organization) [data-nexus-home-motion] .nexus-hero-copy *,
+ .public-site:not(.public-site-organization) [data-nexus-home-motion] .nexus-search-wrap>.container{
+  animation:none!important;
+ }
+ .public-site:not(.public-site-organization) [data-nexus-home-motion] .nexus-hero-primary,
+ .public-site:not(.public-site-organization) [data-nexus-home-motion] .nexus-search-form .btn,
+ .public-site:not(.public-site-organization) [data-nexus-home-motion] .nexus-service-card{
+  transition:none!important;
+ }
+}

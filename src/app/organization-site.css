@@ -1,0 +1,52 @@
+/* Generic educational and professional-services templates; scoped away from NEXUS. */
+.public-site-organization{background:#fff;color:#26364a}
+.public-site-organization .nexus-header{background:#fff}
+.public-site-organization .organization-main{min-height:65vh}
+.public-site-organization .organization-hero{background:linear-gradient(125deg,#12283d 0%,#23435f 75%,#2b5370);color:#fff;position:relative;overflow:hidden}
+.public-site-organization .organization-hero-image{background-image:linear-gradient(90deg,rgba(11,26,42,.94),rgba(22,39,57,.72)),url("/api/site-media/hero");background-position:center;background-size:cover}
+.public-site-organization .organization-hero-inner{position:relative;z-index:1;padding-block:clamp(75px,10vw,145px);max-width:1160px}
+.public-site-organization .organization-kicker,.public-site-organization .organization-section-kicker{display:block;font-size:12px;letter-spacing:.13em;font-weight:850}
+.public-site-organization .organization-kicker{color:#a7dbf3}
+.public-site-organization .organization-hero h1{max-width:850px;font-size:clamp(38px,5.3vw,70px);letter-spacing:-.045em;line-height:1.07;margin:18px 0 19px;color:white}
+.public-site-organization .organization-hero-description{font-size:clamp(16px,1.65vw,20px);line-height:1.6;color:#e0ebf4;max-width:650px}
+.public-site-organization .organization-hero-actions{display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin-top:28px}
+.public-site-organization .organization-primary-button{background:var(--red);border-color:var(--red);color:white!important;display:inline-flex;gap:9px;align-items:center}
+.public-site-organization .organization-secondary-link{display:inline-flex;align-items:center;gap:8px;font-weight:750;color:white;text-decoration:none}
+.public-site-organization .organization-section{padding:clamp(48px,7vw,92px) 0}
+.public-site-organization .organization-section-heading{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-bottom:25px}
+.public-site-organization .organization-section-heading h2,.public-site-organization .organization-about-preview h2,.public-site-organization .organization-cta h2{font-size:clamp(27px,3.5vw,42px);line-height:1.18;letter-spacing:-.025em;margin:9px 0}
+.public-site-organization .organization-section-kicker{color:var(--red)}
+.public-site-organization .organization-text-link{display:inline-flex;align-items:center;gap:7px;color:var(--red);font-weight:750;font-size:14px;text-decoration:none}
+.public-site-organization .organization-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.public-site-organization .organization-card{min-width:0;display:flex;align-items:flex-start;flex-direction:column;gap:13px;padding:27px;border:1px solid #e2e9f0;border-radius:13px;background:#fff;box-shadow:0 6px 17px rgba(24,49,76,.035)}
+.public-site-organization .organization-card-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:11px;color:var(--red);background:#eef3f7}
+.public-site-organization .organization-card h2,.public-site-organization .organization-card h3{font-size:19px;margin:0;letter-spacing:-.015em;color:#1e344d}
+.public-site-organization .organization-card p{font-size:14px;line-height:1.6;color:#586d83;margin:0;flex:1}
+.public-site-organization .organization-card a{display:inline-flex;align-items:center;gap:7px;color:var(--red);font-size:13px;font-weight:750;text-decoration:none}
+.public-site-organization .organization-about-preview{padding:clamp(52px,7vw,85px) 0;background:#f3f6fa}
+.public-site-organization .organization-about-layout{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(270px,.7fr);align-items:center;gap:40px}
+.public-site-organization .organization-about-layout p{font-size:16px;line-height:1.7;color:#53667a;max-width:650px}
+.public-site-organization .organization-feature-panel{padding:37px;border-radius:16px;background:white;border:1px solid #e1e8ef;display:grid;gap:12px;min-height:170px}
+.public-site-organization .organization-feature-panel span{font-size:13px;color:#7b8797;font-weight:750}
+.public-site-organization .organization-feature-panel strong{font-size:23px;line-height:1.35;color:#284461}
+.public-site-organization .organization-cta{padding:clamp(45px,6vw,75px) 0;background:#142c44;color:white}
+.public-site-organization .organization-cta>.container{display:flex;justify-content:space-between;align-items:center;gap:30px}
+.public-site-organization .organization-cta h2{color:white}
+.public-site-organization .organization-cta p{color:#d4e1eb;line-height:1.6;max-width:560px}
+.public-site-organization .organization-cta span{font-size:11px;letter-spacing:.13em;font-weight:800;color:#a5c4d7}
+.public-site-organization .organization-inner-hero{padding:clamp(64px,8vw,100px) 0;background:#183650;color:white}
+.public-site-organization .organization-inner-hero h1{font-size:clamp(34px,5vw,56px);color:white;letter-spacing:-.04em;margin:16px 0}
+.public-site-organization .organization-inner-hero p{max-width:750px;line-height:1.65;color:#d4e2eb;font-size:17px}
+.public-site-organization .organization-inner-hero .organization-section-kicker{color:#a7cfe7}
+.public-site-organization .organization-reading{max-width:900px}
+.public-site-organization .organization-reading h2{font-size:31px;color:#233b52}
+.public-site-organization .organization-reading p{max-width:760px;font-size:17px;color:#52677d;line-height:1.75}
+.public-site-organization .organization-contact-layout{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:40px}
+.public-site-organization .organization-contact-info,.public-site-organization .organization-contact-form{min-width:0}
+.public-site-organization .organization-contact-info h2,.public-site-organization .organization-contact-form h2{font-size:25px;color:#243e56;margin:0 0 11px}
+.public-site-organization .organization-contact-info p,.public-site-organization .organization-contact-form p{font-size:14px;color:#586d82;line-height:1.65}
+.public-site-organization .organization-contact-info>a{display:flex;gap:12px;align-items:center;padding:14px 0;border-bottom:1px solid #e9eef3;color:var(--red);font-weight:750;text-decoration:none;overflow-wrap:anywhere}
+.public-site-organization .organization-contact-form{background:#fff;padding:25px;border:1px solid #e1e7ef;border-radius:14px}
+.public-site-organization .organization-contact-form .contact-form{margin-top:17px}
+@media(max-width:850px){.public-site-organization .organization-cards{grid-template-columns:1fr 1fr}.public-site-organization .organization-about-layout,.public-site-organization .organization-contact-layout{grid-template-columns:1fr}.public-site-organization .organization-cta>.container{align-items:flex-start;flex-direction:column}}
+@media(max-width:620px){.public-site-organization .organization-hero-inner{padding-block:72px 80px}.public-site-organization .organization-cards{grid-template-columns:1fr}.public-site-organization .organization-card{padding:20px}.public-site-organization .organization-section-heading{align-items:flex-start;flex-direction:column}.public-site-organization .organization-contact-form{padding:16px}.public-site-organization .organization-hero-actions{gap:17px}}

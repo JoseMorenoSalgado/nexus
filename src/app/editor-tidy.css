@@ -1,0 +1,61 @@
+/* Formulario de propiedades y ficha CRM: priorizar el trabajo frecuente. */
+.admin-shell .property-editor{max-width:870px}
+.admin-shell .property-editor .property-form-section{gap:12px;margin-bottom:8px;padding-bottom:15px}
+.admin-shell .editor-section-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.admin-shell .editor-section-heading h2{font-size:17px;margin:0 0 4px}
+.admin-shell .editor-section-heading p{font-size:12px;color:#67768a;margin:0;line-height:1.5}
+.admin-shell .editor-section-step{display:grid;place-items:center;width:27px;height:27px;flex:0 0 27px;border-radius:9px;background:#f8eef0;color:#a42633;font-size:12px;font-weight:800}
+.admin-shell .property-fields-essential>label>textarea{min-height:110px}
+.admin-shell .property-fields-essential .property-form-grid-three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.admin-shell .editor-disclosure{display:block!important;min-width:0;padding:0!important;overflow:visible}
+.admin-shell .editor-disclosure>summary,.admin-shell .crm-secondary-disclosure>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;cursor:pointer;min-height:48px;color:#31465e}
+.admin-shell .editor-disclosure>summary::-webkit-details-marker,.admin-shell .crm-secondary-disclosure>summary::-webkit-details-marker{display:none}
+.admin-shell .editor-disclosure>summary>span:first-child{display:grid;gap:2px}
+.admin-shell .editor-disclosure>summary strong,.admin-shell .crm-secondary-disclosure>summary strong{font-size:13px;font-weight:750;color:#2a3d53}
+.admin-shell .editor-disclosure>summary small{font-size:12px;color:#718096;font-weight:450}
+.admin-shell .editor-chevron{flex-shrink:0;display:inline-block;color:#617186;font-size:21px;line-height:1;transition:transform .2s}
+.admin-shell details[open]>summary .editor-chevron{transform:rotate(180deg)}
+.admin-shell .editor-disclosure-body{display:grid;gap:13px;padding:15px 16px 17px;border-top:1px solid #e8ebf0}
+.admin-shell .property-editor details.editor-disclosure{background:#fff;border:1px solid #e5eaf0;border-radius:11px;margin:4px 0 16px}
+.admin-shell .editor-quick-nav{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.admin-shell .editor-quick-nav a{display:inline-flex;align-items:center;text-decoration:none;padding:8px 12px;border-radius:8px;background:white;border:1px solid #dfe5ec;color:#53657b;min-height:38px;font-size:12px;font-weight:700}
+.admin-shell .editor-quick-nav a:hover{background:#f7f8fb;color:#a41d2c}
+.admin-shell .editor-quick-nav a:focus-visible,.admin-shell .editor-disclosure>summary:focus-visible,.admin-shell .crm-secondary-disclosure>summary:focus-visible{outline:3px solid #1765a2;outline-offset:2px}
+.admin-shell .editor-panel-heading{display:flex;align-items:center;gap:9px;margin-bottom:11px;color:#a52331}
+.admin-shell .editor-panel-heading h2,.admin-shell .crm-detail-grid .editor-panel-heading h2{margin:0!important;font-size:17px!important}
+.admin-shell .editor-pdf-disclosure{border:1px solid #e5eaf0;border-radius:12px;display:block!important}
+.admin-shell .editor-pdf-disclosure .editor-disclosure-body{padding:16px}
+.admin-shell .editor-pdf-disclosure .property-pdf-auto{margin-bottom:12px}
+.admin-shell .crm-detail-simplified{gap:14px}
+.admin-shell .crm-detail-simplified .crm-detail-primary{gap:14px}
+.admin-shell .crm-detail-simplified .crm-followup-panel{padding:19px}
+.admin-shell .crm-followup-intro{font-size:12px;line-height:1.5;color:#63748a;margin:0 0 10px}
+.admin-shell .crm-detail-simplified .crm-contact-data{gap:8px;margin-bottom:14px}
+.admin-shell .crm-detail-simplified .crm-info-panel .property-help{font-size:11px;line-height:1.5}
+.admin-shell .crm-secondary-disclosure{display:block!important;margin-top:14px;border:1px solid #e5eaf0;border-radius:10px;overflow:hidden;background:white}
+.admin-shell .crm-secondary-disclosure>summary{padding:11px 13px;min-height:43px}
+.admin-shell .crm-secondary-disclosure .crm-note-list{padding:0 12px 13px;margin-top:0}
+.admin-shell .crm-secondary-disclosure .crm-assignment-history{margin:0;padding:0 15px 15px 29px}
+.admin-shell .crm-agent-assignment{padding:0;margin-top:15px}
+.admin-shell .crm-agent-assignment-content{display:grid;gap:11px;border-top:1px solid #e5eaf0;padding:12px}
+.admin-shell .crm-agent-assignment-content .crm-secondary-disclosure{margin-top:0}
+.admin-shell .crm-agent-assignment-content .property-help{margin:0}
+.admin-shell .crm-secondary-link{display:inline-flex;align-items:center;gap:7px;margin:13px 0 6px;font-size:12px;color:#526983;font-weight:750;text-decoration:none}
+.admin-shell .crm-secondary-link:hover{text-decoration:underline}
+@media(max-width:920px){
+ .admin-shell .crm-detail-simplified{grid-template-columns:1fr}
+ .admin-shell .crm-detail-simplified .crm-followup-panel{grid-row:1}
+ .admin-shell .crm-detail-simplified .crm-detail-primary{grid-row:2}
+}
+@media(max-width:720px){
+ .admin-shell .editor-quick-nav{flex-wrap:nowrap;max-width:100%;overflow-x:auto;padding-bottom:3px}
+ .admin-shell .editor-quick-nav a{white-space:nowrap;flex:0 0 auto}
+ .admin-shell .property-fields-essential .property-form-grid-three{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+ .admin-shell .property-fields-essential .property-form-grid-three label{font-size:12px}
+ .admin-shell .property-fields-essential .property-form-grid-three input{min-width:0}
+ .admin-shell .crm-detail-simplified .crm-followup-panel{padding:15px}
+ .admin-shell .crm-detail-simplified .crm-detail-primary{gap:12px}
+ .admin-shell .crm-detail-simplified .crm-note-form textarea{min-height:95px}
+}
+@media(max-width:380px){.admin-shell .property-fields-essential .property-form-grid-three{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-shell .property-fields-essential .property-form-grid-three label:first-child{grid-column:1/-1}}
+@media(prefers-reduced-motion:reduce){.admin-shell .editor-chevron{transition:none}}

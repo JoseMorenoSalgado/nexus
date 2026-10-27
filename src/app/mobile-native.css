@@ -1,0 +1,17 @@
+/* Platform polish based on mobile-native: CSS only, no JavaScript sniffing.
+ * Keep text selectable; apply native touch behavior to interactive controls.
+ */
+html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
+button,a,[role="button"],summary{touch-action:manipulation}
+button,[role="button"]{user-select:none;-webkit-user-select:none}
+@media(pointer:coarse){
+ input:not([type="checkbox"]):not([type="radio"]),textarea,select{font-size:16px}
+}
+@media(max-width:720px){
+ .admin-mobile-drawer{padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+ .floating-wa{bottom:calc(18px + env(safe-area-inset-bottom,0px))}
+}
+@media(prefers-reduced-motion:reduce){
+ html{scroll-behavior:auto}
+ .btn,.module-card,.wizard-sector-option,.wizard-module-choice{transition:none}
+}

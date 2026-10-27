@@ -1,0 +1,57 @@
+
+/* Sector onboarding · Taste (information hierarchy), Impeccable (task clarity),
+   Emil (short feedback and mobile touch handling). */
+.install-screen{min-height:100dvh}
+.install-form .wizard-sector{border:0;margin:24px 0 22px;padding:0;min-width:0}
+.wizard-sector legend{font-size:16px;font-weight:750;letter-spacing:-.025em;color:#18243a;margin-bottom:12px}
+.wizard-sector-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.wizard-sector-option{display:flex;align-items:flex-start;gap:12px;min-width:0;min-height:112px;padding:17px 15px;background:#fff;border:1px solid #dce2e9;border-radius:13px;cursor:pointer;position:relative;transition:border-color 150ms cubic-bezier(.23,1,.32,1),background-color 150ms ease}
+.wizard-sector-option:hover{border-color:#9aa8bd}
+.wizard-sector-option.is-selected,.wizard-sector-option:has(input:checked){border-color:#b51c28;background:#fffbfb}
+.wizard-sector-option:focus-within{outline:3px solid #f6a5aa;outline-offset:2px}
+.wizard-sector-option input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;margin:0}
+.wizard-sector-symbol{display:grid;place-items:center;flex:0 0 39px;width:39px;height:39px;border:1px solid #dce2e9;border-radius:10px;color:#344963;background:#f6f8fa}
+.is-selected .wizard-sector-symbol{color:#af1525;background:#fff;border-color:#efc1c6}
+.wizard-sector-copy{display:flex;flex-direction:column;gap:6px;min-width:0;padding-top:1px;overflow-wrap:anywhere}
+.wizard-sector-copy strong{font-size:15px;line-height:1.3;color:#1b2738;font-weight:750}
+.wizard-sector-copy small{font-size:12px;line-height:1.5;color:#586578}
+.wizard-sector-check{position:absolute;right:12px;top:12px;color:#ad1b29;opacity:0}
+.is-selected .wizard-sector-check{opacity:1}
+.wizard-sector-hint{font-size:12px!important;color:#67758a!important;margin:9px 0 0!important}
+.wizard-organization{border-top:1px solid #e6eaf0;margin-top:24px;padding-top:2px}
+.wizard-organization h3{margin-top:18px;border:0;padding:0}
+.wizard-module-step{margin:26px 0 22px;min-width:0}
+.wizard-modules-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid #e6eaf0;padding-top:20px}
+.wizard-modules-heading h3{margin:0;border:0;padding:0;font-size:17px;letter-spacing:-.025em}
+.wizard-modules-heading>span{font-size:12px;font-weight:700;color:#2e5f47;white-space:nowrap}
+.wizard-module-step>p{margin:8px 0 14px;color:#566478;font-size:13px;line-height:1.55}
+.wizard-module-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.wizard-module-choice{display:flex;align-items:flex-start;gap:11px;min-width:0;padding:15px;border:1px solid #dce2e9;border-radius:12px;background:#fff;cursor:pointer;transition:border-color 150ms ease,background-color 150ms ease}
+.wizard-module-choice:has(input:checked){border-color:#9bc7b2;background:#f8fcfa}
+.wizard-module-choice:has(input:disabled:not(:checked)){background:#f8fafc;cursor:default}
+.wizard-module-choice:focus-within{outline:3px solid #9ac6de;outline-offset:2px}
+.wizard-module-choice>input{margin:2px 0 0;width:19px;height:19px;flex:0 0 19px;accent-color:#14633e;cursor:pointer}
+.wizard-module-choice>input:disabled{cursor:default}
+.wizard-module-choice>span:not(.wizard-module-state){display:flex;flex-direction:column;min-width:0;gap:4px;flex:1}
+.wizard-module-choice strong{color:#192539;font-size:13px;font-weight:740}
+.wizard-module-choice small{color:#5d6b7f;font-size:12px;line-height:1.45;overflow-wrap:anywhere}
+.wizard-module-state{font-size:11px;color:#68748b;font-weight:700;white-space:nowrap}
+.wizard-module-choice:has(input:checked) .wizard-module-state{color:#14633e}
+.install-form .wizard-field>input,.install-form .wizard-db-select{font-size:16px;min-height:48px}
+.install-form :is(button,a){touch-action:manipulation}
+.install-form button:active:not(:disabled){transform:scale(.98)}
+.install-form button:focus-visible{outline:3px solid #e8858e;outline-offset:3px}
+.install-form button{transition:transform 120ms cubic-bezier(.23,1,.32,1)}
+@media(hover:none){.wizard-sector-option:hover{border-color:#dce2e9}.wizard-sector-option.is-selected:hover{border-color:#b51c28}}
+@media(max-width:700px){
+ .install-screen{padding:18px 12px calc(30px + env(safe-area-inset-bottom,0px))}
+ .install-wrap{width:100%}
+ .install-card{padding:22px 18px}
+ .wizard-sector-grid,.wizard-module-options{grid-template-columns:1fr}
+ .wizard-sector-option{min-height:88px;gap:12px;padding:14px}
+ .wizard-sector-check{right:12px;top:12px}
+ .wizard-module-choice{padding:14px}
+ .wizard-organization .wizard-field{margin:12px 0}
+ .wizard-actions button{min-height:48px}
+}
+@media(prefers-reduced-motion:reduce){.wizard-sector-option,.wizard-module-choice,.install-form button{transition:none!important}}

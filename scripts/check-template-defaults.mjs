@@ -1,0 +1,15 @@
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+const read=path=>readFileSync(path,"utf8");
+const defaults=read("src/lib/templates/nexus-defaults.ts");
+assert.ok(defaults.includes('heroEyebrow:"NEXUS REAL ESTATE · NICARAGUA"'));
+const common=read("src/lib/site-settings.ts");
+assert.ok(common.includes("DEFAULT_SITE_SETTINGS:SiteSettings=NEXUS_SITE_DEFAULTS"));
+assert.ok(!common.includes('heroEyebrow:"NEXUS REAL ESTATE · NICARAGUA"'));
+assert.ok(common.includes("legacyLocalCode"));
+assert.ok(common.includes("Incluye el indicativo internacional de WhatsApp."));
+const partial=read("src/lib/site-section-editor.ts");
+const route=read("src/app/api/admin/site-settings/route.ts");
+assert.ok(partial.includes('existing.name.trim().toLowerCase()==="nexus real estate"'));
+assert.ok(route.includes('company.name.trim().toLowerCase()==="nexus real estate"'));
+console.log("Defaults: NEXUS preset isolated; international phone validation remains tenant-specific.");

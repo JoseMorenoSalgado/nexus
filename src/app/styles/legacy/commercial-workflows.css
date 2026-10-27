@@ -1,0 +1,282 @@
+/* Commercial schedule: mobile-first, role-scoped calendar and cards. */
+.agenda-dashboard{display:grid;gap:18px;min-width:0}
+.agenda-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.agenda-metrics>div{display:grid;align-content:start;gap:5px;border-radius:13px;padding:17px;border:1px solid #e2e8f0;background:#fff}
+.agenda-metrics svg{color:#b62739}
+.agenda-metrics span{font-size:12px;color:#5b6d81;font-weight:700}
+.agenda-metrics strong{font-size:29px;color:#25384d;line-height:1.2}
+.agenda-metrics small{font-size:11px;color:#78889a}
+.agenda-create-panel>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;list-style:none;cursor:pointer;font-size:15px;font-weight:800;color:#263a4f}
+.agenda-create-panel>summary::-webkit-details-marker{display:none}
+.agenda-create-panel>summary span:first-child{display:inline-flex;align-items:center;gap:9px}
+.agenda-create-panel[open]>summary{margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid #e7edf3}
+.agenda-create-form{display:grid;gap:14px}
+.agenda-create-form .admin-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.agenda-create-form label{display:grid;gap:7px;min-width:0;font-size:12px;font-weight:750;color:#405570}
+.agenda-create-form input,.agenda-create-form textarea,.agenda-create-form select,.agenda-list-filters select,.agenda-reschedule input,.agenda-reschedule select{min-width:0;width:100%;min-height:43px;padding:10px 12px;color:#263b50;background:white;border:1px solid #dce4ed;border-radius:9px;font:inherit}
+.agenda-create-form textarea{resize:vertical}
+.agenda-create-form>.btn{justify-self:start}
+.agenda-calendar{min-width:0}
+.agenda-calendar-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:15px;margin-bottom:16px}
+.agenda-calendar-top h2{margin:0 0 5px;font-size:18px}
+.agenda-calendar-top p{font-size:13px;color:#677a90;margin:0;text-transform:capitalize}
+.agenda-calendar-top nav{display:flex;gap:7px}
+.agenda-calendar-top nav a{display:grid;place-items:center;width:39px;height:39px;background:#f5f7fa;border:1px solid #e1e7ef;border-radius:9px;font-size:21px;color:#40526a}
+.agenda-calendar-scroll{overflow-x:auto;width:100%}
+.agenda-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;min-width:630px}
+.agenda-weekday{text-align:center;color:#61768e;background:#f6f8fa;padding:9px 4px;font-size:12px}
+.agenda-calendar-day{border:1px solid #e7ebf2;background:white;border-radius:8px;min-height:103px;padding:7px;min-width:0}
+.agenda-outside{background:#f8fafc;color:#abb6c3}
+.agenda-today{border-color:#c63849;box-shadow:inset 0 0 0 1px #c63849}
+.agenda-day-number{display:block;font-size:12px;font-weight:800;margin-bottom:6px}
+.agenda-day-event{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:5px 6px;background:#fff1ef;border-left:3px solid #bd3445;border-radius:4px;color:#66333a;font-size:10px;margin-bottom:4px}
+.agenda-day-event.agenda-llamada{background:#edf5ff;border-left-color:#527fc6;color:#2e527e}
+.agenda-day-event.agenda-reunion{background:#eefaf2;border-left-color:#31a46d;color:#2e7050}
+.agenda-day-event.agenda-realizada{opacity:.56;text-decoration:line-through}
+.agenda-day-event.agenda-cancelada{opacity:.45;text-decoration:line-through}
+.agenda-calendar-day>small{font-size:10px;color:#6b7b8f}
+.agenda-calendar-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:#61748a;margin-top:12px}
+.agenda-calendar-legend span:before{content:"";display:inline-block;width:8px;height:8px;margin-right:5px;border-radius:50%;background:#bd3445}
+.agenda-calendar-legend .agenda-llamada:before{background:#527fc6}
+.agenda-calendar-legend .agenda-reunion:before{background:#31a46d}
+.agenda-list-filters{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:16px 0}
+.agenda-list-filters label{display:grid;gap:5px;min-width:145px;color:#526780;font-size:12px;font-weight:700}
+.agenda-list-filters .btn{min-height:43px}
+.agenda-event-list{display:grid;gap:12px}
+.agenda-event{border:1px solid #e5eaf1;background:#fff;border-radius:12px;padding:16px;display:grid;grid-template-columns:minmax(155px,.75fr) minmax(0,1.6fr) minmax(175px,.9fr);gap:14px;align-items:start;scroll-margin-top:25px}
+.agenda-event-date{display:grid;gap:7px;font-size:12px;color:#3a536e;font-weight:700}
+.agenda-event-date svg{color:#be2d3d}
+.agenda-event-date small{font-size:11px;color:#6c8097}
+.agenda-event-main{display:grid;gap:7px;min-width:0}
+.agenda-event-heading{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.agenda-event-heading strong{font-size:14px;color:#243a50;overflow-wrap:anywhere}
+.agenda-event-main p{margin:0;color:#5b6e82;font-size:12px;line-height:1.5}
+.agenda-event-place{display:flex;gap:5px;align-items:center;overflow-wrap:anywhere}
+.agenda-event-notes{white-space:pre-wrap;overflow-wrap:anywhere}
+.agenda-event-status{border-radius:99px;background:#fff3d6;color:#93611b;padding:3px 9px;font-size:10px;font-weight:800}
+.agenda-event-status-realizada{background:#e5f8ed;color:#177345}
+.agenda-event-status-cancelada{background:#eef0f3;color:#67788d}
+.agenda-event-controls{display:grid;gap:8px;justify-items:start}
+.agenda-event-controls form{margin:0}
+.agenda-event-controls .btn{min-height:36px;padding:7px 10px;font-size:11px}
+.agenda-reprogram{width:100%}
+.agenda-reprogram>summary{cursor:pointer;color:#a92c40;font-size:12px;font-weight:700}
+.agenda-reschedule{display:grid;gap:8px;padding:12px 0}
+.agenda-reschedule label{display:grid;gap:5px;font-size:11px;font-weight:700;color:#53677f}
+@media(max-width:1020px){.agenda-event{grid-template-columns:minmax(0,1fr) minmax(0,1.4fr)}.agenda-event-controls{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px}.agenda-reprogram{width:auto;min-width:170px}}
+@media(max-width:680px){
+ .agenda-metrics{grid-template-columns:minmax(0,1fr)}
+ .agenda-create-form .admin-form-grid{grid-template-columns:minmax(0,1fr)}
+ .agenda-event{grid-template-columns:minmax(0,1fr);gap:10px}
+ .agenda-event-controls{grid-column:auto}
+ .agenda-list-filters{display:grid;grid-template-columns:minmax(0,1fr)}
+ .agenda-list-filters label{min-width:0}
+}
+
+/* In-dashboard actionable notifications */
+.admin-notification-trigger{position:relative;display:inline-flex;align-items:center;justify-content:center;
+ width:40px;height:40px;flex-shrink:0;border:1px solid #e0e7ef;background:#fff;border-radius:10px;color:#34485f}
+.admin-notification-trigger:hover{background:#fff6f7;color:#a92a3e}
+.admin-notification-count{position:absolute;top:-5px;right:-6px;min-width:19px;height:19px;
+ padding:0 4px;display:grid;place-items:center;border-radius:100px;background:#c02132;color:#fff;
+ font-size:10px;font-weight:850;border:2px solid white}
+.admin-nav-count{margin-left:auto;background:#c6283d;color:#fff;display:grid;place-items:center;
+ border-radius:100px;min-width:23px;height:22px;padding:0 5px;font-size:10px;font-weight:850}
+.notification-center{display:grid;gap:18px;min-width:0}
+.notification-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.notification-summary-card{display:grid;align-content:start;gap:7px;padding:16px;min-width:0;background:#fff;
+ border:1px solid #e2e8f0;border-radius:12px;color:#52677f;transition:border-color .16s ease}
+.notification-summary-card:hover,.notification-summary-card.selected{border-color:#c33848;background:#fffafb}
+.notification-summary-card svg{color:#b02a3d}
+.notification-summary-card span{font-size:12px;min-height:31px;font-weight:680}
+.notification-summary-card strong{font-size:28px;line-height:1.15;color:#24394c}
+.notification-tabs{display:flex;flex-wrap:wrap;gap:7px;margin:15px 0;padding-bottom:12px;border-bottom:1px solid #e8ecf1}
+.notification-tabs a{display:inline-flex;align-items:center;min-height:35px;border-radius:8px;
+ border:1px solid #e0e6ec;background:#f7f9fb;color:#4f637c;font-size:12px;font-weight:750;padding:7px 12px}
+.notification-tabs a.active{background:#a82639;color:#fff;border-color:#a82639}
+.notification-list{display:grid;min-width:0}
+.notification-item{display:flex;align-items:center;gap:12px;padding:14px 5px;
+ border-bottom:1px solid #edf1f5;min-width:0;color:#35465d}
+.notification-item:last-child{border-bottom:0}
+.notification-item:hover{background:#fbfcfe}
+.notification-mark{width:40px;height:40px;flex-shrink:0;display:grid;place-items:center;border-radius:11px;
+ background:#edf2fa;color:#496b9b}
+.notification-vencidas .notification-mark{background:#feedef;color:#b4233c}
+.notification-proximas .notification-mark{background:#fff4e6;color:#a76a1d}
+.notification-sin-atender .notification-mark{background:#eef7fd;color:#296d9b}
+.notification-sin-asignar .notification-mark{background:#f3effe;color:#7652ad}
+.notification-content{flex:1;min-width:0;display:grid;gap:4px}
+.notification-content strong{font-size:13px;line-height:1.3;color:#24394e}
+.notification-content small{font-size:12px;color:#5d6e83;overflow-wrap:anywhere}
+.notification-content>span{font-size:11px;color:#75869b}
+.notification-arrow{flex-shrink:0;color:#8492a3}
+/* New calendar controls and responsive daily/weekly layout */
+.agenda-view-switch{display:inline-flex;gap:5px;border:1px solid #e0e8ef;background:#f5f7fa;
+ padding:4px;border-radius:9px;margin:0 0 16px}
+.agenda-view-switch a{padding:8px 15px;border-radius:7px;font-size:12px;font-weight:770;color:#51647b}
+.agenda-view-switch a.active{background:#fff;color:#a72237;box-shadow:0 1px 5px rgba(26,39,55,.12)}
+.agenda-calendar-top nav{align-items:center}
+.agenda-calendar-top nav a[aria-label="Ir a hoy"]{width:auto;padding:0 13px;font-size:12px;font-weight:800}
+.agenda-day-number{color:#3c516a}
+.agenda-day-number:hover{color:#b42538}
+.agenda-extra-events{display:block;font-size:10px;color:#a72c3d;font-weight:700}
+.agenda-agent-filter{display:flex;align-items:end;gap:9px;flex-wrap:wrap;
+ background:#fff;border:1px solid #e5eaf0;padding:13px 15px;border-radius:11px}
+.agenda-agent-filter label{font-size:12px;color:#50647b;font-weight:770}
+.agenda-agent-filter select{flex:1;max-width:340px;min-width:200px;border:1px solid #dce4ed;border-radius:8px;
+ min-height:39px;background:#fff;color:#2e4257;padding:8px 10px}
+.agenda-focused-days{display:grid;gap:10px}
+.agenda-focused-day{background:#fff;border:1px solid #e5ebf1;border-radius:11px;padding:13px;min-width:0}
+.agenda-focused-today{border-color:#c53749}
+.agenda-focused-day-head{display:flex;align-items:center;justify-content:space-between;gap:10px;
+ border-bottom:1px solid #ecf0f4;padding-bottom:10px;margin-bottom:10px}
+.agenda-focused-day-head strong{text-transform:capitalize;font-size:13px;color:#273d54}
+.agenda-focused-day-head span{font-size:11px;color:#76869a}
+.agenda-time-list{display:grid;gap:9px}
+.agenda-time-entry{display:flex;align-items:center;gap:12px;min-width:0;
+ padding:11px;border-radius:9px;background:#f8fafc;border:1px solid #e9edf2}
+.agenda-time-bubble{min-width:65px;font-size:12px;font-weight:850;color:#ae293d}
+.agenda-time-data{display:grid;gap:4px;flex:1;min-width:0}
+.agenda-time-data strong{font-size:13px;color:#26394e;overflow-wrap:anywhere}
+.agenda-time-data span,.agenda-time-data small{font-size:11px;color:#718197}
+.agenda-time-entry.agenda-realizada,.agenda-time-entry.agenda-cancelada{opacity:.64}
+.agenda-focused-semana .agenda-focused-day{padding:12px}
+@media(max-width:1040px){.notification-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){
+ .notification-summary{gap:8px}
+ .notification-summary-card{padding:13px}
+ .notification-summary-card span{min-height:0}
+ .notification-item{gap:9px;padding:12px 2px}
+ .admin-notification-trigger{width:36px;height:36px}
+ .agenda-agent-filter{display:grid;grid-template-columns:minmax(0,1fr)}
+ .agenda-agent-filter select{max-width:none;width:100%;min-width:0}
+ .agenda-focused-day-head{align-items:start}
+ .agenda-time-entry{flex-wrap:wrap;gap:7px}
+ .agenda-time-entry .inline-link{width:100%}
+ .agenda-calendar-top nav a{min-width:38px}
+}
+
+/* Dashboard overview: live actionable activity queue */
+.dashboard-alert-preview{min-width:0}
+.dashboard-alert-preview .heading-row h2{display:flex;align-items:center;gap:9px}
+.dashboard-alert-preview .heading-row h2>svg{color:#ae293b}
+.dashboard-alert-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:14px 0}
+.dashboard-alert-metrics>a{display:flex;align-items:center;gap:9px;min-width:0;flex-wrap:wrap;
+ padding:12px;border:1px solid #e4e9f0;border-radius:10px;background:#f8fafc;color:#53677b}
+.dashboard-alert-metrics svg{color:#b02c41}
+.dashboard-alert-metrics strong{font-size:22px;color:#253b50}
+.dashboard-alert-metrics span{font-size:12px;min-width:0}
+.dashboard-alert-items{display:grid}
+.dashboard-alert-item{display:flex;align-items:center;gap:11px;padding:10px 0;border-top:1px solid #eaf0f4}
+.dashboard-alert-dot{width:8px;height:8px;flex-shrink:0;border-radius:50%;background:#6b9bd2}
+.dashboard-alert-dot.dashboard-alert-vencidas{background:#d42c40}
+.dashboard-alert-dot.dashboard-alert-proximas{background:#c48226}
+.dashboard-alert-dot.dashboard-alert-sin-atender{background:#307da9}
+.dashboard-alert-dot.dashboard-alert-sin-asignar{background:#8a69b4}
+.dashboard-alert-label{flex:1;display:grid;gap:3px;min-width:0}
+.dashboard-alert-label strong{font-size:12px;color:#283c51;overflow-wrap:anywhere}
+.dashboard-alert-label small{color:#708298;font-size:11px;overflow-wrap:anywhere}
+.dashboard-alert-date{color:#687f95;font-size:11px;white-space:nowrap}
+@media(max-width:740px){
+ .dashboard-alert-metrics{grid-template-columns:minmax(0,1fr)}
+ .dashboard-alert-item{flex-wrap:wrap;gap:7px}
+ .dashboard-alert-date{margin-left:17px}
+}
+
+/* Real estate transaction ledger: mobile-friendly confirmed deals and commissions. */
+.closing-dashboard{display:grid;gap:18px;min-width:0}
+.closing-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.closing-metrics>div{min-width:0;background:white;border:1px solid #e5eaf1;border-radius:12px;padding:16px;display:grid;align-content:start;gap:5px}
+.closing-metrics svg{color:#b6283a}
+.closing-metrics span{font-size:12px;color:#5c7086;font-weight:700}
+.closing-metrics strong{color:#26384c;font-size:22px;overflow-wrap:anywhere}
+.closing-activation-form{display:grid;gap:14px;justify-items:start;margin-top:16px}
+.closing-activation-form label{display:flex;align-items:center;gap:9px;color:#4e637b;font-size:13px}
+.closing-activation-form input{width:17px;height:17px;accent-color:#a9273c}
+.closing-create-panel>summary,.closing-void-form>summary{display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;font-weight:800;color:#25374a}
+.closing-create-panel>summary{font-size:17px}
+.closing-create-panel[open]>summary{border-bottom:1px solid #e5ebf1;padding-bottom:14px;margin-bottom:17px}
+.closing-create-form{display:grid;gap:14px}
+.closing-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.closing-create-form label,.closing-void-form label,.closing-filters label{min-width:0;display:grid;gap:6px;font-size:12px;font-weight:750;color:#52677f}
+.closing-create-form input,.closing-create-form select,.closing-create-form textarea,.closing-void-form textarea,.closing-filters select{width:100%;min-width:0;background:white;color:#27394c;min-height:42px;border:1px solid #dbe5ef;border-radius:8px;padding:10px;font:inherit}
+.closing-create-form button{justify-self:start}
+.closing-create-form textarea,.closing-void-form textarea{resize:vertical}
+.closing-filters{display:flex;gap:9px;align-items:end;flex-wrap:wrap;padding:15px 0}
+.closing-filters label{min-width:132px;flex:1}
+.closing-filters .btn{min-height:42px}
+.closing-records{display:grid;gap:10px}
+.closing-record{border:1px solid #e4eaf0;border-radius:11px;background:#fff;padding:15px;display:grid;gap:11px}
+.closing-record.closing-voided{background:#f8f9fb;opacity:.82}
+.closing-record-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.closing-kind{font-size:11px;font-weight:850;color:#a8293b;background:#ffeff1;border-radius:7px;padding:5px 8px}
+.closing-record-header strong{font-size:14px;color:#273a50;flex:1;min-width:150px}
+.closing-record-date{color:#758499;font-size:12px}
+.closing-record-status{font-size:11px;font-weight:750;color:#25734e;background:#e6f6ee;padding:5px 8px;border-radius:8px}
+.closing-voided .closing-record-status{background:#e8ebef;color:#637385}
+.closing-record-details{display:flex;gap:10px 22px;align-items:center;flex-wrap:wrap;font-size:12px;color:#5a6c81}
+.closing-record-details strong{color:#26394c;font-weight:800}
+.closing-void-form{border-top:1px solid #edf0f4;padding-top:12px}
+.closing-void-form>summary{display:inline-flex;font-size:12px;color:#ad3041}
+.closing-void-form>summary svg{margin-right:7px}
+.closing-void-form form{display:grid;gap:10px;max-width:540px;padding-top:12px}
+.closing-void-form button{justify-self:start}
+.crm-transaction-link{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:3px 0 14px}
+.crm-transaction-link small{font-size:11px;color:#76879b}
+@media(max-width:1050px){.closing-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){
+ .closing-metrics{gap:8px}
+ .closing-metrics>div{padding:12px}
+ .closing-metrics strong{font-size:18px}
+ .closing-form-grid{grid-template-columns:minmax(0,1fr)}
+ .closing-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .closing-filters .btn{justify-self:start}
+}
+@media(max-width:400px){.closing-metrics,.closing-filters{grid-template-columns:minmax(0,1fr)}}
+
+/* Commission payment dashboard: responsive audit-friendly financial tracking */
+.commission-dashboard{display:grid;gap:18px;min-width:0}
+.commission-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.commission-metrics>div{min-width:0;background:#fff;border:1px solid #e3eaf1;border-radius:13px;padding:18px;display:grid;gap:6px}
+.commission-metrics svg{color:#ba2c40}
+.commission-metrics span{font-size:12px;color:#60758b;font-weight:750}
+.commission-metrics strong{font-size:24px;color:#253a50;overflow-wrap:anywhere}
+.commission-filters{display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin:15px 0}
+.commission-filters label{display:grid;gap:5px;font-size:12px;font-weight:750;color:#526a80;flex:1;min-width:140px}
+.commission-filters select,.commission-add-payment input,.commission-add-payment select,.commission-add-payment textarea,.commission-void-payment textarea{
+ width:100%;min-width:0;border:1px solid #d9e3ec;border-radius:9px;padding:10px;background:#fff;
+ color:#26394c;font:inherit;min-height:42px
+}
+.commission-filters .btn{min-height:42px}
+.commission-records{display:grid;gap:12px}
+.commission-record{padding:16px;border:1px solid #e5eaf1;background:#fff;border-radius:11px;min-width:0;display:grid;gap:11px}
+.commission-record-top{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.commission-record-top strong{color:#253b52;font-size:14px;min-width:0;flex:1;overflow-wrap:anywhere}
+.commission-record>p{margin:0;color:#63778d;font-size:12px}
+.commission-state{padding:5px 9px;border-radius:8px;font-size:11px;font-weight:780;background:#fef0df;color:#936117}
+.commission-pagada{background:#e7f8ec;color:#187545}
+.commission-parcial{background:#eaf3ff;color:#2966a0}
+.commission-anulada{background:#e9eef2;color:#6e7f90}
+.commission-values{display:flex;flex-wrap:wrap;gap:10px 22px;padding:12px;border-radius:9px;background:#f7f9fc}
+.commission-values span{font-size:12px;color:#52667e}
+.commission-values strong{color:#263a51;font-size:14px}
+.commission-add-payment,.commission-payment-history{border-top:1px solid #edf0f4;padding-top:10px}
+.commission-add-payment>summary,.commission-payment-history>summary,.commission-void-payment>summary{font-weight:800;color:#ac2c42;font-size:12px;cursor:pointer;list-style:none}
+.commission-add-payment>summary::-webkit-details-marker,.commission-payment-history>summary::-webkit-details-marker{display:none}
+.commission-add-payment form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;max-width:650px;padding:14px 0}
+.commission-add-payment label,.commission-void-payment label{display:grid;gap:5px;min-width:0;font-size:12px;font-weight:750;color:#4f637a}
+.commission-add-payment form button{justify-self:start;align-self:end}
+.commission-payment{display:grid;gap:5px;padding:12px 0;border-bottom:1px solid #ecf0f4}
+.commission-payment strong{color:#283c54;font-size:12px}
+.commission-payment span,.commission-payment small{color:#62788f;font-size:11px;overflow-wrap:anywhere}
+.commission-payment-voided{opacity:.7}
+.commission-void-payment form{display:grid;gap:10px;padding:12px 0;max-width:500px}
+.commission-void-payment form button{justify-self:start}
+.closing-download-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+@media(max-width:800px){.commission-metrics{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){
+ .commission-filters{display:grid;grid-template-columns:minmax(0,1fr)}
+ .commission-add-payment form{grid-template-columns:minmax(0,1fr)}
+ .commission-values{display:grid}
+ .closing-download-actions{width:100%}
+}

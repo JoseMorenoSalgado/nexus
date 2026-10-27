@@ -1,0 +1,87 @@
+import assert from "node:assert/strict";
+import {execFileSync} from "node:child_process";
+import sharp from "sharp";
+
+const origin=process.env.TEST_ORIGIN||"http://localhost:3000";
+assert.equal(new URL(origin).hostname,"localhost","Integration tests restricted to localhost");
+const creds=new FormData();
+creds.set("email",process.env.ADMIN_EMAIL||"");
+creds.set("password",process.env.ADMIN_PASSWORD||"");
+const login=await fetch(origin+"/api/admin/session",{method:"POST",headers:{Origin:origin},body:creds,redirect:"manual"});
+assert.equal(login.status,303);
+const cookie=login.headers.getSetCookie().find(x=>x.startsWith("webappecloud_session="))?.split(";")[0];
+assert.ok(cookie);
+const auth={Origin:origin,Cookie:cookie};
+const slug="contenidos-bloques-ci";
+const post=async(path,form,headers=auth)=>fetch(origin+path,{method:"POST",headers,body:form,redirect:"manual"});
+const get=async(path)=>fetch(origin+path,{headers:{Cookie:cookie},redirect:"manual"});
+const create=new FormData();
+for(const [k,v] of Object.entries({title:"Página de bloques de prueba",slug,summary:"Resumen inicial",body:"Texto clásico conservado."}))create.set(k,v);
+const created=await post("/api/admin/site-pages",create);
+assert.equal(created.status,303);
+assert.match(created.headers.get("location")||"",/created=1/);
+const url="/api/admin/site-pages/"+slug+"/images";
+const source=await sharp({create:{width:1200,height:700,channels:3,background:"#689bb7"}}).png().toBuffer();
+const badOrigin=new FormData();badOrigin.set("image",new Blob([source],{type:"image/png"}),"foto.png");
+const csrf=await post(url,badOrigin,{...auth,Origin:"https://malicioso.invalid"});
+assert.equal(csrf.status,403);
+const file=new FormData();
+file.set("image",new Blob([source],{type:"image/png"}),"fachada.png");
+const uploaded=await post(url,file);
+const uploadResult=await uploaded.json();
+assert.equal(uploaded.status,200,"Upload failed: "+JSON.stringify(uploadResult).slice(0,200));
+const {id}=uploadResult;
+assert.match(id,/^[a-f0-9]{32}$/);
+const adminImg="/api/admin/site-pages/"+slug+"/images/"+id;
+const publicImg="/api/site-page-images/"+slug+"/"+id;
+assert.equal((await get(adminImg)).status,200,"Draft media must be visible to its editor");
+assert.equal((await fetch(origin+publicImg)).status,404,"Draft media must not be public");
+const invalid=new FormData();
+invalid.set("title","Página de bloques de prueba");
+invalid.set("summary","Una página");
+invalid.set("body","Texto clásico conservado.");
+invalid.set("sections",JSON.stringify([{id:"section-encabezado-a",type:"image",imageId:id,alt:"",caption:"Prueba"}]));
+const rejected=await post("/api/admin/site-pages/"+slug,invalid);
+assert.match(rejected.headers.get("location")||"",/error=secciones/,"Missing alt should be rejected");
+const sections=[
+ {id:"section-heading-01",type:"heading",text:"Nuestro trabajo"},
+ {id:"section-text-002",type:"text",text:"Contenido organizado en una sección nueva."},
+ {id:"section-image-003",type:"image",imageId:id,alt:"Fachada del edificio de prueba",caption:"Imagen de referencia"}
+];
+const update=new FormData();
+update.set("title","Página de bloques de prueba");
+update.set("summary","Resumen actualizado");
+update.set("body","Texto clásico conservado.");
+update.set("published","on");
+update.set("sections",JSON.stringify(sections));
+const saved=await post("/api/admin/site-pages/"+slug,update);
+assert.match(saved.headers.get("location")||"",/saved=1/);
+const published=await fetch(origin+"/pagina/"+slug);
+assert.equal(published.status,200);
+const html=await published.text();
+for(const content of ["Texto clásico conservado.","Nuestro trabajo","Contenido organizado en una sección nueva.","Fachada del edificio de prueba","Imagen de referencia"]){
+ assert.ok(html.includes(content),"Missing rendered content: "+content);
+}
+const picture=await fetch(origin+publicImg);
+assert.equal(picture.status,200);
+assert.equal(picture.headers.get("content-type"),"image/webp");
+assert.equal((await sharp(Buffer.from(await picture.arrayBuffer())).metadata()).format,"webp");
+const otherHost=execFileSync("curl",["-sS","-o","/dev/null","-w","%{http_code}","-H","Host: unrelated-tenant.invalid",origin+publicImg],{encoding:"utf8"}).trim();
+assert.equal(otherHost,"404","Cross-tenant image leak");
+const unreferenced=await fetch(origin+"/api/site-page-images/"+slug+"/"+"a".repeat(32));
+assert.equal(unreferenced.status,404,"Unreferenced image should be inaccessible");
+const legacyForm=new FormData();
+legacyForm.set("title","Página de bloques de prueba");
+legacyForm.set("summary","Editor antiguo actualiza resumen");
+legacyForm.set("body","Texto clásico editado sin borrar bloques.");
+legacyForm.set("published","on");
+const legacySaved=await post("/api/admin/site-pages/"+slug,legacyForm);
+assert.match(legacySaved.headers.get("location")||"",/saved=1/);
+const existingMarkup=await (await fetch(origin+"/pagina/"+slug)).text();
+assert.ok(existingMarkup.includes("Nuestro trabajo")&&existingMarkup.includes("Texto clásico editado"),"Legacy editor erased sections");
+const draftForm=new FormData();draftForm.set("intent","status");
+const unpublished=await post("/api/admin/site-pages/"+slug,draftForm);
+assert.match(unpublished.headers.get("location")||"",/saved=1/);
+assert.equal((await fetch(origin+publicImg)).status,404,"Media still visible after draft");
+assert.equal((await get(adminImg)).status,200);
+console.log("Visual custom pages: WebP, blocks, legacy preservation, draft image security and tenant isolation passed.");

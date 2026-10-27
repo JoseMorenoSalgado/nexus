@@ -1,0 +1,155 @@
+/*
+ * NEXUS: refinamientos deliberadamente pequeños sobre el diseño público
+ * original previo a PR #41. No se cambia la fotografía ni la composición
+ * oscura de la portada. Excluye templates institucionales y administración.
+ */
+.public-site:not(.public-site-organization) .nexus-hero-layout.nexus-hero-layout-simple{
+ grid-template-columns:minmax(0,1fr);
+}
+.public-site:not(.public-site-organization) .nexus-hero-copy{
+ max-width:740px;
+ min-width:0;
+}
+.public-site:not(.public-site-organization) .nexus-hero h1{
+ text-wrap:balance;
+ overflow-wrap:break-word;
+}
+.public-site:not(.public-site-organization) .nexus-hero-lead{
+ color:#e7edf3;
+ max-width:610px;
+ line-height:1.75;
+}
+.public-site:not(.public-site-organization) .nexus-hero-primary,
+.public-site:not(.public-site-organization) .nexus-header-cta{
+ min-height:48px;
+ transition:background-color .16s ease,transform .16s ease;
+}
+.public-site:not(.public-site-organization) .nexus-hero-secondary{
+ min-height:48px;
+}
+.public-site:not(.public-site-organization) .nexus-search-wrap>.container{
+ border-color:#e2e7ec;
+ box-shadow:0 18px 48px rgba(14,34,49,.13);
+}
+.public-site:not(.public-site-organization) .nexus-search-form :is(input,select){
+ background:#fff;
+ border-color:#cdd7e0;
+ color:#28394b;
+ min-height:48px;
+}
+.public-site:not(.public-site-organization) .nexus-search-form label{
+ color:#405269;
+}
+.public-site:not(.public-site-organization) .nexus-search-form .btn{
+ min-height:48px;
+}
+.public-site:not(.public-site-organization) .nexus-search-form :is(input,select):focus-visible,
+.public-site:not(.public-site-organization) .nexus-catalog-filter-card :is(input,select):focus-visible{
+ outline:3px solid rgba(207,32,43,.20);
+ outline-offset:1px;
+ border-color:var(--red);
+}
+.public-site:not(.public-site-organization) .nexus-featured-grid .property-card{
+ border:1px solid #e5eaee;
+ box-shadow:0 8px 28px rgba(16,40,59,.07);
+}
+.public-site:not(.public-site-organization) .nexus-featured-grid .property-card h3{
+ overflow-wrap:anywhere;
+}
+.public-site:not(.public-site-organization) .nexus-service-card{
+ border-color:#dde5eb;
+ box-shadow:0 4px 16px rgba(20,41,60,.035);
+}
+.public-site:not(.public-site-organization) .nexus-service-card h3{
+ overflow-wrap:break-word;
+}
+.public-site:not(.public-site-organization) .nexus-contact-form-card,
+.public-site:not(.public-site-organization) .nexus-lead-panel{
+ border:1px solid #e6ebee;
+}
+.public-site:not(.public-site-organization) .property-gallery-controls button{
+ min-width:44px;
+ min-height:44px;
+}
+.public-site:not(.public-site-organization) .property-gallery-photo{
+ object-fit:contain!important;
+ max-width:100%!important;
+ max-height:100%!important;
+}
+.public-site:not(.public-site-organization) .property-detail-title h1{
+ overflow-wrap:anywhere;
+}
+.public-site:not(.public-site-organization) .nexus-mobile-menu summary{
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ min-width:44px;
+ min-height:44px;
+ cursor:pointer;
+}
+.public-site:not(.public-site-organization) .nexus-mobile-menu[open]>nav{
+ z-index:25;
+ max-height:min(75dvh,550px);
+ overflow-y:auto;
+}
+.public-site:not(.public-site-organization) .nexus-mobile-menu>nav a{
+ display:flex;
+ align-items:center;
+ min-height:44px;
+}
+@media(hover:hover) and (pointer:fine){
+ .public-site:not(.public-site-organization) .nexus-featured-grid .property-card:hover{
+  transform:translateY(-2px);
+ }
+}
+@media(max-width:820px){
+ .public-site:not(.public-site-organization) .nexus-hero-layout.nexus-hero-layout-simple{
+  min-height:550px;
+ }
+ .public-site:not(.public-site-organization) .nexus-search-form{
+  gap:13px;
+ }
+}
+@media(max-width:610px){
+ .public-site:not(.public-site-organization) .nexus-hero-layout.nexus-hero-layout-simple{
+  min-height:545px;
+  padding-block:60px 79px;
+ }
+ .public-site:not(.public-site-organization) .nexus-hero h1{
+  font-size:clamp(37px,10vw,53px);
+  line-height:1.1;
+ }
+ .public-site:not(.public-site-organization) .nexus-hero-actions{
+  gap:13px;
+ }
+ .public-site:not(.public-site-organization) .nexus-search-wrap{
+  margin-top:-22px;
+ }
+ .public-site:not(.public-site-organization) .nexus-search-form :is(input,select),
+ .public-site:not(.public-site-organization) .nexus-catalog-filter-card :is(input,select){
+  font-size:16px;
+  min-height:48px;
+ }
+ .public-site:not(.public-site-organization) .nexus-service-card{
+  min-height:0;
+ }
+ .public-site:not(.public-site-organization) .nexus-text-link{
+  white-space:normal;
+  min-height:44px;
+  align-items:center;
+ }
+ .public-site:not(.public-site-organization) .nexus-contact-method strong{
+  overflow-wrap:anywhere;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ .public-site:not(.public-site-organization) .nexus-featured-grid .property-card,
+ .public-site:not(.public-site-organization) .nexus-service-card,
+ .public-site:not(.public-site-organization) .nexus-hero-primary{
+  transition:none;
+ }
+ .public-site:not(.public-site-organization) .nexus-featured-grid .property-card:hover,
+ .public-site:not(.public-site-organization) .nexus-service-card:hover{
+  transform:none;
+ }
+}

@@ -1,0 +1,271 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "mysql"
+  url = env("DATABASE_URL")
+}
+model Tenant {
+  id String @id @default(cuid())
+  name String
+  slug String @unique
+  tagline String?
+  whatsapp String?
+  contactEmail String?
+  logoUrl String?
+  primaryColor String @default("#CB2027")
+  active Boolean @default(true)
+  domains Domain[]
+  properties Property[]
+  leads Lead[]
+  closings CommercialClosing[]
+  events VisitEvent[]
+  pages SitePage[]
+  admins AdminUser[]
+  createdAt DateTime @default(now())
+}
+model Domain {
+  id String @id @default(cuid())
+  hostname String @unique
+  tenantId String
+  tenant Tenant @relation(fields:[tenantId],references:[id],onDelete:Cascade)
+  @@index([tenantId])
+}
+model Property {
+  id String @id @default(cuid())
+  tenantId String
+  tenant Tenant @relation(fields:[tenantId],references:[id],onDelete:Cascade)
+  slug String
+  refCode String
+  title String
+  description String @db.Text
+  city String
+  neighborhood String?
+  type String
+  operation String
+  price Decimal @db.Decimal(13,2)
+  bedrooms Int?
+  bathrooms Int?
+  areaM2 Int?
+  featured Boolean @default(false)
+  published Boolean @default(false)
+  photos Photo[]
+  leads Lead[]
+  closings CommercialClosing[]
+  assignedAgentId String?
+  assignedAgent AdminUser? @relation("AgentProperties",fields:[assignedAgentId],references:[id],onDelete:SetNull)
+  @@index([assignedAgentId])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([tenantId,slug])
+  @@unique([tenantId,refCode])
+  @@index([tenantId,published,operation,type])
+  @@index([tenantId,published,createdAt,id])
+  @@index([tenantId,published,price,id])
+  @@index([tenantId,published,city])
+}
+model Photo {
+  id String @id @default(cuid())
+  propertyId String
+  property Property @relation(fields:[propertyId],references:[id],onDelete:Cascade)
+  url String
+  alt String?
+  sortOrder Int @default(0)
+  @@index([propertyId,sortOrder])
+}
+model Lead {
+  id String @id @default(cuid())
+  tenantId String
+  tenant Tenant @relation(fields:[tenantId],references:[id],onDelete:Cascade)
+  propertyId String?
+  property Property? @relation(fields:[propertyId],references:[id],onDelete:SetNull)
+  name String
+  email String?
+  phone String
+  message String? @db.Text
+  source String @default("web")
+  consent Boolean @default(false)
+  crm LeadCrm?
+  notes LeadNote[]
+  assignedAgentId String?
+  assignedAgent AdminUser? @relation("AgentLeads",fields:[assignedAgentId],references:[id],onDelete:SetNull)
+  assignmentHistory LeadAssignmentHistory[]
+  agendaEvents AgendaEvent[]
+  closing CommercialClosing?
+  createdAt DateTime @default(now())
+  @@index([tenantId,assignedAgentId,createdAt])
+  @@index([tenantId,createdAt])
+}
+model VisitEvent {
+  id String @id @default(cuid())
+  tenantId String
+  tenant Tenant @relation(fields:[tenantId],references:[id],onDelete:Cascade)
+  kind String
+  path String?
+  createdAt DateTime @default(now())
+  @@index([tenantId,kind,createdAt])
+}
+model SitePage {
+  id String @id @default(cuid())
+  tenantId String
+  tenant Tenant @relation(fields:[tenantId],references:[id],onDelete:Cascade)
+  slug String
+  title String
+  blocks Json
+  published Boolean @default(false)
+  updatedAt DateTime @updatedAt
+  @@unique([tenantId,slug])
+}
+model AdminUser {
+  id String @id @default(cuid())
+  tenantId String
+  tenant Tenant @relation(fields:[tenantId],references:[id],onDelete:Cascade)
+  email String
+  name String
+  passwordHash String
+  role String @default("admin")
+  active Boolean @default(true)
+  sessions AdminSession[]
+  assignedProperties Property[] @relation("AgentProperties")
+  assignedLeads Lead[] @relation("AgentLeads")
+  closings CommercialClosing[] @relation("AgentClosings")
+  createdAt DateTime @default(now())
+  @@unique([tenantId,email])
+  @@index([tenantId])
+}
+model AdminSession {
+  id String @id @default(cuid())
+  tokenHash String @unique
+  userId String
+  user AdminUser @relation(fields:[userId],references:[id],onDelete:Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@index([userId])
+}
+
+model AdminLoginThrottle {
+  key String @id
+  attempts Int @default(0)
+  expiresAt DateTime
+}
+
+/**
+ * Additive CRM tables: no changes to legacy Lead columns or records.
+ * Created via the admin-authorized CRM activation after deployment.
+ */
+model LeadCrm {
+  id String @id @default(cuid())
+  tenantId String
+  leadId String @unique
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  status String @default("nuevo")
+  nextContactAt DateTime?
+  updatedAt DateTime @updatedAt
+  @@index([tenantId,status])
+}
+model LeadNote {
+  id String @id @default(cuid())
+  tenantId String
+  leadId String
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  authorName String
+  body String @db.Text
+  createdAt DateTime @default(now())
+  @@index([tenantId,leadId,createdAt])
+}
+
+/** Immutable snapshots of changes in the prospect's responsible agent.
+ * Names are saved to preserve the audit trail after an account is removed.
+ */
+model LeadAssignmentHistory {
+  id String @id @default(cuid())
+  tenantId String
+  leadId String
+  lead Lead @relation(fields:[leadId],references:[id],onDelete:Cascade)
+  fromAgentId String?
+  fromAgentName String?
+  toAgentId String?
+  toAgentName String?
+  changedByName String
+  createdAt DateTime @default(now())
+  @@index([tenantId,leadId,createdAt])
+}
+
+/** Scheduled commercial activity is linked to a lead; transferring the lead
+ * also transfers access to its future and historical agenda entries.
+ */
+model AgendaEvent {
+  id String @id @default(cuid())
+  tenantId String
+  leadId String
+  lead Lead @relation(fields:[leadId],references:[id],onDelete:Cascade)
+  type String
+  title String
+  startsAt DateTime
+  durationMinutes Int @default(60)
+  location String?
+  notes String? @db.Text
+  status String @default("pendiente")
+  createdByName String
+  completedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([tenantId,startsAt])
+  @@index([tenantId,leadId,startsAt])
+}
+
+/** A verified-by-staff commercial transaction is a separate ledger entry.
+ * A lead CRM status "cerrado" does NOT imply a completed sale or rental.
+ * Keep financial records when a lead/property is reassigned.
+ */
+model CommercialClosing {
+  id String @id @default(cuid())
+  tenantId String
+  tenant Tenant @relation(fields:[tenantId],references:[id],onDelete:Restrict)
+  leadId String @unique
+  lead Lead @relation(fields:[leadId],references:[id],onDelete:Restrict)
+  propertyId String
+  property Property @relation(fields:[propertyId],references:[id],onDelete:Restrict)
+  agentId String?
+  agent AdminUser? @relation("AgentClosings",fields:[agentId],references:[id],onDelete:SetNull)
+  agentName String
+  propertyRefCode String
+  clientName String
+  kind String
+  currency String @default("USD")
+  amount Decimal @db.Decimal(13,2)
+  commissionAmount Decimal @db.Decimal(13,2)
+  closedAt DateTime
+  notes String? @db.Text
+  status String @default("confirmado")
+  voidReason String? @db.Text
+  voidedAt DateTime?
+  voidedByName String?
+  createdByName String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  commissionPayments CommissionPayment[]
+  @@index([tenantId,closedAt])
+  @@index([tenantId,agentId,closedAt])
+}
+
+/** Append-only commission payment ledger. Corrections void entries, never delete them. */
+model CommissionPayment {
+ id String @id @default(cuid())
+ tenantId String
+ closingId String
+ closing CommercialClosing @relation(fields:[closingId],references:[id],onDelete:Restrict)
+ amount Decimal @db.Decimal(13,2)
+ paidAt DateTime
+ method String @default("transferencia")
+ reference String?
+ notes String? @db.Text
+ createdByName String
+ status String @default("confirmado")
+ voidReason String? @db.Text
+ voidedAt DateTime?
+ voidedByName String?
+ createdAt DateTime @default(now())
+ @@index([tenantId,closingId,paidAt])
+ @@index([tenantId,paidAt])
+}

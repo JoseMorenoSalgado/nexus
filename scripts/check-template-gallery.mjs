@@ -1,0 +1,32 @@
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+
+const gallery=readFileSync("src/components/template-gallery.tsx","utf8");
+const templatePage=readFileSync("src/app/admin/(panel)/personalizar/plantilla/page.tsx","utf8");
+const store=readFileSync("src/lib/site-template-store.ts","utf8");
+const styles=readFileSync("src/app/admin/(panel)/personalizar/plantilla/preview.css","utf8");
+
+assert.match(gallery,/useState<SiteTemplateKey>\(current\)/);
+assert.match(gallery,/useState<"desktop"\|"mobile">\("desktop"\)/);
+assert.match(gallery,/onChange=\{\(\)=>setSelected\(template.key\)\}/);
+assert.match(gallery,/name="templatePreview"/);
+assert.match(gallery,/aria-pressed=\{device==="mobile"\}/);
+assert.match(gallery,/role="radiogroup"/);
+assert.match(gallery,/aria-live="polite"/);
+assert.match(gallery,/\{selected===current\?/);
+assert.match(gallery,/method="post" action="\/api\/admin\/site-template"/);
+assert.match(gallery,/name="intent" value="select"/);
+assert.match(gallery,/name="templateKey" value=\{selected\}/);
+assert.match(gallery,/Confirmar y aplicar plantilla/);
+assert.ok(!gallery.includes("fetch("),"Preview interaction must not make server requests");
+assert.ok(!gallery.includes("window.location"),"Preview cannot navigate the public site");
+assert.ok(templatePage.includes("getTemplateLibrary(user.tenantId)"));
+assert.match(templatePage,/where:\{tenantId:user.tenantId,published:true\}/);
+assert.match(templatePage,/<TemplateGallery current=\{key\} variants=\{variants\}/);
+const getter=store.slice(store.indexOf("export async function getTemplateLibrary"),store.indexOf("export async function updateSiteTemplate"));
+assert.ok(!getter.includes("upsert(")&&!getter.includes("update(")&&!getter.includes("create("),"Preview store read must remain non-mutating");
+assert.match(styles,/template-preview-stage-mobile/);
+assert.match(styles,/template-library-choices/);
+assert.match(templatePage,/import "\.\/preview\.css"/);
+assert.match(templatePage,/INMOBILIARIA · /);
+console.log("Template library: isolated preview, mobile controls and explicit publication tested.");

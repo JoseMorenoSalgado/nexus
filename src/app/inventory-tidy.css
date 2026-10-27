@@ -1,0 +1,77 @@
+/* Gestión inmobiliaria: filas útiles y compactas, sin ampliar las tarjetas de forma innecesaria. */
+.admin-shell .admin-quick-filters{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+.admin-shell .admin-quick-filters a{display:inline-flex;align-items:center;gap:9px;min-height:39px;padding:8px 12px;border:1px solid #dfe5ec;border-radius:9px;background:#fff;color:#53647a;font-size:13px;font-weight:650;text-decoration:none}
+.admin-shell .admin-quick-filters a strong{color:inherit;font-size:13px;font-weight:800}
+.admin-shell .admin-quick-filters a.selected{border-color:#bb2633;background:#fff3f4;color:#a71e2b}
+.admin-shell .admin-quick-filters a:focus-visible,.admin-shell .admin-row-link:focus-visible,.admin-shell .admin-clear-filters:focus-visible{outline:3px solid #1465a0;outline-offset:2px}
+.admin-shell .admin-filter-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.admin-shell .admin-clear-filters{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:#65758a;text-decoration:none;font-weight:700}
+.admin-shell .admin-clear-filters:hover{color:#b5212e}
+.admin-shell .property-filters,.admin-shell .crm-filters-compact{gap:10px;margin-bottom:15px}
+.admin-shell .property-result-heading{margin:0 0 10px}
+.admin-shell .property-list-compact{display:flex;flex-direction:column;gap:9px}
+.admin-shell .property-list-compact .property-admin-card{display:grid;grid-template-columns:136px minmax(0,1fr) minmax(195px,auto);align-items:center;min-height:128px;gap:16px;padding:12px;background:white;border:1px solid #e5eaf0;border-radius:12px;overflow:hidden;box-shadow:none}
+.admin-shell .property-list-compact .property-admin-photo{width:136px;height:102px;min-height:0;aspect-ratio:4/3;position:relative;border-radius:8px;overflow:hidden;background:#f4f5f7}
+.admin-shell .property-list-compact .property-admin-photo img{width:100%;height:100%;object-fit:contain}
+.admin-shell .property-list-compact .property-admin-content{min-width:0;padding:0;display:grid;gap:5px;align-content:center}
+.admin-shell .property-list-compact .property-admin-code{display:flex;align-items:center;gap:9px;color:#6d7b90;font-size:11px;margin:0;min-width:0}
+.admin-shell .property-list-compact .property-admin-code strong{font-size:11px;color:#566477;letter-spacing:.025em}
+.admin-shell .property-list-compact .property-admin-status{position:static!important;display:inline-block;white-space:nowrap;border-radius:100px;padding:3px 8px;font-size:10px}
+.admin-shell .property-list-compact .property-admin-content h2{font-size:15px;line-height:1.3;margin:0;display:block}
+.admin-shell .property-list-compact .property-admin-content h2 a{color:#23384f;text-decoration:none}
+.admin-shell .property-list-compact .property-admin-content h2 a:hover{text-decoration:underline}
+.admin-shell .property-list-compact .property-admin-location{display:flex;align-items:center;gap:5px;font-size:12px;color:#6b788a;white-space:normal}
+.admin-shell .property-list-compact .property-admin-specs{font-size:11px;color:#6b788a}
+.admin-shell .property-list-compact .property-admin-controls{display:grid;gap:9px;justify-items:end;min-width:0}
+.admin-shell .property-list-compact .property-admin-amount{display:grid;text-align:right;gap:1px}
+.admin-shell .property-list-compact .property-admin-amount strong{font-size:17px;color:#bd2330}
+.admin-shell .property-list-compact .property-admin-amount small{font-size:11px;color:#67778b}
+.admin-shell .property-list-compact .property-admin-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;padding:0;margin:0;border:0}
+.admin-shell .property-list-compact .property-admin-actions .btn{min-height:34px;padding:7px 10px;font-size:12px}
+.admin-shell .property-list-compact .property-admin-actions form{margin:0}
+.admin-shell .admin-row-link{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:#4c6179;text-decoration:none;padding:7px}
+.admin-shell .admin-row-link:hover{color:#b31c29;text-decoration:underline}
+.admin-shell .admin-empty-actions{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:12px}
+.admin-shell .crm-overview-compact{gap:9px;margin-bottom:14px}
+.admin-shell .crm-overview-compact>div{padding:12px 15px;min-height:88px;box-shadow:none}
+.admin-shell .crm-overview-compact strong{font-size:24px}
+.admin-shell .crm-list-compact{display:grid;gap:8px}
+.admin-shell .crm-list-compact .crm-lead-card{padding:14px 16px;gap:11px;box-shadow:none;align-items:center}
+.admin-shell .crm-list-compact .crm-lead-name{min-width:0}
+.admin-shell .crm-list-compact .crm-lead-name strong a{color:#26394f;text-decoration:none}
+.admin-shell .crm-list-compact .crm-lead-name strong a:hover{text-decoration:underline}
+.admin-shell .crm-list-compact .crm-lead-actions{display:flex;flex-wrap:wrap;gap:7px}
+.admin-shell .crm-list-compact .crm-lead-actions .btn{min-height:34px;padding:7px 10px;font-size:12px}
+.admin-shell .crm-list-compact .crm-lead-property{min-width:0}
+.admin-shell .admin-context-actions{display:flex;align-items:center;gap:13px;flex-wrap:wrap}
+.admin-shell .admin-context-actions a{display:inline-flex;align-items:center;gap:5px;font-size:12px}
+@media(max-width:1120px){
+ .admin-shell .property-list-compact .property-admin-card{grid-template-columns:116px minmax(0,1fr);gap:12px}
+ .admin-shell .property-list-compact .property-admin-photo{width:116px;height:94px}
+ .admin-shell .property-list-compact .property-admin-controls{grid-column:2;justify-items:start;gap:7px}
+ .admin-shell .property-list-compact .property-admin-amount{text-align:left}
+ .admin-shell .property-list-compact .property-admin-actions{justify-content:flex-start}
+}
+@media(max-width:720px){
+ .admin-shell .admin-quick-filters{gap:6px}
+ .admin-shell .admin-quick-filters a{padding:7px 10px;min-height:37px;font-size:12px}
+ .admin-shell .property-list-compact .property-admin-card{grid-template-columns:86px minmax(0,1fr);align-items:start;padding:10px;gap:10px}
+ .admin-shell .property-list-compact .property-admin-photo{width:86px;height:88px}
+ .admin-shell .property-list-compact .property-admin-content h2{font-size:14px}
+ .admin-shell .property-list-compact .property-admin-controls{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:8px;border-top:1px solid #eef1f5;padding-top:8px}
+ .admin-shell .property-list-compact .property-admin-amount{text-align:left}
+ .admin-shell .property-list-compact .property-admin-amount strong{font-size:15px}
+ .admin-shell .property-list-compact .property-admin-actions{justify-content:flex-start;gap:4px}
+ .admin-shell .property-list-compact .admin-view-link{display:none}
+ .admin-shell .property-list-compact .property-admin-actions .btn{min-height:36px}
+ .admin-shell .crm-overview-compact{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+ .admin-shell .crm-overview-compact>div{padding:11px 9px;min-height:83px}
+ .admin-shell .crm-overview-compact>div span{font-size:11px}
+ .admin-shell .crm-overview-compact>div strong{font-size:22px}
+ .admin-shell .crm-overview-compact>div svg{display:none}
+ .admin-shell .crm-list-compact .crm-lead-card{padding:12px;gap:9px}
+ .admin-shell .crm-list-compact .crm-lead-actions{gap:6px}
+ .admin-shell .admin-filter-actions{width:100%}
+ .admin-shell .admin-context-actions{width:100%;gap:10px}
+}
+@media(max-width:390px){.admin-shell .crm-overview-compact{grid-template-columns:1fr 1fr}.admin-shell .crm-overview-compact>div:last-child{grid-column:1/-1}}

@@ -1,0 +1,52 @@
+/* Built-in page additions and bounded image library: editable without affecting legacy templates. */
+.admin-shell .cms-builtins-extras-intro{margin:22px 0 11px;max-width:1060px}
+.admin-shell .cms-builtins-extras-intro h2{font-size:18px;margin:0 0 5px;letter-spacing:-.02em}
+.admin-shell .cms-builtins-extras-intro p{font-size:12px;line-height:1.65;color:#637387;margin:0}
+.admin-shell .cms-extras-workspace{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(260px,.8fr);gap:16px;align-items:start;max-width:1220px}
+.admin-shell .cms-extras-panel{padding:19px;display:grid;gap:13px;min-width:0;box-shadow:none}
+.admin-shell .cms-extras-panel .cms-block-editor-head h2{font-size:17px;margin:0 0 6px}
+.admin-shell .cms-extra-save{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid #e5eaf0;padding-top:14px}
+.admin-shell .cms-extra-save .btn{min-height:44px}
+.public-site .cms-public-additions{padding-top:44px;padding-bottom:44px}
+.public-site .cms-public-additions>.container{max-width:960px}
+.public-site .cms-public-additions .site-content-heading{color:inherit}
+.admin-shell .cms-media-open{display:inline-flex;align-items:center;gap:7px;background:white;color:#315876;border:1px solid #dae3eb;border-radius:9px;padding:9px 12px;min-height:44px;font-size:12px;font-weight:730;cursor:pointer}
+.admin-shell .cms-media-open:hover:not(:disabled){background:#f4f8fa}
+.admin-shell .cms-media-open:disabled{opacity:.5;cursor:not-allowed}
+.admin-shell .cms-media-open:focus-visible{outline:3px solid #2674ae;outline-offset:2px}
+.admin-shell .cms-media-backdrop{position:fixed;inset:0;z-index:1999;background:#07132192}
+.admin-shell .cms-media-sheet{position:fixed;z-index:2000;inset:7vh max(12px,calc((100vw - 780px)/2));max-height:85dvh;overflow-y:auto;background:#fff;border:1px solid #d7e1ea;border-radius:15px;padding:20px;box-shadow:0 12px 70px #13263b40}
+.admin-shell .cms-media-head{display:flex;align-items:start;justify-content:space-between;gap:15px;margin-bottom:14px}
+.admin-shell .cms-media-head strong{font-size:18px;color:#24364c}
+.admin-shell .cms-media-head p{font-size:12px;color:#637387;line-height:1.5;margin:5px 0 0}
+.admin-shell .cms-media-head button{width:40px;height:40px;border:1px solid #d9e1eb;border-radius:10px;background:#fff;display:grid;place-items:center;flex:0 0 40px}
+.admin-shell .cms-media-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.admin-shell .cms-media-grid button{min-width:0;background:#fff;border:1px solid #dce4ed;border-radius:10px;padding:7px;display:flex;flex-direction:column;gap:6px;text-align:left;cursor:pointer}
+.admin-shell .cms-media-grid button:disabled{opacity:.5;cursor:wait}
+.admin-shell .cms-media-grid button:hover:not(:disabled){border-color:#4a7fa8}
+.admin-shell .cms-media-grid button:focus-visible,.admin-shell .cms-media-head button:focus-visible{outline:3px solid #2674ae;outline-offset:2px}
+.admin-shell .cms-media-grid img{width:100%;height:112px;object-fit:contain;background:#f3f6f8;border-radius:6px}
+.admin-shell .cms-media-grid span{font-size:11px;color:#445a70;font-weight:710;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+@media(max-width:900px){.admin-shell .cms-extras-workspace{grid-template-columns:minmax(0,1fr)}.admin-shell .cms-extras-workspace>.cms-live-preview{position:static}}
+@media(max-width:650px){.admin-shell .cms-media-sheet{inset:5vh 8px;max-height:88dvh;border-radius:12px;padding:12px}.admin-shell .cms-media-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-shell .cms-media-grid img{height:105px}.admin-shell .cms-extras-panel{padding:14px}.admin-shell .cms-extra-save .btn{flex:1}}
+@media(prefers-reduced-motion:reduce){.admin-shell .cms-media-grid button{transition:none}}
+
+
+/* Polished media modal: easy search, safe areas and keyboard-visible actions. */
+.admin-shell .cms-media-sheet{display:flex;flex-direction:column;overscroll-behavior:contain}
+.admin-shell .cms-media-head{position:sticky;top:-20px;z-index:1;background:#fff;padding:0 0 12px;margin:0 0 10px;border-bottom:1px solid #e5ecf1}
+.admin-shell .cms-media-head button{min-height:44px;min-width:44px;cursor:pointer}
+.admin-shell .cms-media-search{display:grid;gap:7px;font-size:12px;font-weight:730;color:#344d66;margin:0 0 6px}
+.admin-shell .cms-media-search input{width:100%;font-size:16px;padding:11px 13px;border:1px solid #d5e0e9;border-radius:9px;background:#fff;color:#20374d;min-height:44px}
+.admin-shell .cms-media-search input:focus-visible{outline:3px solid #2674ae;outline-offset:1px}
+.admin-shell .cms-media-result-count{margin:0 0 10px;color:#66778d;font-size:11px;font-variant-numeric:tabular-nums}
+.admin-shell .cms-media-grid button{min-height:140px}
+.admin-shell .cms-media-grid img{flex:0 0 auto}
+.admin-shell .cms-media-grid button span{white-space:normal;overflow-wrap:anywhere;max-height:3.3em;overflow:hidden}
+@media(max-width:740px){
+ .admin-shell .cms-media-sheet{inset:max(8px,env(safe-area-inset-top)) 9px max(8px,env(safe-area-inset-bottom));max-height:none;border-radius:11px;padding:14px}
+ .admin-shell .cms-media-head{top:-14px}
+ .admin-shell .cms-media-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .admin-shell .cms-media-grid button{min-height:132px}
+}
+@media(max-width:390px){.admin-shell .cms-media-sheet{padding:12px}.admin-shell .cms-media-head{top:-12px}}
