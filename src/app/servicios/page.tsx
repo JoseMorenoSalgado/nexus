@@ -6,19 +6,11 @@ import {getPageDefinitions} from "@/lib/site-pages";
 import {PublicFrame} from "@/components/public-frame";
 import {NexusInnerMotion} from "@/components/nexus-inner-motion";
 import {PageExtraSections} from "@/components/page-extra-sections";
-import {getSiteTemplate} from "@/lib/site-template-store";
-import {OrganizationServices} from "@/components/templates/organization-site";
 export const dynamic="force-dynamic";
 const steps=[{n:"01",title:"Cuéntanos qué necesitas",text:"Indícanos el tipo de propiedad, ubicación y características que estás buscando."},
  {n:"02",title:"Explora las opciones",text:"Revisa las fichas, fotografías y detalles de las propiedades disponibles."},
  {n:"03",title:"Hablemos de los siguientes pasos",text:"Solicita información y comunícate con nuestro equipo para evaluar las alternativas."}];
 export default async function Services(){
- const lighter=await getPublicContext({loadProperties:false});
- const template=await getSiteTemplate(lighter.tenant.id);
- if(template.key!=="real-estate"){
-  await assertPagePublished(lighter.tenant.id,lighter.demo,"servicios");
-  return <OrganizationServices tenant={lighter.tenant} demo={lighter.demo} template={template}/>;
- }
  const {tenant,settings,demo}=await getPublicContext();
  await assertPagePublished(tenant.id,demo,"servicios");
  const advisoryPublished=!demo&&(await getPageDefinitions(tenant.id)).some(p=>p.id==="asesoria-empresarial"&&p.published);

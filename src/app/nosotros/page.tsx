@@ -5,16 +5,8 @@ import {assertPagePublished} from "@/lib/site-pages";
 import {PublicFrame} from "@/components/public-frame";
 import {NexusInnerMotion} from "@/components/nexus-inner-motion";
 import {PageExtraSections} from "@/components/page-extra-sections";
-import {getSiteTemplate} from "@/lib/site-template-store";
-import {OrganizationAbout} from "@/components/templates/organization-site";
 export const dynamic="force-dynamic";
 export default async function About(){
- const lighter=await getPublicContext({loadProperties:false});
- const template=await getSiteTemplate(lighter.tenant.id);
- if(template.key!=="real-estate"){
-  await assertPagePublished(lighter.tenant.id,lighter.demo,"nosotros");
-  return <OrganizationAbout tenant={lighter.tenant} demo={lighter.demo} template={template}/>;
- }
  const {tenant,demo,settings,properties}=await getPublicContext();
  await assertPagePublished(tenant.id,demo,"nosotros");
  const image=properties.find(p=>p.image)?.image;

@@ -5,18 +5,10 @@ import {assertPagePublished} from "@/lib/site-pages";
 import {PublicFrame} from "@/components/public-frame";
 import {NexusInnerMotion} from "@/components/nexus-inner-motion";
 import {PageExtraSections} from "@/components/page-extra-sections";
-import {getSiteTemplate} from "@/lib/site-template-store";
-import {OrganizationContact} from "@/components/templates/organization-site";
 import {ContactForm} from "@/components/contact-form";
 import {tenantModuleEnabled} from "@/lib/tenant-modules";
 export const dynamic="force-dynamic";
 export default async function Contact(){
- const lighter=await getPublicContext({loadProperties:false});
- const template=await getSiteTemplate(lighter.tenant.id);
- if(template.key!=="real-estate"){
-  await assertPagePublished(lighter.tenant.id,lighter.demo,"contacto");
-  return <OrganizationContact tenant={lighter.tenant} demo={lighter.demo} template={template}/>;
- }
  const {tenant,settings,demo}=await getPublicContext();
  await assertPagePublished(tenant.id,demo,"contacto");
  const inquiriesEnabled=await tenantModuleEnabled(tenant.id,"inquiries");

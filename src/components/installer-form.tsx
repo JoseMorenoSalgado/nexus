@@ -1,19 +1,13 @@
 "use client";
 import {useState,type FormEvent} from "react";
-import {ArrowLeft,ArrowRight,CheckCircle2,Database,ShieldCheck,Building2,GraduationCap,ShoppingBag,BriefcaseBusiness} from "lucide-react";
-import {SITE_TEMPLATES,type SiteTemplateKey} from "@/lib/site-template-registry";
+import {ArrowLeft,ArrowRight,CheckCircle2,Database,ShieldCheck,Building2} from "lucide-react";
+import {type SiteTemplateKey} from "@/lib/site-template-registry";
 import {defaultEnabledModules,modulesForSector,type ModuleKey} from "@/lib/tenant-modules-registry";
 
 type Values={
  dbType:"mariadb"|"mysql"|"postgresql";dbHost:string;dbPort:string;dbName:string;dbUser:string;dbPassword:string;
  institution:string;institutionEmail:string;adminName:string;adminEmail:string;adminPassword:string;templateKey:SiteTemplateKey;modules:ModuleKey[];
 };
-const sectorIcons={
- "real-estate":Building2,
- education:GraduationCap,
- services:BriefcaseBusiness,
- ecommerce:ShoppingBag
-} satisfies Record<SiteTemplateKey,typeof Building2>;
 const defaults:Values={
  dbType:"mariadb",dbHost:"db",dbPort:"3306",dbName:"webappecloud",dbUser:"webappecloud",dbPassword:"",
  institution:"",institutionEmail:"",adminName:"",adminEmail:"",adminPassword:"",templateKey:"real-estate",modules:defaultEnabledModules("real-estate")
@@ -21,7 +15,6 @@ const defaults:Values={
 export default function InstallerForm({domain}:{domain:string}){
  const [step,setStep]=useState<1|2>(1),[values,setValues]=useState(defaults);
  const [error,setError]=useState(""),[busy,setBusy]=useState(false),[complete,setComplete]=useState(false);
- const selectSector=(key:SiteTemplateKey)=>setValues(v=>({...v,templateKey:key,modules:defaultEnabledModules(key)}));
  const availableModules=modulesForSector(values.templateKey);
  const moduleCount=availableModules.filter(x=>x.implemented&&values.modules.includes(x.key)).length;
  function change(name:Exclude<keyof Values,"modules">,value:string){setValues(v=>({...v,[name]:value}));}
@@ -46,11 +39,11 @@ export default function InstallerForm({domain}:{domain:string}){
  if(complete)return <div className="wizard-success">
   <CheckCircle2 size={48} color="#0a9e5a"/>
   <h2>Instalación completada</h2>
-  <p>La base de datos, la institución y el administrador han sido creados. El asistente ha quedado bloqueado.</p>
+  <p>La base de datos, la inmobiliaria y el administrador han sido creados. El asistente ha quedado bloqueado.</p>
   <a className="btn btn-red" href="/admin/acceso?installed=1">Entrar al panel administrativo <ArrowRight size={17}/></a>
  </div>;
  return <form className="install-form" onSubmit={submit}>
-  <div className="install-steps"><span className={step===1?"current":"completed"}><Database size={17}/> 1. Base de datos</span><span className={step===2?"current":""}><Building2 size={17}/> 2. Negocio y herramientas</span></div>
+  <div className="install-steps"><span className={step===1?"current":"completed"}><Database size={17}/> 1. Base de datos</span><span className={step===2?"current":""}><Building2 size={17}/> 2. Inmobiliaria y herramientas</span></div>
   {step===1?<section>
     <h2>Conexión a la base de datos</h2>
     <label className="wizard-field"><span>Motor de base de datos</span>
@@ -70,26 +63,11 @@ export default function InstallerForm({domain}:{domain:string}){
     <button className="btn btn-red" type="submit">Continuar <ArrowRight size={16}/></button>
   </section>:<section>
     <h2>Configura tu espacio de trabajo</h2>
-    <p>Primero elige tu actividad. Configuraremos el sitio y el panel con las herramientas de ese sector.</p>
-    <fieldset className="wizard-sector" disabled={busy}>
-     <legend>¿Para qué utilizarás WebAppECloud?</legend>
-     <div className="wizard-sector-grid">
-      {SITE_TEMPLATES.map(template=>{
-       const Icon=sectorIcons[template.key];
-       const checked=values.templateKey===template.key;
-       return <label className={"wizard-sector-option"+(checked?" is-selected":"")} key={template.key}>
-        <input type="radio" name="businessSector" value={template.key} checked={checked} onChange={()=>selectSector(template.key)}/>
-        <span className="wizard-sector-symbol"><Icon size={21} aria-hidden="true"/></span>
-        <span className="wizard-sector-copy"><strong>{template.label}</strong><small>{template.description}</small></span>
-        <CheckCircle2 size={19} className="wizard-sector-check" aria-hidden="true"/>
-       </label>;
-      })}
-     </div>
-     <p className="wizard-sector-hint">Podrás cambiar la plantilla más adelante sin borrar tu información.</p>
-    </fieldset>
+    <p>Esta instalación es exclusivamente inmobiliaria. Configura tu agencia y las herramientas para propiedades, clientes y agentes.</p>
+    <div className="wizard-sector-hint"><Building2 size={18} aria-hidden="true"/> <strong>Inmobiliaria</strong> · Categoría fija de NEXUS.</div>
     <div className="wizard-organization">
      <h3>Datos del negocio</h3>
-     {input("institution","Nombre de la institución o empresa",{minLength:3})}
+     {input("institution","Nombre de la inmobiliaria",{minLength:3})}
      {input("institutionEmail","Correo institucional",{type:"email",autoComplete:"email"})}
      <div className="wizard-domain"><span>Dominio detectado:</span> <strong>{domain}</strong></div>
     </div>
