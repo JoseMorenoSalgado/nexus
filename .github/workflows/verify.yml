@@ -247,6 +247,11 @@ jobs:
           curl -fsSL -c /tmp/mysql-install-cookies.txt -b /tmp/mysql-install-cookies.txt http://localhost:3002/instalar -o /tmp/nexus-wizard.html
           grep -qi "instalación inicial" /tmp/nexus-wizard.html
           test -s "$INSTALL_TMP/installer-session.json"
+          # Simulate Dokploy exposing the bind address internally: redirects must
+          # remain relative to the public browser origin, even when a session is busy.
+          curl -sS -D /tmp/nexus-installer-redirect-headers -o /dev/null -H 'Host: 0.0.0.0:3002' http://localhost:3002/api/install/session
+          grep -Eiq '^location: /instalar\\?estado=ocupado' /tmp/nexus-installer-redirect-headers
+          ! grep -Eiq '^location: https?://' /tmp/nexus-installer-redirect-headers
           # No setup key is copied or displayed in the browser.
           node -e 'const fs=require("node:fs");const data={dbType:"mariadb",dbHost:"127.0.0.1",dbPort:"3306",dbName:"webappecloud_install_ci",dbUser:"ciuser",dbPassword:"ci_password_only",institution:"Nexus Real Estate",institutionEmail:"nexus@example.com",adminName:"Administrador Nexus",adminEmail:"admin-nexus@example.com",adminPassword:"long-safe-password-for-test-1234"};fs.writeFileSync("/tmp/webappecloud-install-request.json",JSON.stringify(data),{mode:0o600});'
           curl -fsS -b /tmp/mysql-install-cookies.txt -H 'Origin: http://localhost:3002' -H 'Content-Type: application/json' -X POST http://localhost:3002/api/install \
@@ -257,6 +262,8 @@ jobs:
           grep -qi 'NEXUS' /tmp/nexus-after-install.html
           test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3002/instalar)" = "307"
           test "$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Origin: http://localhost:3002' -H 'Content-Type: application/json' -d '{}' http://localhost:3002/api/install)" = "409"
+          curl -sS -D /tmp/nexus-installed-redirect-headers -o /dev/null -H 'Host: 0.0.0.0:3002' http://localhost:3002/api/install/session
+          grep -Eiq '^location: /admin/acceso' /tmp/nexus-installed-redirect-headers
         env:
           NODE_ENV: production
       - name: PostgreSQL - instalación completa desde el asistente
