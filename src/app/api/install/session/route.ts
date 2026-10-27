@@ -4,16 +4,26 @@ import {automaticInstallerEnabled, issueInstallerSession, validInstallerSession,
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+/** Keep public origin when Docker reports internal URL 0.0.0.0:3000.
+ * Relative Location headers also avoid trusting client-controlled Host headers.
+ */
+function redirectTo(path:string){
+ return new NextResponse(null,{status:303,headers:{
+  "Location":path,
+  "Cache-Control":"private, no-store, max-age=0"
+ }});
+}
 export function GET(req: NextRequest){
- if (!installerAvailable()) return NextResponse.redirect(new URL("/admin/acceso", req.url));
- if (!automaticInstallerEnabled()) return NextResponse.redirect(new URL("/instalar", req.url));
+ if (!installerAvailable()) return redirectTo("/admin/acceso");
+ if (!automaticInstallerEnabled()) return redirectTo("/instalar");
  const existing = req.cookies.get(INSTALLER_SESSION_COOKIE)?.value;
- if (validInstallerSession(existing)) return NextResponse.redirect(new URL("/instalar", req.url));
+ if (validInstallerSession(existing)) return redirectTo("/instalar");
  let token: string | null;
  try {token = issueInstallerSession();}
- catch {return NextResponse.redirect(new URL("/instalar?estado=almacenamiento", req.url));}
- if (!token) return NextResponse.redirect(new URL("/instalar?estado=ocupado", req.url));
- const res = NextResponse.redirect(new URL("/instalar", req.url));
+ catch {return redirectTo("/instalar?estado=almacenamiento");}
+ if (!token) return redirectTo("/instalar?estado=ocupado");
+ const res = redirectTo("/instalar");
  res.headers.set("Cache-Control", "no-store");
  res.cookies.set(INSTALLER_SESSION_COOKIE, token, {
   httpOnly:true,
