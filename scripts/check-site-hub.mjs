@@ -26,24 +26,11 @@ const pages=await get("/admin/personalizar/paginas");
 assert.match(pages,/Publicar y mostrar en el men/);
 assert.ok(pages.includes("Pasar a borrador"),"Unpublish must be a clear action");
 assert.ok(pages.includes("Mi sitio web"),"Overview shortcut missing");
-const select=async key=>{
- const res=await fetch(origin+"/api/admin/site-template",{method:"POST",
-  headers:{Cookie:cookie,Origin:origin},
-  body:new URLSearchParams({intent:"select",templateKey:key}),redirect:"manual"});
- assert.equal(res.status,303,"Could not switch sector");
-};
-await select("education");
-const school=await get("/admin/personalizar/paginas");
-assert.match(school,/Página de la plantilla/);
-assert.ok(school.includes('href="/admin/personalizar/paginas/home"'),"Education pages must open their independent section editor");
-const schoolHome=await get("/admin/personalizar/paginas/home");
-assert.ok(schoolHome.includes("Editar textos de plantilla")&&schoolHome.includes("Secciones adicionales"),"Education home must provide template and blocks editing");
-const eduOverview=await get("/admin/personalizar/inicio");
-assert.match(eduOverview,/Tipo de sitio:/);
-assert.match(eduOverview,/Educación/);
-await select("real-estate");
-const after=await get("/admin/personalizar/paginas");
-assert.ok(after.includes("Pasar a borrador"),"Existing real-estate management must be preserved");
+const estate=await get("/admin/personalizar/plantilla");
+assert.match(estate,/Diseño inmobiliario/);
+assert.ok(!estate.includes("Confirmar y aplicar plantilla"));
+const advisor=await get("/admin/personalizar/paginas/asesoria-empresarial");
+assert.match(advisor,/Asesoría Empresarial/);
 const outsider=await fetch(origin+"/admin/personalizar/inicio",{redirect:"manual"});
 assert.ok([303,307,308].includes(outsider.status),"Overview must require authentication");
-console.log("CMS guide: tenant overview, discoverable tools, publication semantics and sector-specific editing passed.");
+console.log("CMS guide: tenant overview, discoverable tools, publication semantics and real-estate editing passed.");
