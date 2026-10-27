@@ -1,67 +1,46 @@
-# WebAppECloud — Plataforma multiempresa
+# NEXUS — CMS inmobiliario
 
-**Primera implementación:** NEXUS REAL ESTATE · «Pensando en tu futuro».
+Aplicación de **NEXUS Real Estate Nicaragua**, desarrollada en Next.js 15, TypeScript, Tailwind, Prisma y MariaDB/MySQL o PostgreSQL. Se despliega mediante **Docker en Dokploy**.
 
-Base Next.js 15 + TypeScript + Tailwind CSS + Prisma + **MariaDB/MySQL/PostgreSQL**. **Despliegue previsto: Docker en Dockploy**, con base SQL y archivos persistentes respaldados. **Estado:** primera versión de pruebas; no se considera apta para clientes reales hasta verificar migraciones, respaldos recuperables y seguridad del entorno.
+> Este repositorio es una copia **independiente** del proyecto base WebAppECloud. No es un fork sincronizado: los cambios de NEXUS no se propagan a otras categorías o clientes.
 
-## Funcionalidades implementadas
+## Alcance exclusivo
 
-- **Plantillas por empresa:** Inmobiliaria, Educación y Servicios; selector en Personalizar sitio → Plantilla, edición de contenido y menús por sector. [Guía](docs/PLANTILLAS-SECTORIALES.md).\n
-- Web pública NEXUS: home, buscador, catálogo por operación/tipo/ubicación y ficha individual.
-- Ficha técnica PDF generada por servidor.
-- Formulario de contactos con consentimiento; registro separado por empresa (tenant).
-- WhatsApp contextual por propiedad y contador separado de los leads confirmados.
-- Panel administrativo **protegido por usuario y sesión segura**: KPIs, gráficas, inmuebles recientes, leads.
-- Registro de inmuebles con publicación opcional (fotografía por URL HTTPS).
-- Esquema multiempresa en MariaDB: tenants, domains, propiedades, leads, páginas, eventos, cuentas y sesiones.
-- Diseño móvil del home y dashboard, basado en la referencia aprobada y la paleta roja/gris de Nexus.
+Este CMS es **solo inmobiliario**. No permite seleccionar Educación, Comercio electrónico o Servicios genéricos ni instalar sus módulos.
 
-### Instalador inicial
+- Sitio público inmobiliario, home editable y catálogo de propiedades para venta o alquiler.
+- Fichas de inmuebles con imágenes, galería, documentos PDF y contacto contextual por WhatsApp.
+- Panel de administración, usuarios y roles, clientes, agentes y asignaciones.
+- CRM de prospectos, agenda de seguimiento y notificaciones.
+- Cierres comerciales, abonos, comisiones y reportes con indicadores de rendimiento.
+- Gestión de marca, imágenes, páginas y menús.
+- **Asesoría Empresarial**, servicio solicitado por el cliente: auditoría externa de cumplimiento, prevención de LA/FT/FP, capacitación para sujetos obligados definidos en la legislación aplicable y formulario de contacto. Su publicación es opcional desde `Administración → Mi sitio web → Páginas`; el contenido se edita en `/admin/personalizar/paginas/asesoria-empresarial`. La página pública es `/asesoria-empresarial`.
 
-Abre `/instalar` para configurar por primera vez **MariaDB/MySQL/PostgreSQL**, la institución, el correo institucional y el administrador, sin editar manualmente el código. Necesita una base SQL vacía previamente creada, un volumen persistente y `INSTALLER_AUTO_SETUP=true` habilitado temporalmente en un entorno restringido; la sesión de configuración se genera automáticamente sin introducir claves en el navegador. Consulta [Instalación web](docs/INSTALACION-WEB.md).
+El motor mantiene el aislamiento de empresas en base de datos por seguridad, pero **no incluye otras categorías de negocio**. La asesoría empresarial es un servicio adicional de NEXUS, no una plantilla ni una categoría CMS independiente.
 
-### Aún pendiente
+## Instalación
 
-- Logo vectorial/fotografías definitivas de NEXUS en el repositorio.
-- Ampliar el editor de plantillas con vista previa sin publicar, más bloques y nuevos sectores (las plantillas Educación y Servicios ya están disponibles).
-- Gestión de categorías, agentes, CRM, edición/eliminación de propiedades, informes avanzados.
-- Rate limiting del formulario público, anti-bots, auditoría de seguridad y protección de datos (login incluye control básico de intentos).
-- Migraciones iniciales versionadas, backups restaurables, pruebas de seguridad y despliegue de producción validado en Dockploy.
+- Node.js 22 para desarrollo y Docker para producción.
+- Crear una **base de datos exclusiva** por despliegue y proporcionar la conexión mediante variables privadas de Dokploy o el asistente `/instalar`.
+- Mantener persistente `/app/.runtime` y el almacenamiento de fotografías y archivos del CMS.
+- Habilitar `INSTALLER_AUTO_SETUP=true` temporalmente para una instalación inicial restringida; desactivarlo después.
+- Usar secretos y credenciales fuera de Git. No reutilizar bases de datos o volúmenes de otros clientes.
 
-## Desarrollo local
-
-Necesitas Node.js 20+ y MariaDB/MySQL.
+Para desarrollo local, con base de pruebas:
 
 ```bash
-npm install
+npm install --no-audit --no-fund
 cp .env.example .env
-# Configura DATABASE_URL, SEED_DOMAIN=localhost, ADMIN_EMAIL y ADMIN_PASSWORD fuerte
-npx prisma generate
-npx prisma db push        # Solo primera instalación de DESARROLLO
-npm run db:seed
+npm run db:generate
 npm run dev
 ```
 
-Abre http://localhost:3000 (página pública) o http://localhost:3000/admin/acceso (panel). Para ver la web pública **sin** base de datos en desarrollo, omite `DATABASE_URL`: se muestra un catálogo de ejemplo, pero el formulario y el panel permanecen deshabilitados. En producción **no** se mostrará la demo sin base de datos.
+Para preparar una base **vacía de desarrollo**, configurar primero `DATABASE_URL` y utilizar `npx prisma db push`, seguido de `npm run db:seed`, únicamente en instalaciones descartables. **No usar `prisma db push` como mecanismo automático de actualización de una base de producción.**
 
-La semilla crea la inmobiliaria NEXUS, el dominio configurado, tres propiedades ficticias y —solo si están definidos `ADMIN_EMAIL` y `ADMIN_PASSWORD`— un administrador. La semilla **no cambia la contraseña de una cuenta existente**.
+Antes de desplegar, validar backups restaurables de SQL y archivos, el proceso de migración y la rama que Dokploy utiliza. Ver `docs/DEPLOY-DOCKPLOY.md` y `docs/INSTALACION-WEB.md`.
 
-### Seguridad multicliente
+## Calidad y seguridad
 
-Nunca aceptamos el identificador del tenant enviado por el visitante para seleccionar datos. Se obtiene de la asignación única del dominio. Todas las consultas del panel se limitan al tenant de la cuenta autenticada, con cookie HttpOnly de sesión y token aleatorio cuyo hash se almacena en MariaDB.
+GitHub Actions valida TypeScript, compilación Next.js, Docker, rutas inmobiliarias, CRM, roles, agentes, asesoría empresarial y aislamiento de datos. Las capturas visuales de QA son opcionales; la cuota de almacenamiento de artefactos de GitHub puede impedir su subida.
 
-### Docker / Dockploy
-
-El destino de despliegue es **Docker en Dockploy**. Configura la base de datos con una red privada, los secretos fuera del repositorio y un volumen persistente para `APP_CONFIG_DIR`, el contenido multimedia y la configuración del instalador. Ver [guía Dockploy](docs/DEPLOY-DOCKPLOY.md) y [instalador](docs/INSTALACION-WEB.md).
-
-**Antes de publicar o fusionar cambios con despliegue automático:** realizar y verificar una copia restaurable de SQL y del volumen persistente, comprobar la estrategia de migración y confirmar qué rama tiene conectada Dockploy. Ejecutar `prisma db push` únicamente en instalaciones iniciales vacías de prueba, no como actualización automática de producción.
-
-## Estado de validación
-
-La compilación inicial de Next.js/MariaDB y Docker superó CI. La nueva función del instalador debe superar CI antes de su integración a `main`; Dockploy requiere pruebas de funcionamiento adicionales.
-
-Referencias de diseño: [docs/UX-BRIEF.md](docs/UX-BRIEF.md).
-
-## Identificar el despliegue real
-
-`GET /api/live` expone el campo no sensible `release` para saber si Dockploy realmente ejecuta la última imagen. La versión esperada es `2026-10-21-auto-setup-r3`. Si muestra otro valor, comprobar rama, commit, Clean Cache, Rebuild y asignación del dominio. Más detalles en `docs/INSTALACION-WEB.md`.
+Los nuevos desarrollos en este repositorio deben ser **exclusivamente inmobiliarios** o relativos al servicio de asesoría empresarial existente. Las funciones de otros sectores se desarrollarán solamente en repositorios independientes. Nada en este repositorio actualiza automáticamente `JoseMorenoSalgado/webappecloud`.

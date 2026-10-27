@@ -1,7 +1,7 @@
 # Reglas para colaboradores y agentes — WebAppECloud
 
 ## Objetivo del proyecto
-SaaS de sitios web multicliente. Primer módulo: inmobiliaria; futuros módulos deben ser independientes del núcleo. Interfaces en español y responsive.
+CMS especializado únicamente en NEXUS inmobiliaria, más el servicio de Asesoría Empresarial requerido por el cliente. No reintroducir los sectores Educación, Comercio electrónico ni Servicios genéricos. Interfaces en español, responsive.
 
 ## Diseño y UI UX Pro Max
 - En trabajos que alteren la interfaz usar como referencia la skill: https://github.com/nextlevelbuilder/ui-ux-pro-max-skill.
@@ -18,7 +18,7 @@ SaaS de sitios web multicliente. Primer módulo: inmobiliaria; futuros módulos 
 - MariaDB, MySQL y PostgreSQL mediante dos clientes Prisma (mysql/postgresql); mantener los modelos equivalentes y probar ambos motores.
 - Despliegue exclusivamente con Docker en Dockploy; no mantener scripts, instrucciones ni tareas de despliegue cPanel/WHM/Passenger. Conservar MySQL/MariaDB y PostgreSQL porque funcionan en Docker.
 - Autenticación, autorización y acceso a cada recurso restringidos por tenant en el servidor; nunca depender del filtrado visual.
-- Los módulos sectoriales no deben contaminar los componentes núcleo.
+- Los módulos y rutas deben limitarse a funciones inmobiliarias; conservar la asesoría empresarial, su formulario y su publicación opcional.
 - No afirmar que existen funcionalidades, instalaciones, pruebas o despliegues hasta implementarlos y verificarlos.
 - No exponer credenciales ni guardar secretos en Git.
 
@@ -35,6 +35,6 @@ Home editable, buscador, propiedades, imágenes, fichas PDF, formulario de conta
 - Consultar https://emilkowal.ski/skill para criterios de movimiento, navegación móvil y rendimiento de animaciones.
 - Estas referencias **no equivalen a Skills instaladas**. Cada agente debe verificar disponibilidad local e instalación antes de afirmar que ejecutó una Skill, y anotar los comandos realmente usados en la PR.
 - Criterios de aceptación UI: mobile-first 375px, adaptaciones 768/1024/1440, contrastes, teclado, focus visible, controles accesibles, textos reales largos, estados vacíos/error/carga y prefers-reduced-motion.
-- Dirección por pantalla: sitio público con personalidad de marca; dashboard compacto orientado a tareas; instalador con selección clara de sector y módulos; nunca reutilizar una composición única para sectores distintos.
+- Dirección por pantalla: sitio público con personalidad de marca; dashboard compacto orientado a tareas; instalador con selección clara de sector y módulos; no incluir selectores de sector ni escaparates para negocios ajenos a la inmobiliaria.
 - No sacrificar rendimiento web, compatibilidad de MariaDB/MySQL y PostgreSQL ni el diseño NEXUS aprobado por efectos visuales.
 - Antes de integrar cambios, documentar revisión UI manual y pruebas automáticas; no declarar conformidad visual sin captura comparativa en móvil y escritorio.
