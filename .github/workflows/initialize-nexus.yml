@@ -1,0 +1,44 @@
+name: Copia inicial independiente de WebAppECloud a NEXUS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/initialize-nexus.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  copy-initial-snapshot:
+    if: github.repository == 'JoseMorenoSalgado/nexus'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 1
+
+      - name: Verificar que el repositorio de destino sigue vacío
+        run: |
+          set -euo pipefail
+          test "$(git ls-tree -r --name-only HEAD)" = ".github/workflows/initialize-nexus.yml"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
+      - name: Descargar una instantánea fija del CMS original (sin sincronización futura)
+        run: |
+          set -euo pipefail
+          git clone --depth=1 --branch main https://github.com/JoseMorenoSalgado/webappecloud.git "$RUNNER_TEMP/cms-source"
+          test "$(git -C "$RUNNER_TEMP/cms-source" rev-parse HEAD)" = "035a29df7ae5f2c9310c565ab7979583547d507c"
+
+      - name: Copiar los archivos del CMS y crear historial independiente
+        run: |
+          set -euo pipefail
+          rsync -a --delete --exclude='.git/' "$RUNNER_TEMP/cms-source/" "$GITHUB_WORKSPACE/"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && { echo "No se detectaron archivos para copiar"; exit 1; }
+          git commit -m "chore: initial independent NEXUS CMS copy from webappecloud 035a29d"
+          git push origin HEAD:main
