@@ -1,0 +1,349 @@
+name: Verificación Next.js + MariaDB + PostgreSQL
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: ci_root_only
+          MARIADB_DATABASE: webappecloud_ci
+          MARIADB_USER: ciuser
+          MARIADB_PASSWORD: ci_password_only
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: pgci
+          POSTGRES_PASSWORD: pg_password_only
+          POSTGRES_DB: webappecloud_pg_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U pgci -d webappecloud_pg_ci"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: mysql://ciuser:ci_password_only@127.0.0.1:3306/webappecloud_ci
+      SEED_DOMAIN: localhost
+      ADMIN_EMAIL: admin@ci.invalid
+      ADMIN_PASSWORD: CI-PASSWORD-NOT-PRODUCTION-2345
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar dependencias
+        run: npm install --no-audit --no-fund
+      - name: Probar recuperación no destructiva
+        run: npm run test:recovery
+      - name: Validar esquema Prisma
+        run: |
+          npx prisma validate --schema prisma/schema.prisma
+          DATABASE_URL=postgresql://pgci:pg_password_only@127.0.0.1:5432/webappecloud_pg_ci npx prisma validate --schema prisma/schema.postgres.prisma
+          npm run db:generate
+      - name: Crear esquema en base efímera de CI
+        run: npx prisma db push
+      - name: Crear datos de prueba
+        run: npm run db:seed
+      - name: Simular MariaDB existente antes de activar CRM
+        run: |
+          printf 'DROP TABLE IF EXISTS `LeadNote`;' | npx prisma db execute --schema prisma/schema.prisma --stdin
+          printf 'DROP TABLE IF EXISTS `LeadCrm`;' | npx prisma db execute --schema prisma/schema.prisma --stdin
+          printf 'DROP TABLE IF EXISTS `AgendaEvent`;' | npx prisma db execute --schema prisma/schema.prisma --stdin
+      - name: Verificar agrupación eficiente de métricas del dashboard
+        run: npx tsx scripts/check-dashboard-metrics.ts
+      - name: Evitar regresiones CSS en menú móvil
+        run: node scripts/check-mobile-navigation.mjs
+      - name: Verificar formularios compactos de propiedades y seguimiento CRM
+        run: node scripts/check-editor-ux.mjs
+      - name: Verificar UX y refactorización del personalizador
+        run: node scripts/check-customizer-refactor.mjs
+      - name: Verificar separación estable de estilos
+        run: node scripts/check-style-modules.mjs
+      - name: Separar plantilla inmobiliaria y marca multicliente
+        run: node scripts/check-template-boundaries.mjs
+      - name: Verificar datos predeterminados por plantilla
+        run: node scripts/check-template-defaults.mjs
+      - name: Validar procedimiento de respaldo Docker (sin tocar datos de CI)
+        run: |
+          bash -n scripts/backup-dockploy.sh
+          bash scripts/backup-dockploy.sh --help > /dev/null
+          test ! -f .cpanel.yml
+
+      - name: Verificar biblioteca visual sin publicación accidental
+        run: node scripts/check-template-gallery.mjs
+      - name: Verificar TypeScript
+        run: npx tsc --noEmit
+      - name: Compilar Next.js
+        run: npm run build
+        env:
+          NODE_ENV: production
+      - name: Iniciar servidor de prueba
+        run: |
+          npm run start > /tmp/webappecloud-next.log 2>&1 &
+          echo $! > /tmp/webappecloud-server.pid
+          timeout 90 bash -c 'until curl -fsS http://localhost:3000/ >/dev/null; do sleep 2; done'
+        env:
+          NODE_ENV: production
+      - name: Smoke test - web pública, catálogo, PDF y formulario
+        run: |
+          set -euo pipefail
+          curl -fsS http://localhost:3000/ | grep -qi 'NEXUS'
+          curl -fsS http://localhost:3000/propiedades | grep -qi 'Catálogo'
+          curl -fsS http://localhost:3000/propiedades/casa-zona-ejecutiva | grep -qi 'NX-102'
+          curl -fsS http://localhost:3000/api/propiedades/casa-zona-ejecutiva/pdf -o /tmp/nexus-ficha.pdf
+          head -c 5 /tmp/nexus-ficha.pdf | grep -q '%PDF-'
+          curl -fsS -X POST http://localhost:3000/api/leads \
+            -H 'Origin: http://localhost:3000' \
+            -H 'Content-Type: application/json' \
+            -d '{"name":"Cliente de pruebas","phone":"88887777","email":"cliente@example.com","consent":"yes","message":"Deseo conocer la propiedad."}' | grep -q '"ok":true'
+          curl -fsS -X POST http://localhost:3000/api/events \
+            -H 'Origin: http://localhost:3000' \
+            -H 'Content-Type: application/json' \
+            -d '{"kind":"view","path":"/"}' | grep -q '"ok":true'
+          CODE="$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/admin)"
+          test "$CODE" = "307" || test "$CODE" = "308"
+          echo 'Smoke tests exitosos'
+        env:
+          NODE_ENV: production
+      - name: Probar inicio de sesión real y dashboard
+        run: node scripts/check-admin-access.mjs
+      - name: Verificar dashboard y portada simplificados
+        run: node scripts/check-dashboard-ux.mjs
+      - name: Probar CRM y actualización segura de MariaDB existente
+        run: node scripts/check-crm.mjs
+      - name: Validar perfiles y permisos de agentes en MariaDB
+        run: node scripts/check-agent-access.mjs
+      - name: Probar agenda comercial y activación segura en MariaDB
+        run: node scripts/check-agenda.mjs
+      - name: Probar notificaciones comerciales y agenda diaria/semanal en MariaDB
+        run: node scripts/check-notifications.mjs
+      - name: Verificar tablas financieras en CI
+        run: npx prisma db push
+      - name: Probar operaciones reales, comisiones y aislamiento en MariaDB
+        run: node scripts/check-closings.mjs
+      - name: Probar abonos de comisiones y PDF privado en MariaDB
+        run: node scripts/check-commissions.mjs
+      - name: Validar documentos PDF personalizados de propiedades
+        run: node scripts/check-custom-pdf.mjs
+      - name: Verificar reportes comerciales y exportación segura CSV
+        run: node scripts/check-reports.mjs
+      - name: Probar personalización pública, imágenes y separación multicliente
+        run: node scripts/check-site-customization.mjs
+      - name: Verificar diseño público y páginas independientes
+        run: node scripts/check-public-pages.mjs
+      - name: Probar diseño clásico restaurado de NEXUS y micro-mejoras móviles
+        run: node scripts/check-nexus-classic-restored.mjs
+      - name: Verificar animaciones ligeras del Home sin alterar el diseño clásico
+        run: node scripts/check-nexus-home-motion.mjs
+      - name: Comprobar animaciones de las demás páginas públicas NEXUS
+        run: node scripts/check-nexus-inner-motion.mjs
+      - name: Probar asesoría empresarial opcional, carga WebP y solicitudes de consulta
+        run: node scripts/check-business-advisory.mjs
+      - name: Preparar Playwright sin depender de Ubuntu del runner
+        run: |
+          npm install --no-save --no-package-lock --no-audit --no-fund playwright@1.56.1
+          docker pull mcr.microsoft.com/playwright:v1.56.1-noble
+      - name: Publicar asesoría únicamente en entorno temporal de capturas
+        run: node scripts/stage-advisory-visual.mjs publish
+      - name: Capturar y revisar desbordamientos públicos a 375, 768, 1024 y 1440 px
+        run: |
+          mkdir -p /tmp/nexus-visual-qa
+          docker run --rm --init --network host \
+            -e TEST_ORIGIN=http://localhost:3000 \
+            -e VISUAL_QA_DIR=/tmp/nexus-visual-qa \
+            -v "$PWD:/workspace:ro" \
+            -v /tmp/nexus-visual-qa:/tmp/nexus-visual-qa \
+            -w /workspace \
+            mcr.microsoft.com/playwright:v1.56.1-noble \
+            node scripts/check-nexus-browser-qa.mjs
+      - name: Guardar capturas para aprobación visual humana
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexus-visual-qa
+          path: /tmp/nexus-visual-qa/
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Restablecer borrador de asesoría en pruebas
+        if: always()
+        run: node scripts/stage-advisory-visual.mjs draft
+
+      - name: Verificar galería con imagen completa y sin ampliación artificial
+        run: node scripts/check-property-gallery.mjs
+      - name: Probar CMS, estados de publicación, menú y WebP de alta calidad
+        run: node scripts/check-site-cms.mjs
+      - name: Probar editor visual, bloques y privacidad de imágenes
+        run: node scripts/check-page-blocks.mjs
+      - name: Probar portada, páginas predeterminadas y biblioteca multicliente
+        run: node scripts/check-builtin-media.mjs
+      - name: Probar retención, restauración y limpieza segura de imágenes
+        run: node scripts/check-media-lifecycle.mjs
+      - name: Validar editores independientes y administrador compacto
+        run: node scripts/check-independent-pages.mjs
+      - name: Comprobar vistas previas y experiencia CMS mejorada
+        run: node scripts/check-cms-ux.mjs
+      - name: Probar selección de plantillas, contenido y aislamiento en MariaDB
+        run: node scripts/check-template-selection.mjs
+      - name: Verificar sector, módulos, accesos y aislamiento en MariaDB
+        run: node scripts/check-tenant-modules.mjs
+      - name: Probar orientación CMS, páginas y navegación por sector
+        run: node scripts/check-site-hub.mjs
+      - name: Reproducir instalación MariaDB heredada y comprobar recuperación sin pérdida de datos
+        run: node scripts/check-legacy-db.mjs
+      - name: Probar vista previa sin MariaDB, solo en dominio autorizado
+        run: |
+          set -euo pipefail
+          env -u DATABASE_URL SITE_PREVIEW_MODE=true SITE_PREVIEW_HOST=inmo.elearningcloud.org PORT=3001 NODE_ENV=production npm run start > /tmp/webappecloud-preview.log 2>&1 &
+          timeout 90 bash -c 'until curl -fsS http://localhost:3001/api/live >/dev/null; do sleep 2; done'
+          curl -fsS -H 'Host: inmo.elearningcloud.org' http://localhost:3001/ -o /tmp/nexus-preview-home.html
+          grep -qi 'Vista previa de NEXUS' /tmp/nexus-preview-home.html
+          curl -fsS -H 'Host: inmo.elearningcloud.org' http://localhost:3001/propiedades -o /tmp/nexus-preview-catalog.html
+          grep -qi 'Filtrar propiedades' /tmp/nexus-preview-catalog.html
+          curl -fsS -H 'Host: inmo.elearningcloud.org' http://localhost:3001/api/propiedades/casa-zona-ejecutiva/pdf -o /tmp/nexus-demo.pdf
+          head -c 5 /tmp/nexus-demo.pdf | grep -q '%PDF-'
+          test "$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: example.com' http://localhost:3001/)" = "307"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3001/api/health)" = "503"
+        env:
+          NODE_ENV: production
+      - name: Prueba real del asistente de instalación MariaDB
+        run: |
+          set -euo pipefail
+          printf "CREATE DATABASE IF NOT EXISTS webappecloud_install_ci; GRANT ALL PRIVILEGES ON webappecloud_install_ci.* TO 'ciuser'@'%%';" | sed 's/%%/%/g' | npx prisma db execute --url "mysql://root:ci_root_only@127.0.0.1:3306/webappecloud_ci" --stdin
+          INSTALL_TMP="$(mktemp -d)"
+          env -u DATABASE_URL -u INSTALLER_TOKEN INSTALLER_AUTO_SETUP=true APP_CONFIG_DIR="$INSTALL_TMP" SITE_PREVIEW_MODE=false PORT=3002 NODE_ENV=production npm run start > /tmp/webappecloud-installer.log 2>&1 &
+          timeout 90 bash -c 'until curl -fsS http://localhost:3002/api/live >/dev/null; do sleep 2; done'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3002/)" = "307"
+          curl -fsSL -c /tmp/mysql-install-cookies.txt -b /tmp/mysql-install-cookies.txt http://localhost:3002/instalar -o /tmp/nexus-wizard.html
+          grep -qi "instalación inicial" /tmp/nexus-wizard.html
+          test -s "$INSTALL_TMP/installer-session.json"
+          # No setup key is copied or displayed in the browser.
+          node -e 'const fs=require("node:fs");const data={dbType:"mariadb",dbHost:"127.0.0.1",dbPort:"3306",dbName:"webappecloud_install_ci",dbUser:"ciuser",dbPassword:"ci_password_only",institution:"Nexus Real Estate",institutionEmail:"nexus@example.com",adminName:"Administrador Nexus",adminEmail:"admin-nexus@example.com",adminPassword:"long-safe-password-for-test-1234"};fs.writeFileSync("/tmp/webappecloud-install-request.json",JSON.stringify(data),{mode:0o600});'
+          curl -fsS -b /tmp/mysql-install-cookies.txt -H 'Origin: http://localhost:3002' -H 'Content-Type: application/json' -X POST http://localhost:3002/api/install \
+            --data-binary @/tmp/webappecloud-install-request.json | grep -q '"ok":true'
+          test ! -e "$INSTALL_TMP/installer-session.json"
+          curl -fsS http://localhost:3002/api/health | grep -q '"status":"ok"'
+          curl -fsS http://localhost:3002/ -o /tmp/nexus-after-install.html
+          grep -qi 'NEXUS' /tmp/nexus-after-install.html
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3002/instalar)" = "307"
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Origin: http://localhost:3002' -H 'Content-Type: application/json' -d '{}' http://localhost:3002/api/install)" = "409"
+        env:
+          NODE_ENV: production
+      - name: PostgreSQL - instalación completa desde el asistente
+        run: |
+          set -euo pipefail
+          INSTALL_PG_TMP="$(mktemp -d)"
+          env -u DATABASE_URL -u INSTALLER_TOKEN INSTALLER_AUTO_SETUP=true APP_CONFIG_DIR="$INSTALL_PG_TMP" SITE_PREVIEW_MODE=false PORT=3003 NODE_ENV=production npm run start > /tmp/webappecloud-postgres.log 2>&1 &
+          timeout 90 bash -c 'until curl -fsS http://localhost:3003/api/live >/dev/null; do sleep 2; done'
+          # First request creates the HttpOnly session cookie.
+          # A clean second request tests the form independently of curl's redirect/cookie timing.
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3003/instalar)" = "307"
+          curl -fsS -c /tmp/pg-install-cookies.txt -b /tmp/pg-install-cookies.txt -o /dev/null http://localhost:3003/api/install/session
+          test -s "$INSTALL_PG_TMP/installer-session.json"
+          curl -fsS -b /tmp/pg-install-cookies.txt http://localhost:3003/instalar -o /tmp/nexus-postgres-installer.html
+          grep -qi 'PostgreSQL' /tmp/nexus-postgres-installer.html
+          echo "CI PG: installer authorized; proceeding to install"
+          node -e 'const fs=require("fs");const body={dbType:"postgresql",dbHost:"127.0.0.1",dbPort:"5432",dbName:"webappecloud_pg_ci",dbUser:"pgci",dbPassword:"pg_password_only",institution:"Nexus Real Estate",institutionEmail:"nexus-pg@example.com",adminName:"Administrador Postgres",adminEmail:"admin-postgres@example.com",adminPassword:"long-postgres-test-password-2026"};fs.writeFileSync("/tmp/webappecloud-pg-request.json",JSON.stringify(body),{mode:0o600});'
+          PG_HTTP="$(curl -sS -b /tmp/pg-install-cookies.txt -o /tmp/webappecloud-pg-result.json -w '%{http_code}' -X POST http://localhost:3003/api/install \
+            -H 'Origin: http://localhost:3003' \
+            -H 'Content-Type: application/json' \
+            --data-binary @/tmp/webappecloud-pg-request.json)"
+          echo "CI PG: setup HTTP status=$PG_HTTP"
+          if [ "$PG_HTTP" != "200" ]; then
+            node -e 'const fs=require("fs");try{const r=JSON.parse(fs.readFileSync("/tmp/webappecloud-pg-result.json","utf8"));console.error("CI PG installer:",String(r.error||"unknown error").slice(0,200));}catch{console.error("CI PG: non-JSON error response");}'
+            exit 1
+          fi
+          grep -q '"ok":true' /tmp/webappecloud-pg-result.json
+          echo "CI PG: install completed"
+          curl -fsS http://localhost:3003/api/health | grep -q '"status":"ok"'
+          curl -fsS http://localhost:3003/ -o /tmp/nexus-postgres-home.html
+          grep -qi 'NEXUS' /tmp/nexus-postgres-home.html
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3003/instalar)" = "307"
+          test ! -e "$INSTALL_PG_TMP/installer-session.json"
+        env:
+          NODE_ENV: production
+      - name: Recuperar conexión existente en ambos motores
+        run: |
+          set -euo pipefail
+          RECOVERY_MYSQL_TMP="$(mktemp -d)"
+          APP_CONFIG_DIR="$RECOVERY_MYSQL_TMP" RECOVERY_HOST=localhost npm run installation:restore
+          test -s "$RECOVERY_MYSQL_TMP/installation.json"
+          RECOVERY_PG_TMP="$(mktemp -d)"
+          DATABASE_URL=postgresql://pgci:pg_password_only@127.0.0.1:5432/webappecloud_pg_ci APP_CONFIG_DIR="$RECOVERY_PG_TMP" RECOVERY_HOST=localhost npm run installation:restore
+          test -s "$RECOVERY_PG_TMP/installation.json"
+      - name: Probar inicio de sesión real PostgreSQL
+        run: node scripts/check-admin-access.mjs
+        env:
+          TEST_ORIGIN: http://localhost:3003
+          ADMIN_EMAIL: admin-postgres@example.com
+          ADMIN_PASSWORD: long-postgres-test-password-2026
+      - name: Probar CRM sobre instalación nueva PostgreSQL
+        run: node scripts/check-crm.mjs
+        env:
+          TEST_ORIGIN: http://localhost:3003
+          ADMIN_EMAIL: admin-postgres@example.com
+          ADMIN_PASSWORD: long-postgres-test-password-2026
+      - name: Validar aislamiento comercial de agentes en PostgreSQL
+        run: node scripts/check-agent-access.mjs
+        env:
+          TEST_ORIGIN: http://localhost:3003
+          ADMIN_EMAIL: admin-postgres@example.com
+          ADMIN_PASSWORD: long-postgres-test-password-2026
+      - name: Probar agenda comercial, estados y agentes en PostgreSQL
+        run: node scripts/check-agenda.mjs
+        env:
+          TEST_ORIGIN: http://localhost:3003
+          ADMIN_EMAIL: admin-postgres@example.com
+          ADMIN_PASSWORD: long-postgres-test-password-2026
+      - name: Probar notificaciones comerciales y aislamiento de agentes en PostgreSQL
+        run: node scripts/check-notifications.mjs
+        env:
+          TEST_ORIGIN: http://localhost:3003
+          ADMIN_EMAIL: admin-postgres@example.com
+          ADMIN_PASSWORD: long-postgres-test-password-2026
+      - name: Probar operaciones comerciales en PostgreSQL
+        run: node scripts/check-closings.mjs
+        env:
+          TEST_ORIGIN: http://localhost:3003
+          ADMIN_EMAIL: admin-postgres@example.com
+          ADMIN_PASSWORD: long-postgres-test-password-2026
+      - name: Probar comisiones y reportes PDF en PostgreSQL
+        run: node scripts/check-commissions.mjs
+        env:
+          TEST_ORIGIN: http://localhost:3003
+          ADMIN_EMAIL: admin-postgres@example.com
+          ADMIN_PASSWORD: long-postgres-test-password-2026
+      - name: Probar plantillas Educación y Servicios en PostgreSQL
+        run: node scripts/check-template-selection.mjs
+        env:
+          TEST_ORIGIN: http://localhost:3003
+          ADMIN_EMAIL: admin-postgres@example.com
+          ADMIN_PASSWORD: long-postgres-test-password-2026
+      - name: Mostrar logs si falla
+        if: failure()
+        run: |
+          cat /tmp/webappecloud-next.log 2>/dev/null || true
+          cat /tmp/webappecloud-preview.log 2>/dev/null || true
+          cat /tmp/webappecloud-installer.log 2>/dev/null || true
+          cat /tmp/webappecloud-postgres.log 2>/dev/null || true
