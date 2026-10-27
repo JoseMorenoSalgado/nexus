@@ -126,6 +126,8 @@ jobs:
           echo 'Smoke tests exitosos'
         env:
           NODE_ENV: production
+      - name: Verificar diagnóstico SQL y dominio de NEXUS (solo lectura)
+        run: node scripts/check-diagnostics.mjs
       - name: Probar inicio de sesión real y dashboard
         run: node scripts/check-admin-access.mjs
       - name: Verificar dashboard y portada simplificados
