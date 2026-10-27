@@ -3,7 +3,6 @@ import Link from "next/link";
 import {notFound} from "next/navigation";
 import {ArrowRight,ArrowUpRight,BookOpenCheck,CalendarCheck2,CheckCircle2,ClipboardCheck,FileSearch,GraduationCap,ShieldCheck,Scale,MessageCircle} from "lucide-react";
 import {getPublicContext} from "@/lib/tenant";
-import {getSiteTemplate} from "@/lib/site-template-store";
 import {getPageDefinitions} from "@/lib/site-pages";
 import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {PublicFrame} from "@/components/public-frame";
@@ -31,7 +30,6 @@ const services=[
 
 export default async function BusinessAdvisory(){
  const {tenant,demo}=await getPublicContext({loadProperties:false});
- if((await getSiteTemplate(tenant.id)).key!=="real-estate")notFound();
  // An optional professional-service page must NEVER auto-publish for other tenants.
  const published=!demo&&(await getPageDefinitions(tenant.id)).some(p=>p.id==="asesoria-empresarial"&&p.published);
  if(!published)notFound();

@@ -19,11 +19,9 @@ const staticPages=[
  {id:"asesoria-empresarial",slug:"asesoria-empresarial",title:"Asesoría Empresarial",href:"/asesoria-empresarial"}
 ] as const;
 export const DEFAULT_SITE_MENU:SiteMenuItem[]=staticPages.filter(p=>p.id!=="asesoria-empresarial").map(p=>({id:p.id,label:p.title,href:p.href}));
-export function defaultMenuForTemplate(key:string):SiteMenuItem[]{
- if(key==="real-estate")return [...DEFAULT_SITE_MENU,{id:"asesoria-empresarial",label:"Asesoría Empresarial",href:"/asesoria-empresarial"}];
- return staticPages.filter(p=>p.id!=="propiedades"&&p.id!=="asesoria-empresarial").map(p=>({
-  id:p.id,label:p.id==="servicios"&&key==="education"?"Programas":p.id==="servicios"&&key==="ecommerce"?"Nuestra oferta":p.title,href:p.href
- }));
+/** Only real estate and its optional business-advisory page are available. */
+export function defaultMenuForTemplate(_key:string):SiteMenuItem[]{
+ return [...DEFAULT_SITE_MENU,{id:"asesoria-empresarial",label:"Asesoría Empresarial",href:"/asesoria-empresarial"}];
 }
 export const CUSTOM_PAGE_PREFIX="pagina-";
 export const MENU_SLUG="site-navigation";
@@ -36,13 +34,13 @@ export function textBlocks(raw:unknown):{summary:string;body:string;sections:Pag
 export async function getPageDefinitions(tenantId:string):Promise<PageDefinition[]>{
  const template=await getSiteTemplate(tenantId);
  const available=await getTenantModules(tenantId,template.key);
- const enabledPages=staticPages.filter(p=>(p.id!=="propiedades"||(template.key==="real-estate"&&available.includes("properties")))&&(p.id!=="asesoria-empresarial"||template.key==="real-estate"));
+ const enabledPages=staticPages.filter(p=>p.id!=="propiedades"||available.includes("properties"));
  const rows=await prisma.sitePage.findMany({where:{tenantId,OR:[
   {slug:{in:staticPages.map(x=>x.slug)}},{slug:{startsWith:CUSTOM_PAGE_PREFIX}}
  ]},select:{slug:true,title:true,published:true,blocks:true},orderBy:{updatedAt:"desc"}});
  const lookup=new Map(rows.map(x=>[x.slug,x]));
  const builtins:PageDefinition[]=enabledPages.map(p=>({
-  ...p,title:p.id==="servicios"&&template.key==="education"?"Programas":p.id==="servicios"&&template.key==="ecommerce"?"Nuestra oferta":p.title,published:p.id==="home"?true:p.id==="asesoria-empresarial"?(lookup.get(p.slug)?.published===true):(lookup.get(p.slug)?.published??true),
+  ...p,title:p.title,published:p.id==="home"?true:p.id==="asesoria-empresarial"?(lookup.get(p.slug)?.published===true):(lookup.get(p.slug)?.published??true),
   builtIn:true,summary:""
  }));
  const extras=rows.filter(r=>r.slug.startsWith(CUSTOM_PAGE_PREFIX)).map(r=>{
@@ -81,7 +79,7 @@ export async function getSiteMenu(tenantId:string,existingPages?:PageDefinition[
   ?raw.byTemplate as Record<string,unknown>:{};
  const hasSelected=Object.hasOwn(byTemplate,template.key);
  // An existing customer with only legacy menu settings belongs to real-estate.
- const chosen=hasSelected?byTemplate[template.key]:template.key==="real-estate"?raw?.items:null;
+ const chosen=hasSelected?byTemplate[template.key]:raw?.items;
  if(chosen===null||chosen===undefined)return defaults();
  return normalizedMenu(chosen,pages);
 }
@@ -100,7 +98,7 @@ export async function saveSiteMenu(tenantId:string,items:MenuRecord[]){
   ?currentBlocks.byTemplate as Record<string,unknown>:{};
  const byTemplate={...previous,[currentTemplate.key]:parsed};
  const updated={
-  items:currentTemplate.key==="real-estate"?parsed:(currentBlocks.items??DEFAULT_SITE_MENU),
+  items:parsed,
   byTemplate
  };
  await prisma.sitePage.upsert({

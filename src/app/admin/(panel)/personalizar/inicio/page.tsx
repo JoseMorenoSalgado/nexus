@@ -48,10 +48,10 @@ export default async function SiteHub(){
    <div className="site-hub-summary-copy">
     <span className="site-hub-section-label">Tu espacio de trabajo</span>
     <h2 id="site-hub-summary-title">{user.tenantName}</h2>
-    <p>Tipo de sitio: <strong>{templateLabel}</strong>. El diseño, las páginas y los módulos se administran por separado.</p>
+    <p>Tipo de sitio: <strong>{templateLabel}</strong>. Las propiedades, páginas y módulos se administran por separado.</p>
     <div className="site-hub-summary-actions">
      <Link href="/admin/personalizar/paginas" className="btn btn-red"><FileText size={17} aria-hidden="true"/> Editar páginas</Link>
-     <Link href="/admin/personalizar/plantilla" className="site-hub-text-link"><LayoutTemplate size={16} aria-hidden="true"/> Cambiar plantilla</Link>
+     <Link href="/admin/personalizar/plantilla" className="site-hub-text-link"><LayoutTemplate size={16} aria-hidden="true"/> Ver diseño inmobiliario</Link>
      <Link href="/admin/personalizar/medios" className="site-hub-text-link"><ImageIcon size={16} aria-hidden="true"/> Biblioteca de imágenes</Link>
     </div>
    </div>
