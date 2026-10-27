@@ -65,6 +65,12 @@ jobs:
         run: npx prisma db push
       - name: Crear datos de prueba
         run: npm run db:seed
+      - name: Comprobar base de NEXUS en modo lectura sin exponer credenciales
+        run: |
+          node --check scripts/diagnose-installation.mjs
+          node scripts/diagnose-installation.mjs
+        env:
+          RECOVERY_HOST: localhost
       - name: Simular MariaDB existente antes de activar CRM
         run: |
           printf 'DROP TABLE IF EXISTS `LeadNote`;' | npx prisma db execute --schema prisma/schema.prisma --stdin
