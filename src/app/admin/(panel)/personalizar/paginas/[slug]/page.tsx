@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {notFound,redirect} from "next/navigation";
-import {getSiteTemplate} from "@/lib/site-template-store";
 import {ArrowLeft,ExternalLink,Save,Building2} from "lucide-react";
 import {requireRole} from "@/lib/auth";
 import {getCustomPage,textBlocks} from "@/lib/site-pages";
@@ -61,9 +60,7 @@ export default async function EditSitePage({params,searchParams}:{params:Promise
  const {slug}=await params,q=await searchParams;
  const canEdit=canEditRole(admin.role);
  if(isBuiltin(slug)){
-  const template=await getSiteTemplate(admin.tenantId);
   if(slug==="asesoria-empresarial"){
-   if(template.key!=="real-estate")notFound();
    const [definitions,extras]=await Promise.all([getPageDefinitions(admin.tenantId),readExtraSections(admin.tenantId,"asesoria-empresarial")]);
    const published=definitions.some(page=>page.id==="asesoria-empresarial"&&page.published);
    return <>
@@ -83,20 +80,6 @@ export default async function EditSitePage({params,searchParams}:{params:Promise
     <PageExtrasEditor slug="asesoria-empresarial" initial={extras}/>
     <p className="property-help">El contenido legal introductorio y el formulario de solicitud se mantienen.
      Las imágenes y los textos de esta sección los puedes actualizar cuando lo necesites.</p>
-   </>;
-  }
-  if(template.key!=="real-estate"){
-   if(slug==="propiedades")notFound();
-   const extra=await readExtraSections(admin.tenantId,slug);
-   return <>
-    <div className="admin-heading"><div><Link href="/admin/personalizar/paginas" className="inline-link"><ArrowLeft size={16}/> Todas las páginas</Link>
-     <h1>Editar: {sections[slug].title}</h1><p>Agrega contenido adicional a esta página sin alterar los bloques y textos de tu plantilla.</p></div>
-     <Link href="/admin/personalizar/plantilla" className="btn wizard-back">Editar textos de plantilla <ExternalLink size={16}/></Link>
-    </div>
-    {q.blocksSaved&&<p role="status" className="property-success">Secciones guardadas correctamente.</p>}
-    {q.error&&<p role="alert" className="admin-error">{q.error==="imagenes"?"La fotografía seleccionada ya no está disponible. Cárgala de nuevo.":q.error==="secciones"?"Completa los encabezados y las descripciones de imágenes.":"No se pudieron guardar las secciones. Revisa tus permisos y vuelve a intentarlo."}</p>}
-    <PageExtrasEditor slug={slug} initial={extra}/>
-    <p className="property-help">Para cambiar el encabezado, los programas o los servicios principales, utiliza la edición de plantilla.</p>
    </>;
   }
   const [settings,properties,tenant,pageDefinitions,extraSections]=await Promise.all([

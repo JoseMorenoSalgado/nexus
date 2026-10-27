@@ -7,16 +7,17 @@ import {commercialSchemaState} from "@/lib/commercial-schema";
 import {CommercialAlertsPreview} from "@/components/commercial-alerts-preview";
 import {DashboardAnalytics} from "@/components/dashboard-analytics";
 import {firstDayOfSeries,makeDailyMetrics} from "@/lib/dashboard-metrics";
-import {getSiteTemplate} from "@/lib/site-template-store";
 import {getTenantModules} from "@/lib/tenant-modules";
-import {OrganizationDashboard} from "@/components/templates/organization-dashboard";
 export const dynamic="force-dynamic";
 const days=14;
 export default async function Dashboard(){
  const admin=await requireAdmin(),tenantId=admin.tenantId;
- const template=await getSiteTemplate(tenantId);
- const modules=await getTenantModules(tenantId,template.key);
- if(template.key!=="real-estate"||!modules.includes("properties"))return <OrganizationDashboard user={admin}/>;
+ const modules=await getTenantModules(tenantId);
+ if(!modules.includes("properties"))return <section className="admin-panel">
+  <h1>Módulo inmobiliario desactivado</h1>
+  <p>Activa Propiedades desde Aplicaciones y módulos para visualizar el panel comercial.</p>
+  <Link href="/admin/modulos" className="btn btn-red">Administrar módulos</Link>
+ </section>;
  let compatible=false;
  try{
   const state=await commercialSchemaState();

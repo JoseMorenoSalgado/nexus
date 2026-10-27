@@ -1,5 +1,4 @@
 import "./modules.css";
-import Link from "next/link";
 import {Settings2} from "lucide-react";
 import {ModuleSettingsForm} from "@/components/module-settings-form";
 import {requireRole} from "@/lib/auth";
@@ -16,13 +15,12 @@ export default async function ModulesPage({searchParams}:{searchParams:Promise<{
  return <>
   <div className="admin-heading"><div><h1>Aplicaciones y módulos</h1>
    <p>Activa solo las herramientas que necesita tu empresa. Desactivar no elimina información.</p></div>
-   <Link className="btn wizard-back" href="/admin/personalizar/plantilla">Cambiar sector</Link>
   </div>
   {params.saved&&<p className="property-success" role="status">Módulos guardados para esta empresa.</p>}
   {params.error&&<p className="admin-error" role="alert">No fue posible guardar los módulos. Inténtalo de nuevo.</p>}
   {params.inactive&&<p className="admin-error" role="status">Ese módulo está desactivado para tu empresa. Puedes habilitarlo aquí.</p>}
   <section className="admin-panel">
-   <div className="module-heading"><Settings2 size={21}/><div><h2>Herramientas de {template.key==="real-estate"?"Inmobiliaria":template.key==="education"?"Educación":template.key==="ecommerce"?"Comercio electrónico":"Servicios"}</h2>
+   <div className="module-heading"><Settings2 size={21}/><div><h2>Herramientas inmobiliarias</h2>
     <p>Elige las herramientas que necesita tu equipo. Las funciones en desarrollo se muestran aparte.</p></div></div>
    <ModuleSettingsForm modules={modules} initialEnabled={enabled}/>
   </section>

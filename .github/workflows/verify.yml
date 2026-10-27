@@ -179,6 +179,7 @@ jobs:
             node scripts/check-nexus-browser-qa.mjs
       - name: Guardar capturas para aprobación visual humana
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: nexus-visual-qa

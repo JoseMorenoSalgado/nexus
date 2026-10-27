@@ -17,7 +17,6 @@ import "./inventory-tidy.css";
 import "./editor-tidy.css";
 import "./cms-tidy.css";
 import "./template-editor.css";
-import "./organization-site.css";
 import "./page-content.css";
 import "./page-editor-blocks.css";
 import "./cms-extras.css";
@@ -31,7 +30,7 @@ export const viewport:Viewport={width:"device-width",initialScale:1,viewportFit:
 
 /** Metadata is always resolved by the current site host, never from NEXUS constants. */
 export async function generateMetadata():Promise<Metadata>{
- const fallback:Metadata={title:{default:"WebAppECloud",template:"%s | WebAppECloud"},description:"Sitio web administrado con WebAppECloud."};
+ const fallback:Metadata={title:{default:"NEXUS Inmobiliaria",template:"%s | NEXUS"},description:"Catálogo inmobiliario, propiedades en venta y alquiler."};
  if(!hasDatabaseConfig())return fallback;
  const host=(await headers()).get("host")||"";
  const match=await tenantFromHost(host);

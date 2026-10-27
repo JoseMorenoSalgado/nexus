@@ -8,7 +8,7 @@ export function SiteCustomizerNav({current}:{current:"overview"|"pages"|"media"|
   {key:"pages" as const,href:"/admin/personalizar/paginas",label:"Páginas",Icon:FileText},
   {key:"media" as const,href:"/admin/personalizar/medios",label:"Imágenes",Icon:Images},
   {key:"menu" as const,href:"/admin/personalizar/menu",label:"Menú principal",Icon:ListTree},
-  {key:"template" as const,href:"/admin/personalizar/plantilla",label:"Plantilla",Icon:LayoutTemplate},
+  {key:"template" as const,href:"/admin/personalizar/plantilla",label:"Diseño inmobiliario",Icon:LayoutTemplate},
   {key:"identity" as const,href:"/admin/personalizar/identidad",label:"Identidad visual",Icon:Palette}
  ];
  return <nav aria-label="Herramientas de personalización" className="cms-toolbar cms-toolbar-unified">

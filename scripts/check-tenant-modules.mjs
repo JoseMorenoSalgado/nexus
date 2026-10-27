@@ -14,11 +14,6 @@ const get=(path,authenticated=false)=>fetch(origin+path,{headers:authenticated?{
 const post=(path,values)=>fetch(origin+path,{
  method:"POST",headers:{Origin:origin,Cookie:cookie},body:new URLSearchParams(values),redirect:"manual"
 });
-const select=async sector=>{
- const r=await post("/api/admin/site-template",{intent:"select",templateKey:sector});
- assert.equal(r.status,303);
- assert.match(r.headers.get("location")||"",/saved=1/);
-};
 const configure=async modules=>{
  const values=new URLSearchParams();
  for(const key of modules)values.append("modules",key);
@@ -52,15 +47,11 @@ assert.equal(refusedLead.status,403);
 await configure(all);
 assert.equal((await get("/admin/propiedades",true)).status,200);
 assert.equal((await get("/propiedades")).status,200);
-await select("ecommerce");
-assert.match(await (await get("/")).text(),/Tu marca, tu tienda digital/);
-assert.ok((await (await get("/admin/modulos",true)).text()).includes("Catálogo de productos"));
-assert.equal((await get("/propiedades")).status,404);
-await select("education");
-assert.ok((await (await get("/admin/modulos",true)).text()).includes("Conexión con Moodle"));
-const attempted=await post("/api/admin/modules",{modules:"moodle"});
-assert.equal(attempted.status,303);
-assert.match(attempted.headers.get("location")||"",/error=datos/);
-await select("real-estate");
+for(const forbidden of ["moodle","billing","catalog","orders"]){
+ const attempted=await post("/api/admin/modules",{modules:forbidden});
+ assert.equal(attempted.status,303);
+ assert.match(attempted.headers.get("location")||"",/error=datos/);
+}
 assert.equal((await get("/propiedades")).status,200);
-console.log("Tenant modules: enable/disable, protected routes, ecommerce and education options passed.");
+assert.equal((await get("/admin/clientes-agentes",true)).status,200);
+console.log("NEXUS modules: disable/re-enable real-estate services, reject unrelated sectors.");

@@ -2,7 +2,6 @@ import Link from "next/link";
 import {ArrowUpRight,Plus,Search,X} from "lucide-react";
 import {SiteCustomizerNav} from "@/components/site-customizer-nav";
 import {PagePublicationAction} from "@/components/page-publication-action";
-import {getSiteTemplate} from "@/lib/site-template-store";
 import {type PageDefinition} from "@/lib/site-pages";
 import {requireAdmin} from "@/lib/auth";
 import {getPageDefinitions} from "@/lib/site-pages";
@@ -10,7 +9,7 @@ export const dynamic="force-dynamic";
 type Query={saved?:string;error?:string;estado?:string;buscar?:string};
 export default async function PagesAdmin({searchParams}:{searchParams:Promise<Query>}){
  const admin=await requireAdmin(),q=await searchParams;
- const [pages,template]=await Promise.all([getPageDefinitions(admin.tenantId),getSiteTemplate(admin.tenantId)]);
+ const pages=await getPageDefinitions(admin.tenantId);
  const editingLocation=(page:PageDefinition)=>"/admin/personalizar/paginas/"+page.slug;
  const advisory=pages.find(p=>p.id==="asesoria-empresarial");
  const canEdit=admin.roles.some(r=>["admin","editor"].includes(r));
@@ -60,7 +59,7 @@ export default async function PagesAdmin({searchParams}:{searchParams:Promise<Qu
      <thead><tr><th>Página</th><th>Estado</th><th>Dirección</th><th>Acciones</th></tr></thead>
      <tbody>{results.map(p=><tr key={p.id}>
       <td className="cms-page-name"><Link href={editingLocation(p)}>{p.title}</Link>
-       <small>{p.builtIn?(template.key==="real-estate"?"Página del sitio":"Página de la plantilla"):"Página personalizada"}</small></td>
+       <small>{p.builtIn?"Página del sitio":"Página personalizada"}</small></td>
       <td><span className={"cms-status "+(p.published?"cms-status-live":"cms-status-draft")}>{p.published?"Publicada":"Borrador"}</span></td>
       <td><code>{p.href}</code></td>
       <td><div className="cms-row-actions">

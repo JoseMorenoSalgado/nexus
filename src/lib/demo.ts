@@ -11,13 +11,11 @@ export const demoProperties:PublicProperty[]=[
  {id:"demo3",slug:"casa-las-colinas",refCode:"NX-301",title:"Casa familiar en Las Colinas",description:"Casa de espacios confortables ideal para familias. Datos ilustrativos hasta cargar inmuebles reales.",city:"Managua",neighborhood:"Las Colinas",type:"Casa",operation:"venta",price:180000,bedrooms:3,bathrooms:2,areaM2:250,image:"https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=1100",photos:[]}
 ];
 export function formatPrice(p:PublicProperty){return "US$ "+new Intl.NumberFormat("en-US",{maximumFractionDigits:0}).format(p.price)+(p.operation==="alquiler"?"/mes":"");}
-export function contactUrl(t:PublicTenant,p?:PublicProperty,templateKey:"real-estate"|"education"|"services"|"ecommerce"="real-estate"){
+/** WhatsApp contact links are property-specific or real-estate general. */
+export function contactUrl(t:PublicTenant,p?:PublicProperty){
  const phone=t.whatsapp.replace(/\D/g,"");
  if(!phone)return "/contacto";
  const msg=p?`Hola, estoy interesado en la propiedad Ref: ${p.refCode} en ${p.neighborhood}, ${p.city}. Quisiera recibir más información.`:
-  templateKey==="education"?`Hola, deseo información sobre los programas y cursos de ${t.name}.`:
-  templateKey==="services"?`Hola, deseo conocer los servicios de ${t.name}.`:
-  templateKey==="ecommerce"?`Hola, deseo consultar los productos disponibles de ${t.name}.`:
   `Hola, deseo información sobre las propiedades disponibles de ${t.name}.`;
  return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
 }
