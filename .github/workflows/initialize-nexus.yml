@@ -32,10 +32,10 @@ jobs:
           git clone --depth=1 --branch main https://github.com/JoseMorenoSalgado/webappecloud.git "$RUNNER_TEMP/cms-source"
           test "$(git -C "$RUNNER_TEMP/cms-source" rev-parse HEAD)" = "035a29df7ae5f2c9310c565ab7979583547d507c"
 
-      - name: Copiar los archivos del CMS y crear historial independiente
+      - name: Copiar código y crear historial independiente; workflows se copian aparte
         run: |
           set -euo pipefail
-          rsync -a --delete --exclude='.git/' "$RUNNER_TEMP/cms-source/" "$GITHUB_WORKSPACE/"
+          rsync -a --delete --exclude='.git/' --exclude='.github/workflows/' "$RUNNER_TEMP/cms-source/" "$GITHUB_WORKSPACE/"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
