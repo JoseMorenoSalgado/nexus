@@ -11,4 +11,8 @@ assert.equal(data.checks.database,"connected");
 assert.equal(data.checks.domain,"registered");
 assert.ok(!JSON.stringify(data).includes("DATABASE_URL"));
 assert.equal(response.headers.get("cache-control")?.includes("no-store"),true);
+
+const health=await fetch(origin+"/api/health",{redirect:"manual"});
+assert.equal(health.status,200,"A seeded NEXUS database with Domain table must be healthy.");
+assert.deepEqual(await health.json(),{status:"ok"});
 console.log("NEXUS diagnostic: configured SQL connection and registered hostname passed.");
