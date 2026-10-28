@@ -7,7 +7,7 @@ import {hasDatabaseConfig} from "@/lib/server-config";
 import {normalizeSiteHost} from "@/lib/preview";
 import {parseRoles,primaryRole} from "@/lib/roles";
 const cookieName="webappecloud_session";
-const sessionHours=24*7;
+const sessionHours=24;
 export function hashPassword(password:string){
  const salt=randomBytes(16).toString("hex");
  return "scrypt$"+salt+"$"+scryptSync(password,salt,64).toString("hex");
