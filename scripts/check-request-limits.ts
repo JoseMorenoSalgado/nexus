@@ -4,6 +4,7 @@ import {readJsonObjectLimited,RequestPayloadError} from "../src/lib/limited-json
 async function failure(request:Request,maximum:number,status:400|413){
  await assert.rejects(()=>readJsonObjectLimited(request,maximum),error=>error instanceof RequestPayloadError&&error.status===status);
 }
+async function main(){
 const json=(body:string,extra:Record<string,string>={})=>new Request("http://localhost/api/events",{
  method:"POST",headers:{"content-type":"application/json",...extra},body
 });
@@ -25,3 +26,6 @@ await failure(new Request("http://localhost/api/leads",{
  method:"POST",body:streamed,duplex:"half"
 } as RequestInit&{duplex:"half"}),128,413);
 console.log("Request limits: advertised, streamed, malformed and Unicode JSON safely rejected.");
+
+}
+void main().catch(error=>{console.error(error);process.exitCode=1;});
