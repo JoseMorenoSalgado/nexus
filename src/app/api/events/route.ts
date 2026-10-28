@@ -5,6 +5,7 @@ import {tenantFromHost} from "@/lib/tenant";
 import {readJsonObjectLimited,RequestPayloadError} from "@/lib/limited-json";
 export async function POST(req:NextRequest){
  if(!hasDatabaseConfig())return NextResponse.json({ok:false},{status:503});
+ if(req.headers.get("sec-fetch-site")==="cross-site")return NextResponse.json({ok:false},{status:403});
  const origin=req.headers.get("origin");
  if(origin){try{if(new URL(origin).host!==req.headers.get("host"))return NextResponse.json({ok:false},{status:403});}catch{return NextResponse.json({ok:false},{status:403});}}
  let body:Record<string,unknown>;
