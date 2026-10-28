@@ -108,7 +108,6 @@ jobs:
           NODE_ENV: production
       - name: Auditar dependencias de ejecución sin cambiar versiones
         run: npm audit --omit=dev --audit-level=high
-        continue-on-error: true
       - name: Iniciar servidor de prueba
         run: |
           npm run start > /tmp/webappecloud-next.log 2>&1 &
