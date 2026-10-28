@@ -164,6 +164,8 @@ jobs:
         run: node scripts/check-reports.mjs
       - name: Probar personalización pública, imágenes y separación multicliente
         run: node scripts/check-site-customization.mjs
+      - name: Probar edición de imágenes en todas las páginas y acceso privado
+        run: node scripts/check-page-image-editing.mjs
       - name: Verificar diseño público y páginas independientes
         run: node scripts/check-public-pages.mjs
       - name: Probar diseño clásico restaurado de NEXUS y micro-mejoras móviles
