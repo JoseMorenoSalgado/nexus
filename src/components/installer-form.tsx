@@ -9,7 +9,7 @@ type Values={
  institution:string;institutionEmail:string;adminName:string;adminEmail:string;adminPassword:string;templateKey:SiteTemplateKey;modules:ModuleKey[];
 };
 const defaults:Values={
- dbType:"mariadb",dbHost:"db",dbPort:"3306",dbName:"webappecloud",dbUser:"webappecloud",dbPassword:"",
+ dbType:"mariadb",dbHost:"",dbPort:"3306",dbName:"",dbUser:"",dbPassword:"",
  institution:"",institutionEmail:"",adminName:"",adminEmail:"",adminPassword:"",templateKey:"real-estate",modules:defaultEnabledModules("real-estate")
 };
 export default function InstallerForm({domain}:{domain:string}){
@@ -55,7 +55,7 @@ export default function InstallerForm({domain}:{domain:string}){
      </select>
     </label>
     <p>Utiliza una base de datos <strong>vacía</strong> que hayas creado previamente en cPanel o Dockploy. Sus credenciales no se guardan en GitHub.</p>
-    <div className="wizard-grid">{input("dbHost","Servidor de base de datos",{hint:"En Docker, utiliza el nombre del servicio alcanzable por red (por ejemplo: db o postgres)."})}{input("dbPort","Puerto",{hint:"3306 para MySQL/MariaDB; 5432 para PostgreSQL."})}</div>
+    <div className="wizard-grid">{input("dbHost","Servidor de base de datos",{hint:"En Plesk con SQL local normalmente es 127.0.0.1; en Docker usa el nombre del servicio (db o postgres)."})}{input("dbPort","Puerto",{hint:"3306 para MySQL/MariaDB; 5432 para PostgreSQL."})}</div>
     {input("dbName","Nombre de la base de datos")}
     {input("dbUser","Usuario de la base de datos")}
     {input("dbPassword","Contraseña de la base de datos",{type:"password",autoComplete:"new-password"})}
