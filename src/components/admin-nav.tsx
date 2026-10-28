@@ -13,7 +13,7 @@ import {
 
 type Entry={href:string;label:string;Icon:LucideIcon};
 const primary:Entry[]=[
- {href:"/admin",label:"Inicio",Icon:LayoutDashboard},
+ {href:"/admin",label:"Resumen",Icon:LayoutDashboard},
  {href:"/admin/personalizar/inicio",label:"Mi sitio web",Icon:FileText},
  {href:"/admin/propiedades",label:"Propiedades",Icon:Building2},
  {href:"/admin/leads",label:"Prospectos",Icon:UsersRound},
@@ -72,13 +72,11 @@ export function AdminNav({role="admin",roles=[role],userId,userName,notification
   &&(realEstate||["/admin","/admin/leads","/admin/personalizar/inicio"].includes(x.href)))
   .filter(allowed)
   .map(x=>!realEstate&&x.href==="/admin/leads"?{...x,label:"Consultas"}:x);
- const tools=secondary.filter(x=>(manager||(agent&&x.href==="/admin/notificaciones"))
-  &&realEstate).filter(allowed);
+ const tools=secondary.filter(x=>(manager||agent)&&realEstate).filter(allowed);
  if(has("admin")){
-  if(realEstate&&enabled.has("properties"))tools.push({href:"/admin/clientes-agentes",label:"Clientes y agentes",Icon:ShieldCheck});
-  tools.push({href:"/admin/modulos",label:"Aplicaciones y módulos",Icon:Settings});
+  if(realEstate&&enabled.has("properties"))tools.push({href:"/admin/clientes-agentes",label:"Equipo y usuarios",Icon:ShieldCheck});
+  tools.push({href:"/admin/modulos",label:"Módulos",Icon:Settings});
   tools.push({href:"/admin/sistema",label:"Estado técnico",Icon:Settings});
-  tools.push({href:"/admin/actualizaciones",label:"Actualizaciones (simulación)",Icon:ShieldCheck});
  }
  if(realEstate&&enabled.has("analytics")&&agent&&!manager){
   tools.push({href:"/admin/reportes/agentes",label:"Mi rendimiento",Icon:ChartNoAxesCombined});
@@ -93,13 +91,16 @@ export function AdminNav({role="admin",roles=[role],userId,userName,notification
   return <Link href={x.href} key={x.href} onClick={close} className={active?"active":undefined}
    aria-current={active?"page":undefined}><x.Icon size={18} aria-hidden="true"/><span>{x.label}</span>{notifyBadge(x)}</Link>;
  });
+ // Una sola fuente de enlaces para escritorio y móvil, sin mostrar accesos repetidos.
+ const pinned=main.filter(x=>x.href==="/admin"||x.href==="/admin/personalizar/inicio");
+ const mobileMain=main.filter(x=>!pinned.some(y=>y.href===x.href));
  const toolActive=tools.some(x=>selectedLink(pathname,x.href));
  return <>
   <nav className="admin-nav admin-nav-desktop admin-nav-simplified" aria-label="Menú de administración">
    <span className="admin-nav-section-label">Trabajo diario</span>
    {entries(main,()=>{})}
    {tools.length>0&&<details className="admin-nav-more" key={toolActive?"current-tools":"other-tools"} open={toolActive}>
-    <summary><Settings size={18} aria-hidden="true"/><span>Más herramientas</span><ChevronDown size={16} aria-hidden="true"/></summary>
+    <summary><Settings size={18} aria-hidden="true"/><span>Más opciones</span><ChevronDown size={16} aria-hidden="true"/></summary>
     <div className="admin-nav-more-content">{entries(tools,()=>{})}</div>
    </details>}
    <Link href="/" target="_blank" rel="noopener noreferrer" className="admin-nav-website">
@@ -118,14 +119,12 @@ export function AdminNav({role="admin",roles=[role],userId,userName,notification
     <button type="button" className="admin-mobile-overlay" onClick={()=>setMobileOpen(false)} aria-label="Cerrar navegación"/>
     <aside ref={drawer} id="admin-mobile-drawer" className="admin-mobile-drawer" role="dialog" aria-modal="true" aria-label="Navegación del panel">
      <div className="admin-mobile-drawer-head"><strong>Navegación</strong><button type="button" ref={closeButton} onClick={()=>{setMobileOpen(false);menuTrigger.current?.focus();}} aria-label="Cerrar menú"><X size={20}/></button></div>
-     {manager&&<div className="admin-mobile-site-shortcuts" aria-label="Accesos rápidos a la web">
-      <Link href="/admin/personalizar/inicio" onClick={()=>setMobileOpen(false)}><FileText size={18} aria-hidden="true"/> Mi sitio web</Link>
-      <Link href="/admin/personalizar/identidad" onClick={()=>setMobileOpen(false)}><Settings size={18} aria-hidden="true"/> Logotipo y colores</Link>
-      <Link href="/admin/personalizar/paginas" onClick={()=>setMobileOpen(false)}><FileText size={18} aria-hidden="true"/> Editar páginas</Link>
-     </div>}
+     <nav className="admin-mobile-site-shortcuts" aria-label="Accesos principales">
+      {entries(pinned,()=>setMobileOpen(false))}
+     </nav>
      <nav className="admin-nav admin-nav-mobile-list" aria-label="Navegación móvil">
-      <span className="admin-nav-section-label">Trabajo diario</span>{entries(main,()=>setMobileOpen(false))}
-      {tools.length>0&&<><span className="admin-nav-section-label">Más herramientas</span>{entries(tools,()=>setMobileOpen(false))}</>}
+      {mobileMain.length>0&&<><span className="admin-nav-section-label">Trabajo diario</span>{entries(mobileMain,()=>setMobileOpen(false))}</>}
+      {tools.length>0&&<><span className="admin-nav-section-label">Más opciones</span>{entries(tools,()=>setMobileOpen(false))}</>}
       <Link href="/" target="_blank" rel="noopener noreferrer" onClick={()=>setMobileOpen(false)}><ExternalLink size={17}/>Ver página pública</Link>
      </nav>
      <div className="admin-mobile-account">
