@@ -14,6 +14,7 @@ const get=async path=>{
 };
 const overview=await get("/admin/personalizar/inicio");
 assert.match(overview,/Mi sitio web/);
+assert.match(overview,/Logotipo y colores/,"Branding shortcut should be visible from the site overview");
 assert.match(overview,/Prepara tu sitio/);
 assert.match(overview,/Cómo se publica una página/);
 for(const path of ["/admin/personalizar/paginas","/admin/personalizar/menu","/admin/personalizar/identidad","/admin/personalizar/plantilla"]){
