@@ -1,5 +1,5 @@
 {
-  "name": "webappecloud",
+  "name": "nexus-real-estate",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -37,5 +37,8 @@
     "tailwindcss": "^3.4.17",
     "postcss": "^8.4.49",
     "autoprefixer": "^10.4.20"
+  },
+  "engines": {
+    "node": ">=22 <27"
   }
 }
