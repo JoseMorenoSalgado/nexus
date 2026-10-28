@@ -39,8 +39,12 @@ assert.match(css,/\.public-site \.property-card>\.property-photo>img\{[^}]*objec
 const gallery=readFileSync("src/components/property-gallery.tsx","utf8");
 assert.ok(gallery.includes('useEmblaCarousel')&&gallery.includes('emblaApi?.scrollNext()'),
  "Swipe carousel must use Embla");
-assert.ok(gallery.includes('yet-another-react-lightbox')&&gallery.includes('plugins={[Zoom]}'),
- "Full-screen viewer must support zoom");
+const lightbox=readFileSync("src/components/property-lightbox.tsx","utf8");
+assert.ok(gallery.includes('dynamic(()=>import("@/components/property-lightbox")')&&gallery.includes("lightboxOpen&&<DeferredLightbox"),
+ "Full-screen viewer must download only when opened");
+assert.ok(lightbox.includes("yet-another-react-lightbox")&&lightbox.includes("plugins={[Zoom]}"),
+ "Deferred full-screen viewer must retain zoom");
+assert.ok(gallery.includes("Math.abs(i-index)<=1"),"Only visible/neighbor gallery backdrops should load");
 assert.ok(gallery.includes("dimensions.width/photo.clientWidth<1.35"),
  "Hover must not zoom low-resolution photographs artificially");
 assert.ok(gallery.includes('aria-label={"Ampliar fotografía'),
