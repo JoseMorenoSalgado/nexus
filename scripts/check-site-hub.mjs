@@ -14,10 +14,12 @@ const get=async path=>{
 };
 const overview=await get("/admin/personalizar/inicio");
 assert.match(overview,/Mi sitio web/);
-assert.match(overview,/Logotipo y colores/,"Branding shortcut should be visible from the site overview");
+assert.match(overview,/Marca y contacto/,"Identidad accesible desde el sitio web");
 assert.match(overview,/Prepara tu sitio/);
-assert.match(overview,/Cómo se publica una página/);
-for(const path of ["/admin/personalizar/paginas","/admin/personalizar/menu","/admin/personalizar/identidad","/admin/personalizar/plantilla"]){
+assert.match(overview,/Editar portada/);
+assert.match(overview,/Nueva página/);
+assert.ok(!overview.includes("Ver diseño inmobiliario"),"Evitar pantallas informativas redundantes");
+for(const path of ["/admin/personalizar/paginas","/admin/personalizar/menu","/admin/personalizar/identidad","/admin/personalizar/paginas/home","/admin/personalizar/paginas/nueva"]){
  assert.ok(overview.includes(path),"Missing shortcut to "+path);
 }
 assert.match(overview,/Tu espacio de trabajo/);
@@ -27,9 +29,11 @@ const pages=await get("/admin/personalizar/paginas");
 assert.match(pages,/Publicar y mostrar en el men/);
 assert.ok(pages.includes("Pasar a borrador"),"Unpublish must be a clear action");
 assert.ok(pages.includes("Mi sitio web"),"Overview shortcut missing");
-const estate=await get("/admin/personalizar/plantilla");
-assert.match(estate,/Diseño inmobiliario/);
-assert.ok(!estate.includes("Confirmar y aplicar plantilla"));
+for(const path of ["/admin/personalizar/plantilla","/admin/personalizar","/admin/personalizar/contenido"]){
+ const legacy=await fetch(origin+path,{headers:{Cookie:cookie},redirect:"manual"});
+ assert.ok([303,307,308].includes(legacy.status),"Ruta heredada debe redirigir: "+path);
+ assert.equal(legacy.headers.get("location"),"/admin/personalizar/inicio","Ruta heredada no abre Mi sitio web: "+path);
+}
 const advisor=await get("/admin/personalizar/paginas/asesoria-empresarial");
 assert.match(advisor,/Asesoría Empresarial/);
 const outsider=await fetch(origin+"/admin/personalizar/inicio",{redirect:"manual"});
