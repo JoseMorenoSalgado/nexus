@@ -8,6 +8,7 @@ import {useEffect} from "react";
  */
 export function NexusHomeMotion(){
  useEffect(()=>{
+  try {
   const root=document.querySelector<HTMLElement>("[data-nexus-home-motion]");
   if(!root||!window.matchMedia||!window.IntersectionObserver||!Element.prototype.animate)return;
 
@@ -36,15 +37,21 @@ export function NexusHomeMotion(){
     observer.unobserve(entry.target);
     const el=entry.target as HTMLElement;
     const index=targets.indexOf(el);
-    const animation=el.animate(
-     [
-      {opacity:0.82,transform:"translate3d(0, 12px, 0)"},
-      {opacity:1,transform:"translate3d(0, 0, 0)"}
-     ],
-     {duration:390,delay:(index%3)*55,easing:"cubic-bezier(.2,.7,.2,1)",fill:"none"}
-    );
-    animations.add(animation);
-    void animation.finished.catch(()=>{}).then(()=>animations.delete(animation));
+    try {
+     const animation=el.animate(
+      [
+       {opacity:0.82,transform:"translate3d(0, 12px, 0)"},
+       {opacity:1,transform:"translate3d(0, 0, 0)"}
+      ],
+      {duration:390,delay:(index%3)*55,easing:"cubic-bezier(.2,.7,.2,1)",fill:"none"}
+     );
+     animations.add(animation);
+     if(animation.finished && typeof animation.finished.catch==="function"){
+      void animation.finished.catch(()=>{}).then(()=>animations.delete(animation));
+     }
+    } catch {
+     // Keep server-rendered content visible when a browser rejects WAAPI.
+    }
    }
   },{threshold:0.12,rootMargin:"0px 0px -7% 0px"});
 
@@ -62,6 +69,12 @@ export function NexusHomeMotion(){
    for(const animation of animations)animation.cancel();
    animations.clear();
   };
+  } catch (error) {
+    // This is optional progressive enhancement: unsupported browser APIs
+    // must never prevent hydration of the actual page content.
+    console.warn("[NEXUS] Optional motion disabled", error instanceof Error ? error.name : "unsupported");
+    return;
+  }
  },[]);
  return null;
 }
