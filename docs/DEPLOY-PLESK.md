@@ -103,6 +103,8 @@ Una vez compilada la aplicación, en SSH, en la raíz del proyecto:
 node scripts/check-plesk-ready.mjs
 ```
 
+Desde la interfaz **Plesk → Node.js → Run Script**, que ya añade el prefijo `npm`, puedes escribir solamente `run check:plesk`.
+
 Esta comprobación de solo lectura detecta si faltan `.next/BUILD_ID`, Node.js, el archivo `app.js`, los clientes Prisma, el CLI de instalación y si `APP_CONFIG_DIR` apunta accidentalmente a `public`. No imprime contraseñas, no conecta ni crea tablas.
 
 También existen pruebas automatizadas en GitHub que ejecutan `app.js` como servidor Next.js real, comprueban SSR, `/_next/static/*.js`, CSS y la ruta `/api/health`. Superarlas **no reemplaza** verificar la configuración real de Plesk ni una base de datos independiente.
