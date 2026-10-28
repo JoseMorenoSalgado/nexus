@@ -3,6 +3,8 @@ import {ArrowRight,ArrowUpRight,HeartHandshake,ShieldCheck,Compass,CheckCircle2,
 import {getPublicContext} from "@/lib/tenant";
 import {assertPagePublished} from "@/lib/site-pages";
 import {PublicFrame} from "@/components/public-frame";
+import {PageHeroMedia} from "@/components/page-hero-media";
+import {hasSiteAsset} from "@/lib/site-assets";
 import {NexusInnerMotion} from "@/components/nexus-inner-motion";
 import {PageExtraSections} from "@/components/page-extra-sections";
 export const dynamic="force-dynamic";
@@ -10,9 +12,10 @@ export default async function About(){
  const {tenant,demo,settings,properties}=await getPublicContext();
  await assertPagePublished(tenant.id,demo,"nosotros");
  const image=properties.find(p=>p.image)?.image;
+ const imageFromBrand=!demo&&await hasSiteAsset(tenant.id,"about-photo");
  return <PublicFrame tenant={tenant} demo={demo}>
   <main id="contenido" data-nexus-inner-motion="nosotros"><NexusInnerMotion/>
-   <section className="nexus-inner-hero nexus-about-hero"><div className="container">
+   <section className="nexus-inner-hero nexus-about-hero"><PageHeroMedia tenantId={tenant.id} slug="nosotros"/><div className="container">
     <span className="nexus-section-kicker nexus-kicker-light">SOBRE NOSOTROS</span>
     <div className="nexus-inner-hero-row"><div><h1>Personas primero. <em>Propiedades con propósito.</em></h1>
      <p>{settings.aboutDescription}</p></div>
@@ -20,7 +23,7 @@ export default async function About(){
    </div></section>
    <section className="nexus-section nexus-about-intro"><div className="container nexus-two-column">
     <div className="nexus-about-image">
-     {image?<img src={image} alt="Propiedad del catálogo inmobiliario" loading="lazy"/>:<div className="nexus-abstract-architecture" aria-hidden="true"><span/><span/><span/></div>}
+     {imageFromBrand?<img src="/api/site-media/about-photo" alt="Imagen de presentación de la inmobiliaria" loading="lazy"/>:image?<img src={image} alt="Propiedad del catálogo inmobiliario" loading="lazy"/>:<div className="nexus-abstract-architecture" aria-hidden="true"><span/><span/><span/></div>}
      <div className="nexus-about-image-caption">Un espacio nuevo. Una nueva etapa.</div>
     </div>
     <div className="nexus-about-intro-copy"><span className="nexus-section-kicker">LO QUE NOS MUEVE</span>
