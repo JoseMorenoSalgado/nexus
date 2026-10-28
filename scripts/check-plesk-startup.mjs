@@ -9,7 +9,8 @@ import {setTimeout as sleep} from "node:timers/promises";
 
 const root=resolve(".");
 const port=3004;
-const origin="http://127.0.0.1:"+port;
+// Seeded CI tenant belongs to localhost; use the same Host for SSR routing.
+const origin="http://localhost:"+port;
 const child=spawn(process.execPath,[resolve(root,"app.js")],{
  cwd:root,
  env:{...process.env,NODE_ENV:"production",PORT:String(port)},
