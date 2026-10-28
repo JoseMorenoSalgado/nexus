@@ -2,7 +2,7 @@
 import {useRef,useState} from "react";
 import {useRouter} from "next/navigation";
 import {ImagePlus,Trash2,ImageIcon} from "lucide-react";
-type Kind="hero"|"logo";
+type Kind="hero"|"logo"|"about-photo"|"hero-propiedades"|"hero-nosotros"|"hero-servicios"|"hero-contacto"|"hero-asesoria-empresarial";
 export function SiteAssetManager({kind,exists,canEdit}:{kind:Kind;exists:boolean;canEdit:boolean}){
  const router=useRouter(),ref=useRef<HTMLInputElement>(null);
  const [busy,setBusy]=useState(false),[notice,setNotice]=useState(""),[error,setError]=useState("");
@@ -36,7 +36,7 @@ export function SiteAssetManager({kind,exists,canEdit}:{kind:Kind;exists:boolean
  }
  return <div className="site-image-manager">
   <div className={"site-image-preview "+(kind==="logo"?"site-preview-logo":"site-preview-hero")}>
-   {exists?<img src={"/api/site-media/"+kind} alt={kind==="logo"?"Logo corporativo":"Banner principal"}/>:kind==="hero"?<span>Banner predeterminado del sitio</span>:<span className="site-empty-logo"><ImageIcon size={22} aria-hidden="true"/> Agrega el logotipo de tu organización</span>}
+   {exists?<img src={"/api/site-media/"+kind} alt={kind==="logo"?"Logo corporativo":kind==="about-photo"?"Imagen de Nosotros":"Banner de la página"}/>:kind==="logo"?<span className="site-empty-logo"><ImageIcon size={22} aria-hidden="true"/> Agrega el logotipo de tu organización</span>:<span>Se conservará la imagen o el diseño predeterminado hasta que subas una fotografía.</span>}
   </div>
   <div className="site-image-actions">
    {canEdit&&<label className="property-upload-button"><ImagePlus size={17}/>{busy?"Procesando...":exists?"Reemplazar imagen":"Subir imagen"}
@@ -46,6 +46,6 @@ export function SiteAssetManager({kind,exists,canEdit}:{kind:Kind;exists:boolean
   </div>
   {error&&<p role="alert" className="admin-error">{error}</p>}
   {notice&&<p role="status" className="property-success">{notice}</p>}
-  <p className="property-help">{kind==="hero"?"Recomendado: foto horizontal de 1920 × 1080 px.":"Recomendado: logo PNG con fondo transparente."} Máximo 8 MB. WebP de alta calidad: banner hasta 2560 px y logotipo sin pérdida de detalle. Se eliminan metadatos.</p>
+  <p className="property-help">{kind==="logo"?"Recomendado: logo PNG con fondo transparente.":"Recomendado: foto horizontal de 1920 × 1080 px."} Máximo 8 MB. WebP de alta calidad: banner hasta 2560 px y logotipo sin pérdida de detalle. Se eliminan metadatos.</p>
  </div>;
 }
