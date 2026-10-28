@@ -16,7 +16,7 @@ const pages=read("src/app/admin/(panel)/personalizar/paginas/page.tsx");
 assert.ok(pages.includes("tabHref(t.id)"),"Los filtros deben conservar la búsqueda");
 assert.ok(!pages.includes("getSiteMenu("),"Evitar leer el menú desde el índice de páginas");
 const legacy=read("src/app/admin/(panel)/personalizar/contenido/page.tsx");
-assert.ok(legacy.includes('redirect("/admin/personalizar/paginas")'),"Editor antiguo debe redirigir");
+assert.ok(legacy.includes('redirect("/admin/personalizar/inicio")'),"Editor antiguo debe abrir el sitio web");
 assert.ok(!legacy.includes('action="/api/admin/site-settings"'),"Editor duplicado aún puede modificar todo el sitio");
 const menu=read("src/components/site-menu-editor.tsx");
 assert.match(menu,/cms-menu-preview-collapsible/);

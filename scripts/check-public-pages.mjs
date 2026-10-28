@@ -29,7 +29,7 @@ const cookie=login.headers.getSetCookie().find(s=>s.startsWith("webappecloud_ses
 assert.ok(cookie);
 const legacy=await fetch(origin+"/admin/personalizar/contenido",{headers:{Cookie:cookie},redirect:"manual"});
 assert.ok([303,307,308].includes(legacy.status),"The former all-in-one editor must redirect");
-assert.match(legacy.headers.get("location")||"",/\/admin\/personalizar\/paginas/);
+assert.match(legacy.headers.get("location")||"",/\/admin\/personalizar\/inicio/);
 for(const [path,fields] of [
  ["/admin/personalizar/paginas/home",["heroHeading","heroDescription"]],
  ["/admin/personalizar/paginas/nosotros",["aboutMission","aboutVision"]],

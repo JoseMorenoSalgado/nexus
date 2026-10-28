@@ -1,2 +1,2 @@
 import {redirect} from "next/navigation";
-export default function Personalizar(){redirect("/admin/personalizar/paginas");}
+export default function Personalizar(){redirect("/admin/personalizar/inicio");}

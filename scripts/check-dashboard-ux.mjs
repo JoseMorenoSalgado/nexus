@@ -17,7 +17,7 @@ const html=await dashboard.text();
 assert.match(html,/<h1>Resumen<\/h1>/);
 assert.match(html,/dashboard-simple-list/);
 assert.match(html,/dashboard-details/);
-assert.match(html,/Más herramientas/);
+assert.match(html,/Más opciones/);
 assert.match(html,/Prospectos/);
 const properties=await fetch(base+"/admin/propiedades",{headers:{Cookie:cookie}});
 assert.equal(properties.status,200);

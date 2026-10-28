@@ -12,10 +12,13 @@ const original=await get("/");
 assert.equal(original.status,200);
 assert.match(await original.text(),/nexus-hero/);
 const settings=await get("/admin/personalizar/plantilla",true);
-assert.equal(settings.status,200);
-const html=await settings.text();
-assert.match(html,/Diseño inmobiliario/);
-assert.match(html,/Catálogo de propiedades/);
+assert.ok([303,307,308].includes(settings.status),"La antigua pantalla debe redirigir");
+assert.equal(new URL(settings.headers.get("location")||"",origin).pathname,"/admin/personalizar/inicio");
+const hub=await get("/admin/personalizar/inicio",true);
+assert.equal(hub.status,200);
+const html=await hub.text();
+assert.match(html,/Mi sitio web/);
+assert.match(html,/Editar portada/);
 assert.ok(!html.includes("templatePreview"),"Sector selection must be removed");
 for(const sector of ["education","services","ecommerce"]){
  const response=await fetch(origin+"/api/admin/site-template",{
