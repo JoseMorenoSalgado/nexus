@@ -17,13 +17,13 @@
   "dependencies": {
     "@prisma/client": "^6.3.0",
     "lucide-react": "^0.468.0",
-    "next": "^15.3.0",
+    "next": "^15.5.28",
     "pdf-lib": "^1.17.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "recharts": "^2.15.0",
     "server-only": "^0.0.1",
-    "sharp": "^0.34.4",
+    "sharp": "^0.35.5",
     "embla-carousel-react": "^8.6.0",
     "yet-another-react-lightbox": "^3.32.2",
     "prisma": "^6.3.0"
