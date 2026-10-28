@@ -12,7 +12,8 @@
     "installation:restore": "node scripts/restore-installation.mjs",
     "test:recovery": "node --test scripts/restore-installation.test.mjs",
     "db:seed": "tsx prisma/seed.ts",
-    "predev": "npm run db:generate"
+    "predev": "npm run db:generate",
+    "check:plesk": "node scripts/check-plesk-ready.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.3.0",
