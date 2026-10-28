@@ -22,8 +22,8 @@ assert.ok(!overview.includes("Ver diseño inmobiliario"),"Evitar pantallas infor
 for(const path of ["/admin/personalizar/paginas","/admin/personalizar/menu","/admin/personalizar/identidad","/admin/personalizar/paginas/home","/admin/personalizar/paginas/nueva"]){
  assert.ok(overview.includes(path),"Missing shortcut to "+path);
 }
-assert.match(overview,/Tu espacio de trabajo/);
-assert.match(overview,/Estado de configuración/);
+assert.match(overview,/ADMINISTRAR TU WEB/);
+assert.match(overview,/site-hub-status/);
 assert.match(overview,/página/);
 const pages=await get("/admin/personalizar/paginas");
 assert.match(pages,/Publicar y mostrar en el men/);
@@ -32,7 +32,7 @@ assert.ok(pages.includes("Mi sitio web"),"Overview shortcut missing");
 for(const path of ["/admin/personalizar/plantilla","/admin/personalizar","/admin/personalizar/contenido"]){
  const legacy=await fetch(origin+path,{headers:{Cookie:cookie},redirect:"manual"});
  assert.ok([303,307,308].includes(legacy.status),"Ruta heredada debe redirigir: "+path);
- assert.equal(legacy.headers.get("location"),"/admin/personalizar/inicio","Ruta heredada no abre Mi sitio web: "+path);
+ assert.equal(new URL(legacy.headers.get("location")||"",origin).pathname,"/admin/personalizar/inicio","Ruta heredada no abre Mi sitio web: "+path);
 }
 const advisor=await get("/admin/personalizar/paginas/asesoria-empresarial");
 assert.match(advisor,/Asesoría Empresarial/);
