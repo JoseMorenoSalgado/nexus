@@ -14,6 +14,11 @@ assert.match(focused,/overflow-y:auto!important/);
 assert.match(focused,/color:white!important/);
 assert.match(nav,/aria-current=\{active\?"page":undefined\}/);
 assert.match(nav,/aria-label="Cerrar menú"/);
+assert.match(nav,/className="admin-mobile-site-shortcuts"/,"Los enlaces de personalización deben quedar fijos en el menú móvil.");
+for(const href of ["/admin/personalizar/inicio","/admin/personalizar/identidad","/admin/personalizar/paginas"]){
+ assert.ok(nav.includes('href="'+href+'"'),"Falta acceso rápido móvil a "+href);
+}
+assert.match(focused,/\.admin-shell \.admin-mobile-site-shortcuts/,"Faltan estilos de atajos móviles.");
 assert.match(nav,/document\.body\.style\.overflow="hidden"/);
 assert.match(nav,/event\.key==="Escape"/);
 const layout=readFileSync("src/app/admin/(panel)/layout.tsx","utf8");
