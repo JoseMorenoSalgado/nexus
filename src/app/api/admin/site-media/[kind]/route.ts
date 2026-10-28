@@ -5,10 +5,19 @@ import {NextRequest,NextResponse} from "next/server";
 import sharp from "sharp";
 import {requireAdmin} from "@/lib/auth";
 import {validMutationOrigin} from "@/lib/admin-property-request";
-import {isSiteAssetKind,SITE_ASSET_MAX_BYTES,siteAssetPath} from "@/lib/site-assets";
+import {isSiteAssetKind,SITE_ASSET_MAX_BYTES,siteAssetPath,readSiteAsset} from "@/lib/site-assets";
 
 export const runtime="nodejs";
 function error(message:string,status:number){return NextResponse.json({error:message},{status,headers:{"Cache-Control":"no-store"}});}
+export async function GET(_req:NextRequest,{params}:{params:Promise<{kind:string}>}){
+ const admin=await requireAdmin();
+ if(!admin.roles.some(r=>r==="admin"||r==="editor"))return error("Sin permisos.",403);
+ const {kind}=await params;
+ if(!isSiteAssetKind(kind))return error("Imagen inválida.",404);
+ const bytes=await readSiteAsset(admin.tenantId,kind);
+ if(!bytes)return new NextResponse(null,{status:404,headers:{"Cache-Control":"no-store"}});
+ return new NextResponse(new Uint8Array(bytes),{headers:{"Content-Type":"image/webp","Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff"}});
+}
 export async function POST(req:NextRequest,{params}:{params:Promise<{kind:string}>}){
  const admin=await requireAdmin();
  if(!admin.roles.some(r=>["admin","editor"].includes(r)))return error("No autorizado.",403);
@@ -31,7 +40,7 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{kind:string
   // Keep a detailed master: hero up to 2560px; logos stay sharp with lossless WebP.
   // Sharp strips EXIF/metadata after auto-rotation to avoid personal data exposure.
   const pixels=pipeline.rotate().resize({
-   width:kind==="hero"?2560:960,height:kind==="hero"?1600:960,
+   width:kind==="logo"?960:2560,height:kind==="logo"?960:1600,
    fit:"inside",withoutEnlargement:true,kernel:"lanczos3"
   });
   output=await pixels.webp(kind==="logo"

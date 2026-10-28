@@ -259,3 +259,12 @@
 @media(max-width:600px){.public-site .nexus-catalog-filter-card{padding:17px;margin-bottom:38px}.public-site .nexus-catalog-filter-card .nexus-search-form{grid-template-columns:1fr}.public-site .nexus-catalog-results{align-items:start;flex-direction:column;gap:10px}}
 
 
+
+
+/* Optional page-specific media: existing gradients and layout remain the fallback. */
+.public-site .nexus-inner-hero .nexus-inner-page-photo{
+ position:absolute;inset:0;width:100%;height:100%;z-index:0;
+ object-fit:cover;object-position:center;opacity:.38;pointer-events:none;
+}
+.public-site .nexus-inner-hero::before{z-index:1}
+.public-site .nexus-inner-hero .container{z-index:2}

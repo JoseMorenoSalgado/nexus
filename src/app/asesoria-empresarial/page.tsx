@@ -6,6 +6,7 @@ import {getPublicContext} from "@/lib/tenant";
 import {getPageDefinitions} from "@/lib/site-pages";
 import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {PublicFrame} from "@/components/public-frame";
+import {PageHeroMedia} from "@/components/page-hero-media";
 import {PageExtraSections} from "@/components/page-extra-sections";
 import {ContactForm} from "@/components/contact-form";
 import {NexusInnerMotion} from "@/components/nexus-inner-motion";
@@ -41,6 +42,7 @@ export default async function BusinessAdvisory(){
   <main id="contenido" data-nexus-inner-motion="asesoria">
    <NexusInnerMotion/>
    <section className="nexus-inner-hero nexus-advisory-hero">
+    <PageHeroMedia tenantId={tenant.id} slug="asesoria-empresarial"/>
     <div className="container nexus-advisory-hero-grid">
      <div>
       <span className="nexus-section-kicker nexus-kicker-light">AUDITORÍA · PREVENCIÓN · FORMACIÓN</span>

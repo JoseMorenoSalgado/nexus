@@ -4,6 +4,7 @@ import {getPublicContext} from "@/lib/tenant";
 import {assertPagePublished} from "@/lib/site-pages";
 import {getPageDefinitions} from "@/lib/site-pages";
 import {PublicFrame} from "@/components/public-frame";
+import {PageHeroMedia} from "@/components/page-hero-media";
 import {NexusInnerMotion} from "@/components/nexus-inner-motion";
 import {PageExtraSections} from "@/components/page-extra-sections";
 export const dynamic="force-dynamic";
@@ -16,7 +17,7 @@ export default async function Services(){
  const advisoryPublished=!demo&&(await getPageDefinitions(tenant.id)).some(p=>p.id==="asesoria-empresarial"&&p.published);
  return <PublicFrame tenant={tenant} demo={demo}>
   <main id="contenido" data-nexus-inner-motion="servicios"><NexusInnerMotion/>
-   <section className="nexus-inner-hero nexus-services-hero"><div className="container">
+   <section className="nexus-inner-hero nexus-services-hero"><PageHeroMedia tenantId={tenant.id} slug="servicios"/><div className="container">
     <span className="nexus-section-kicker nexus-kicker-light">NUESTROS SERVICIOS</span>
     <div className="nexus-inner-hero-row"><div><h1>{settings.servicesHeading}</h1><p>{settings.servicesDescription}</p></div>
      <div className="nexus-inner-label">02 / LO QUE HACEMOS</div></div>

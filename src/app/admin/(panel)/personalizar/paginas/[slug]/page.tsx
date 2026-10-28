@@ -10,6 +10,7 @@ import {SiteTextInput} from "@/components/site-text-input";
 import {getPageDefinitions} from "@/lib/site-pages";
 import {PageExtrasEditor} from "@/components/page-extras-editor";
 import {PagePublicationAction} from "@/components/page-publication-action";
+import {PageImageEditor} from "@/components/page-image-editor";
 import {readExtraSections} from "@/lib/page-extras";
 export const dynamic="force-dynamic";
 type Field={name:string;label:string;max:number;multiline?:boolean;hint?:string};
@@ -72,6 +73,7 @@ export default async function EditSitePage({params,searchParams}:{params:Promise
      <span>{published?"Tu contenido ya es público. Puedes retirarlo cuando lo necesites.":"Puedes editar todo antes de publicarlo. Cuando publiques, añade el enlace en Menú principal."} <Link href="/admin/personalizar/menu">Organizar menú</Link>.</span>
     </div>
     <div className="cms-advisory-editor-publication"><PagePublicationAction slug="asesoria-empresarial" title="Asesoría Empresarial" published={published}/></div>
+    <PageImageEditor tenantId={admin.tenantId} slug="asesoria-empresarial"/>
     {q.blocksSaved&&<p role="status" className="property-success">Contenido adicional guardado correctamente.</p>}
     {q.error&&<p role="alert" className="admin-error">{q.error==="imagenes"?"La imagen ya no está disponible. Vuelve a cargarla.":q.error==="secciones"?"Revisa los textos e imágenes.":"No fue posible guardar los contenidos."}</p>}
     <section className="cms-builtins-extras-intro"><h2>Material informativo e imágenes</h2>
@@ -98,6 +100,7 @@ export default async function EditSitePage({params,searchParams}:{params:Promise
    </div>
    {q.saved&&<p role="status" className="property-success">Cambios de {section.title} guardados correctamente. No se modificaron las demás páginas.</p>}
    {q.error&&<p role="alert" className="admin-error">No se pudieron guardar los cambios. Verifica los datos y tus permisos.</p>}
+   <PageImageEditor tenantId={admin.tenantId} slug={slug} includeAbout={slug==="nosotros"}/>
    {canEdit?<form className="admin-panel site-page-editor site-section-independent" action="/api/admin/site-section" method="post">
     <input type="hidden" name="section" value={slug}/>
     <div className="cms-editor-section-heading"><div><h2>Contenido de {section.title.toLowerCase()}</h2><p>Los cambios se aplican exclusivamente a esta sección cuando pulses Guardar.</p></div></div>

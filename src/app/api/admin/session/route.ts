@@ -9,7 +9,7 @@ export const runtime="nodejs";
 export const dynamic="force-dynamic";
 
 const cookieName="webappecloud_session";
-const sessionSeconds=7*24*60*60;
+const sessionSeconds=24*60*60;
 
 function go(_req:NextRequest,path:string){
  // Relative redirects preserve the public host and HTTPS behind Dokploy's reverse proxy.
@@ -48,7 +48,7 @@ export async function POST(req:NextRequest){
   const key=createHash("sha256").update(domain.tenantId+":"+email).digest("hex");
   const now=new Date();
   const previous=await prisma.adminLoginThrottle.findUnique({where:{key}});
-  if(previous&&previous.expiresAt>now&&previous.attempts>=8)return fail(req,"bloqueado");
+  if(previous&&previous.expiresAt>now&&previous.attempts>=5)return fail(req,"bloqueado");
 
   const user=await prisma.adminUser.findUnique({
    where:{tenantId_email:{tenantId:domain.tenantId,email}},
