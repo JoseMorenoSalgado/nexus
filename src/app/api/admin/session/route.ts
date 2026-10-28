@@ -4,6 +4,7 @@ import {currentAdmin,verifyPassword} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {hasDatabaseConfig} from "@/lib/server-config";
 import {normalizeSiteHost} from "@/lib/preview";
+import {verifyLoginCaptcha} from "@/lib/recaptcha";
 
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
@@ -32,11 +33,12 @@ export async function POST(req:NextRequest){
  if(!hasDatabaseConfig())return go(req,"/instalar");
  if(!sameOrigin(req))return fail(req,"origen");
  if(Number(req.headers.get("content-length")||0)>8000)return fail(req,"solicitud");
- let email:string,password:string;
+ let email:string,password:string,captchaToken:string;
  try{
   const form=await req.formData();
   email=String(form.get("email")||"").trim().toLowerCase();
   password=String(form.get("password")||"");
+  captchaToken=String(form.get("g-recaptcha-response")||"");
  }catch{return fail(req,"solicitud");}
  if(email.length<3||email.length>180||password.length<8||password.length>256)return fail(req,"credenciales");
 
@@ -49,6 +51,7 @@ export async function POST(req:NextRequest){
   const now=new Date();
   const previous=await prisma.adminLoginThrottle.findUnique({where:{key}});
   if(previous&&previous.expiresAt>now&&previous.attempts>=5)return fail(req,"bloqueado");
+  if(!await verifyLoginCaptcha(captchaToken,hostname))return fail(req,"captcha");
 
   const user=await prisma.adminUser.findUnique({
    where:{tenantId_email:{tenantId:domain.tenantId,email}},

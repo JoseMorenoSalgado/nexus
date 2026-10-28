@@ -205,6 +205,7 @@ model AgendaEvent {
   startsAt DateTime
   durationMinutes Int @default(60)
   location String?
+  meetingUrl String? @db.VarChar(500)
   notes String? @db.Text
   status String @default("pendiente")
   createdByName String

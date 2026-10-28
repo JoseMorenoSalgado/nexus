@@ -7,8 +7,11 @@ function isMissingTable(error:unknown){
  return !!(error&&typeof error==="object"&&"code" in error&&error.code==="P2021");
 }
 export async function agendaTableReady(){
- try{await prisma.agendaEvent.count();return true;}
- catch(error){if(isMissingTable(error))return false;throw error;}
+ try{await prisma.agendaEvent.findFirst({select:{meetingUrl:true}});return true;}
+ catch(error){
+  if(isMissingTable(error)||!!(error&&typeof error==="object"&&"code" in error&&error.code==="P2022"))return false;
+  throw error;
+ }
 }
 /** Call only from an admin-authorized, same-origin POST, not a page render. */
 export async function activateAgendaTable(){
@@ -44,6 +47,7 @@ export async function activateAgendaTable(){
     "startsAt" TIMESTAMP(3) NOT NULL,
     "durationMinutes" INTEGER NOT NULL DEFAULT 60,
     "location" TEXT,
+    "meetingUrl" VARCHAR(500),
     "notes" TEXT,
     "status" TEXT NOT NULL DEFAULT 'pendiente',
     "createdByName" TEXT NOT NULL,
@@ -56,6 +60,19 @@ export async function activateAgendaTable(){
   `CREATE INDEX IF NOT EXISTS "AgendaEvent_tenantId_startsAt_idx" ON "AgendaEvent"("tenantId","startsAt")`,
   `CREATE INDEX IF NOT EXISTS "AgendaEvent_tenantId_leadId_startsAt_idx" ON "AgendaEvent"("tenantId","leadId","startsAt")`
  ];
- for(const sql of engineFromUrl(url)==="postgresql"?postgres:[mysql])await prisma.$executeRawUnsafe(sql);
+ const engine=engineFromUrl(url);
+ for(const sql of engine==="postgresql"?postgres:[mysql])await prisma.$executeRawUnsafe(sql);
+ if(!await agendaTableReady()){
+  // Existing installations created the agenda before meetingUrl existed.
+  // Only the explicit admin-authorized Activate operation performs this alteration.
+  try{
+   await prisma.$executeRawUnsafe(engine==="postgresql"
+    ?'ALTER TABLE "AgendaEvent" ADD COLUMN IF NOT EXISTS "meetingUrl" VARCHAR(500)'
+    :'ALTER TABLE `AgendaEvent` ADD COLUMN `meetingUrl` VARCHAR(500) NULL');
+  }catch(error){
+   // Concurrent admin clicks may race; recheck before treating as failure.
+   if(!await agendaTableReady())throw error;
+  }
+ }
  if(!await agendaTableReady())throw new Error("No se pudo activar la agenda.");
 }

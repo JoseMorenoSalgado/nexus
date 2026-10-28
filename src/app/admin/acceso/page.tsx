@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Script from "next/script";
+import {recaptchaRequired,recaptchaSiteKey} from "@/lib/recaptcha";
 import {redirect} from "next/navigation";
 import {hasDatabaseConfig} from "@/lib/server-config";
 import type {Metadata} from "next";
@@ -15,20 +17,25 @@ const errors:Record<string,string>={
  dominio:"Este dominio no está vinculado a la organización. Comprueba el dominio configurado en Plesk.",
  origen:"No se pudo validar el origen del formulario. Abre el panel desde su dirección HTTPS oficial.",
  servidor:"No fue posible completar el acceso por un error del servidor. Revisa los registros de Node.js en Plesk.",
- solicitud:"El formulario no pudo procesarse. Actualiza la página e inténtalo de nuevo."
+ solicitud:"El formulario no pudo procesarse. Actualiza la página e inténtalo de nuevo.",
+ captcha:"No se pudo verificar reCAPTCHA. Completa el desafío y vuelve a intentar.",
+ captcha_config:"El captcha no está configurado. Solicita asistencia al administrador del servidor."
 };
 export default async function Access({searchParams}:{searchParams:Promise<{error?:string}>}){
  if(!hasDatabaseConfig())redirect("/instalar");
  if(await currentAdmin())redirect("/admin");
  const q=await searchParams;
  const notice=q.error?errors[q.error]||errors.servidor:null;
+ const captcha=recaptchaRequired(),siteKey=recaptchaSiteKey();
  return <main className="login-page"><form method="post" action="/api/admin/session" className="login-card">
   <div className="brand"><span className="brand-icon"><img src="/brand/nexus-icon.webp" alt=""/></span><span><strong>NEXUS</strong><small>REAL ESTATE</small></span></div>
   <h1>Acceso administrativo</h1><p>Ingresa tus credenciales para gestionar tu sitio web.</p>
   {notice&&<div className="admin-error" role="alert">{notice}</div>}
   <label>Correo electrónico<input name="email" type="email" autoComplete="username" maxLength={180} required/></label>
   <label>Contraseña<input name="password" type="password" autoComplete="current-password" required/></label>
-  <button className="btn btn-red" type="submit">Entrar al panel →</button>
+  {captcha&&siteKey&&<><div className="g-recaptcha" data-sitekey={siteKey} aria-label="Verificación de seguridad reCAPTCHA"/><Script src="https://www.google.com/recaptcha/api.js" strategy="afterInteractive"/></>}
+  {captcha&&!siteKey&&<p role="alert" className="admin-error">Verificación pendiente de configurar por el administrador.</p>}
+  <button className="btn btn-red" type="submit" disabled={captcha&&!siteKey}>Entrar al panel →</button>
   <Link href="/" className="inline-link">← Regresar al sitio web</Link>
  </form></main>;
 }
