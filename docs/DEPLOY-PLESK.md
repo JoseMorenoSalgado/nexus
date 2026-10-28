@@ -95,6 +95,22 @@ Al finalizar, el asistente crea tablas y registra institución/dominio/admin. El
 
 Cambia inmediatamente `INSTALLER_AUTO_SETUP=false` y reinicia desde Plesk. La conexión privada se conserva en `APP_CONFIG_DIR/installation.json`; respalda este directorio junto con la BD.
 
+## 6.1 Comprobación de arranque y privacidad sin cambiar SQL
+
+Una vez compilada la aplicación, en SSH, en la raíz del proyecto:
+
+```sh
+node scripts/check-plesk-ready.mjs
+```
+
+Esta comprobación de solo lectura detecta si faltan `.next/BUILD_ID`, Node.js, el archivo `app.js`, los clientes Prisma, el CLI de instalación y si `APP_CONFIG_DIR` apunta accidentalmente a `public`. No imprime contraseñas, no conecta ni crea tablas.
+
+También existen pruebas automatizadas en GitHub que ejecutan `app.js` como servidor Next.js real, comprueban SSR, `/_next/static/*.js`, CSS y la ruta `/api/health`. Superarlas **no reemplaza** verificar la configuración real de Plesk ni una base de datos independiente.
+
+## Seguridad de dependencias
+
+El despliegue original reportó vulnerabilidades en npm y no dispone todavía de un `package-lock.json` controlado. El CI revisa dependencias de ejecución y muestra vulnerabilidades sin modificarlas automáticamente. No aplicar `npm audit fix --force` en producción sin probar el impacto; antes de producción final deben revisarse y corregirse las alertas y conservar un lockfile reproducible.
+
 ## 7. Comprobar funcionamiento
 
 - `https://nexusrealestatenicaragua.com/api/live`: la aplicación Next.js responde.
