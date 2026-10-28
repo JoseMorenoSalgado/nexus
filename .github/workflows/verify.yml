@@ -166,6 +166,14 @@ jobs:
           docker pull mcr.microsoft.com/playwright:v1.56.1-noble
       - name: Publicar asesoría únicamente en entorno temporal de capturas
         run: node scripts/stage-advisory-visual.mjs publish
+      - name: Verificar hidratación Safari WebKit y detectar errores JS móviles
+        run: |
+          docker run --rm --init --network host \
+            -e TEST_ORIGIN=http://localhost:3000 \
+            -v "$PWD:/workspace:ro" \
+            -w /workspace \
+            mcr.microsoft.com/playwright:v1.56.1-noble \
+            node scripts/check-nexus-webkit-hydration.mjs
       - name: Capturar y revisar desbordamientos públicos a 375, 768, 1024 y 1440 px
         run: |
           mkdir -p /tmp/nexus-visual-qa
