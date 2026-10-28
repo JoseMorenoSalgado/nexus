@@ -46,12 +46,12 @@ export async function POST(req:NextRequest){
   const hostname=normalizeSiteHost(req.headers.get("host")||"");
   const domain=await prisma.domain.findUnique({where:{hostname},select:{tenantId:true}});
   if(!domain)return fail(req,"dominio");
-  if(!await verifyLoginCaptcha(captchaToken,hostname))return fail(req,"captcha");
 
   const key=createHash("sha256").update(domain.tenantId+":"+email).digest("hex");
   const now=new Date();
   const previous=await prisma.adminLoginThrottle.findUnique({where:{key}});
   if(previous&&previous.expiresAt>now&&previous.attempts>=5)return fail(req,"bloqueado");
+  if(!await verifyLoginCaptcha(captchaToken,hostname))return fail(req,"captcha");
 
   const user=await prisma.adminUser.findUnique({
    where:{tenantId_email:{tenantId:domain.tenantId,email}},
