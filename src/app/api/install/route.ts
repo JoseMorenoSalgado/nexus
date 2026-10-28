@@ -11,6 +11,7 @@ import {installerAvailable,takeInstallLock,saveInstallation,configDir} from "@/l
 import {automaticInstallerEnabled,validInstallerSession,clearInstallerSession,INSTALLER_SESSION_COOKIE} from "@/lib/installer-session";
 import {normalizeSiteHost} from "@/lib/preview";
 import {mkdirSync,accessSync,constants} from "node:fs";
+import {readJsonObjectLimited,RequestPayloadError} from "@/lib/limited-json";
 
 export const runtime="nodejs";
 const execute=promisify(execFile);
@@ -59,9 +60,10 @@ export async function POST(req:NextRequest){
  if(!origin||!host)return response("Origen de instalación no válido.",403);
  try{if(new URL(origin).host.toLowerCase()!==host.toLowerCase())return response("Origen no autorizado.",403);}catch{return response("Origen no válido.",403);}
  if(Number(req.headers.get("content-length")||"0")>15000)return response("Solicitud demasiado grande.",413);
- let input:Form;
- try{input=await req.json() as Form;}catch{return response("Solicitud inválida.");}
  if(!automaticInstallerEnabled()||!validInstallerSession(req.cookies.get(INSTALLER_SESSION_COOKIE)?.value))return response("La sesión de instalación no está autorizada o ha expirado. Vuelve a abrir /instalar.",403);
+ let input:Form;
+ try{input=await readJsonObjectLimited(req,15000) as unknown as Form;}
+ catch(error){return response(error instanceof RequestPayloadError?error.message:"Solicitud inválida.",error instanceof RequestPayloadError?error.status:400);}
  let data:ReturnType<typeof validate>;
  try{data=validate(input);}catch(e){return response(e instanceof Error?e.message:"Datos incompletos.");}
  const domain=normalizeSiteHost(host);
