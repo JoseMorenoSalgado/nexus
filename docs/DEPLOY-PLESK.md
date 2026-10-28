@@ -15,7 +15,7 @@ En Plesk > Sitios web y dominios > NEXUS > Administrador de archivos, comprueba 
 - `package.json`, `next.config.mjs`, `src/`, `public/`, `prisma/`, `scripts/`.
 - `app.js` (arranque convencional de Plesk) y `plesk-server.cjs` (servidor Passenger de Next.js). Si Plesk 18.0.81+ genera un adaptador correcto, puedes usar el autogenerado.
 
-Configura **Application Root** como la carpeta que contiene `package.json`, por ejemplo `httpdocs` solo si Git ha desplegado ahí el proyecto completo. La **Document Root** debe ser la subcarpeta pública de la aplicación, por ejemplo `httpdocs/public` si el panel permite esta estructura. El directorio que contiene `package.json`, `src`, `prisma` y `.runtime` **no** debe ser directamente accesible como archivos estáticos desde Internet. Si Plesk 18.0.81+ ofrece otra ruta segura autoconfigurada para Next.js, utiliza y verifica esa configuración. No ajustes el document root sin revisar la configuración del dominio.
+Configura **Application Root** como la carpeta que contiene `package.json`, por ejemplo `httpdocs` solo si Git ha desplegado ahí el proyecto completo. En Plesk con Node.js Toolkit reciente y Next.js detectado como **server-side**, el panel puede autoconfigurar la aplicación sin pedir Document Root. **En el modo manual clásico**, Document Root debe estar dentro de Application Root (por ejemplo `httpdocs/public`); no debe exponer la raíz del código. El directorio que contiene `package.json`, `src`, `prisma` y `.runtime` **no** debe ser directamente accesible como archivos estáticos desde Internet. Si Plesk 18.0.81+ ofrece otra ruta segura autoconfigurada para Next.js, utiliza y verifica esa configuración. No ajustes el document root sin revisar la configuración del dominio.
 
 La carpeta privada `.runtime` debe ser escribible por el usuario del sitio y **estar fuera del document root público**.
 
@@ -140,7 +140,7 @@ Los logs de Passenger en Plesk Linux (Node.js Toolkit moderno) se encuentran nor
 4. Verificar web pública, /api/live, /api/health y administrador.
 5. Nunca sobrescribir/borrar `APP_CONFIG_DIR` ni la BD en despliegues Git; respaldar siempre medios, documentos y SQL.
 6. Verificar que `/api/live` devuelve `service: nexus` y `release: 2026-10-27-plesk-r1` tras desplegar esta versión. Si no coincide, se está sirviendo un proceso antiguo.
-7. En Plesk el `Document Root` debe ser un subdirectorio del `Application Root` en Linux (por ejemplo `httpdocs/public`). Nunca publiques `node_modules`, `src`, `prisma` ni credenciales como recursos estáticos.
+7. Si el panel solicita **Document Root** en modo clásico Linux, debe ser un subdirectorio de Application Root (por ejemplo `httpdocs/public`). En Plesk 18.0.81+ y modo Next.js server-side autoconfigurado puede no solicitar Document Root. Nunca publiques `node_modules`, `src`, `prisma` ni credenciales como recursos estáticos.
 
 ### Documentación oficial
 
