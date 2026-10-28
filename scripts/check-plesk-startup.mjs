@@ -35,7 +35,7 @@ try{
   await sleep(300);
  }
  assert.ok(ready,"Passenger app.js could not start: "+logs.slice(-1300));
- const htmlResponse=await fetch(origin+"/",{signal:AbortSignal.timeout(10000)});
+ const htmlResponse=await fetch(origin+"/",{headers:{Host:"localhost:"+port},signal:AbortSignal.timeout(10000)});
  assert.equal(htmlResponse.status,200,"SSR homepage status");
  const html=await htmlResponse.text();
  assert.match(html,/NEXUS/i,"Missing rendered Nexus page");
