@@ -13,7 +13,7 @@ assert.ok(cookie,"Missing test admin cookie");
 const auth={Cookie:cookie,Origin:origin};
 const hub=await fetch(origin+"/admin/personalizar",{headers:{Cookie:cookie}});
 assert.equal(hub.status,200);
-assert.match(await hub.text(),/Menú principal/);
+assert.match(await hub.text(),/Menú del sitio/);
 const pages=await fetch(origin+"/admin/personalizar/paginas",{headers:{Cookie:cookie}});
 assert.equal(pages.status,200);
 assert.match(await pages.text(),/Nueva página/);
