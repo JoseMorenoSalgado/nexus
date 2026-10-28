@@ -276,3 +276,37 @@
  }
  .admin-shell .admin-mobile-account form button{min-height:44px}
 }
+
+/* Accesos de edición visibles incluso cuando la lista larga del menú está desplazada. */
+@media(max-width:720px){
+ .admin-shell .admin-mobile-site-shortcuts{
+  display:grid;
+  gap:5px;
+  flex:0 0 auto;
+  padding:8px 2px 12px;
+  border-bottom:1px solid #e5ebf1;
+  background:#fff;
+ }
+ .admin-shell .admin-mobile-site-shortcuts a{
+  display:flex;
+  align-items:center;
+  gap:11px;
+  min-height:44px;
+  padding:10px 12px;
+  border-radius:9px;
+  background:#f5f7fa;
+  color:#263a50;
+  text-decoration:none;
+  font-size:14px;
+  font-weight:750;
+ }
+ .admin-shell .admin-mobile-site-shortcuts a:hover,
+ .admin-shell .admin-mobile-site-shortcuts a:focus-visible{
+  background:#fff1f3;
+  color:#a91b2b;
+ }
+ .admin-shell .admin-mobile-site-shortcuts a:focus-visible{
+  outline:3px solid #1d65a5;
+  outline-offset:1px;
+ }
+}
