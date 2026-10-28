@@ -3,7 +3,17 @@ import {useEffect} from "react";
 import {usePathname} from "next/navigation";
 import {MessageCircle} from "lucide-react";
 import {type PublicTenant,type PublicProperty,contactUrl} from "@/lib/demo";
-function log(kind:"view"|"whatsapp"){const body=JSON.stringify({kind,path:location.pathname});if(navigator.sendBeacon)navigator.sendBeacon("/api/events",new Blob([body],{type:"application/json"}));}
+function log(kind:"view"|"whatsapp"){
+ // Analytics are optional. Private/in-app Safari browsers may reject a beacon;
+ // it must never throw during React's mount effects or disable the public page.
+ try{
+  if(typeof navigator==="undefined"||typeof navigator.sendBeacon!=="function")return;
+  const body=JSON.stringify({kind,path:location.pathname});
+  navigator.sendBeacon("/api/events",new Blob([body],{type:"application/json"}));
+ }catch{
+  // An unavailable telemetry API must not interrupt navigation or contact forms.
+ }
+}
 export function PageView(){useEffect(()=>{log("view");},[]);return null;}
 export function WhatsAppButton({tenant,property}:{tenant:PublicTenant;property?:PublicProperty}){
  const href=contactUrl(tenant,property),enabled=Boolean(tenant.whatsapp);

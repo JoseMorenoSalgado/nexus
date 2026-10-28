@@ -8,6 +8,7 @@ import {useEffect} from "react";
  */
 export function NexusInnerMotion(){
  useEffect(()=>{
+  try {
   const root=document.querySelector<HTMLElement>("[data-nexus-inner-motion]");
   if(!root||!window.matchMedia||!("IntersectionObserver" in window)||!Element.prototype.animate)return;
   const reduced=window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -41,12 +42,18 @@ export function NexusInnerMotion(){
     observer.unobserve(entry.target);
     const element=entry.target as HTMLElement;
     const sequence=targets.indexOf(element);
-    const animation=element.animate(
-     [{opacity:.86,transform:"translate3d(0, 10px, 0)"},{opacity:1,transform:"translate3d(0, 0, 0)"}],
-     {duration:350,delay:(sequence%3)*45,easing:"cubic-bezier(.2,.7,.2,1)",fill:"none"}
-    );
-    running.add(animation);
-    void animation.finished.catch(()=>{}).then(()=>running.delete(animation));
+    try {
+     const animation=element.animate(
+      [{opacity:.86,transform:"translate3d(0, 10px, 0)"},{opacity:1,transform:"translate3d(0, 0, 0)"}],
+      {duration:350,delay:(sequence%3)*45,easing:"cubic-bezier(.2,.7,.2,1)",fill:"none"}
+     );
+     running.add(animation);
+     if(animation.finished && typeof animation.finished.catch==="function"){
+      void animation.finished.catch(()=>{}).then(()=>running.delete(animation));
+     }
+    } catch {
+     // Optional browser effect; never hide or replace the server DOM.
+    }
    }
   },{threshold:.10,rootMargin:"0px 0px -6% 0px"});
 
@@ -64,6 +71,12 @@ export function NexusInnerMotion(){
    running.forEach(animation=>animation.cancel());
    running.clear();
   };
+  } catch (error) {
+    // This is optional progressive enhancement: unsupported browser APIs
+    // must never prevent hydration of the actual page content.
+    console.warn("[NEXUS] Optional motion disabled", error instanceof Error ? error.name : "unsupported");
+    return;
+  }
  },[]);
  return null;
 }
