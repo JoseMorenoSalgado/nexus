@@ -8,6 +8,7 @@ import {AgendaCreateForm,AgendaRescheduleForm} from "@/components/agenda-forms";
 import {agendaTableReady} from "@/lib/agenda-schema";
 import {AgendaCalendar,AgendaLocalDate,type AgendaView} from "@/components/agenda-calendar";
 import {parseRoles} from "@/lib/roles";
+import {smtpEnabled} from "@/lib/smtp-notifications";
 export const dynamic="force-dynamic";
 
 const errors:Record<string,string>={
@@ -20,11 +21,12 @@ const errors:Record<string,string>={
  activacion:"No se pudo preparar la agenda. Comprueba los permisos de la base de datos."
 };
 const pad=(n:number)=>String(n).padStart(2,"0");
-type Search={mes?:string;vista?:string;fecha?:string;agente?:string;estado?:string;tipo?:string;lead?:string;created?:string;updated?:string;activated?:string;error?:string};
+type Search={mes?:string;vista?:string;fecha?:string;agente?:string;estado?:string;tipo?:string;lead?:string;created?:string;updated?:string;activated?:string;error?:string;mail?:string};
 export default async function CommercialAgenda({searchParams}:{searchParams:Promise<Search>}){
  const user=await requireRole(["admin","editor","agente"]);
  const q=await searchParams;
  if(!await agendaTableReady())return <section className="agenda-dashboard"><div className="admin-heading"><div><h1>Agenda comercial</h1><p>Programa llamadas, visitas y reuniones relacionadas con tus prospectos.</p></div></div><div className="admin-panel"><h2>Activar agenda comercial</h2><p>La agenda necesita una tabla nueva e independiente. Se conservarán los prospectos y las propiedades existentes.</p>{q.error&&<p role="alert" className="admin-error">{errors[q.error]||errors.activacion}</p>}{user.roles.includes("admin")?<form action="/api/admin/agenda/activate" method="post"><button type="submit" className="btn btn-red">Activar agenda</button></form>:<p className="property-help">Un administrador de esta empresa debe activar la agenda antes de usarla.</p>}</div></section>;
+ const emailReady=smtpEnabled();
  const now=new Date();
  const current=now.toISOString().slice(0,7);
  const month=/^\d{4}-(0[1-9]|1[0-2])$/.test(q.mes||"")?q.mes!:current;
@@ -63,6 +65,8 @@ export default async function CommercialAgenda({searchParams}:{searchParams:Prom
 
   </div>
   {(q.created||q.updated||q.activated)&&<p className="property-success" role="status">{q.activated?"Agenda activada correctamente.":q.created?"Actividad programada correctamente.":"Agenda actualizada correctamente."}</p>}
+  {q.mail==="sent"&&<p className="property-success" role="status">Notificación entregada al servidor SMTP para su envío.</p>}
+  {q.mail==="failed"&&<p role="alert" className="admin-error">La actividad quedó guardada, pero el envío SMTP falló. Revisa la configuración de correo en Plesk.</p>}}
   {q.error&&<p className="admin-error" role="alert">{errors[q.error]||errors.servidor}</p>}
   <div className="agenda-metrics">
    <div><AlertTriangle size={19}/><span>Actividades vencidas</span><strong>{overdue}</strong><small>Pendientes con horario ya pasado</small></div>
@@ -71,7 +75,7 @@ export default async function CommercialAgenda({searchParams}:{searchParams:Prom
   </div>
   <details className="admin-panel agenda-create-panel" open={!!selectedLead}>
    <summary><span><CalendarDays size={20}/> Programar nueva actividad</span><span>+</span></summary>
-   {leads.length?<AgendaCreateForm leads={leads.map(l=>({id:l.id,name:l.name,propertyRef:l.property?.refCode||null,agentName:l.assignedAgent?.name||null}))} defaultLeadId={selectedLead}/>:<p className="property-help">Para programar una actividad debes tener al menos un prospecto disponible. <Link href="/admin/leads/nuevo" className="inline-link">Registrar prospecto →</Link></p>}
+   {leads.length?<AgendaCreateForm leads={leads.map(l=>({id:l.id,name:l.name,propertyRef:l.property?.refCode||null,agentName:l.assignedAgent?.name||null}))} defaultLeadId={selectedLead} mailEnabled={emailReady}/>:<p className="property-help">Para programar una actividad debes tener al menos un prospecto disponible. <Link href="/admin/leads/nuevo" className="inline-link">Registrar prospecto →</Link></p>}
   </details>
   {canCompare&&<form className="agenda-agent-filter" method="get" action="/admin/agenda">
    <input type="hidden" name="mes" value={month}/><input type="hidden" name="vista" value={view}/>
@@ -101,6 +105,7 @@ export default async function CommercialAgenda({searchParams}:{searchParams:Prom
      <div className="agenda-event-heading"><strong>{e.title}</strong><span className={"agenda-event-status agenda-event-status-"+e.status}>{agendaStatusLabel(e.status)}</span></div>
      <p>{agendaLabel(e.type)} · <Link className="inline-link" href={"/admin/leads/"+encodeURIComponent(e.leadId)}>{e.lead.name}</Link>{e.lead.assignedAgent?.name?" · "+e.lead.assignedAgent.name:" · Sin agente"}</p>
      {e.location&&<p className="agenda-event-place"><MapPin size={14}/>{e.location}</p>}
+     {e.meetingUrl&&<p className="agenda-event-place"><a href={e.meetingUrl} target="_blank" rel="noopener noreferrer" className="inline-link">Abrir videoconferencia <ArrowUpRight size={14}/></a></p>}
      {e.notes&&<p className="agenda-event-notes">{e.notes}</p>}
     </div>
     <div className="agenda-event-controls">
@@ -108,11 +113,11 @@ export default async function CommercialAgenda({searchParams}:{searchParams:Prom
       <form method="post" action={"/api/admin/agenda/"+encodeURIComponent(e.id)}><input type="hidden" name="intent" value="status"/><input type="hidden" name="mes" value={month}/><input type="hidden" name="status" value="realizada"/><button type="submit" className="btn wizard-back"><CheckCircle2 size={15}/> Realizada</button></form>
       <form method="post" action={"/api/admin/agenda/"+encodeURIComponent(e.id)}><input type="hidden" name="intent" value="status"/><input type="hidden" name="mes" value={month}/><input type="hidden" name="status" value="cancelada"/><button type="submit" className="btn wizard-back">Cancelar actividad</button></form>
      </>:<form method="post" action={"/api/admin/agenda/"+encodeURIComponent(e.id)}><input type="hidden" name="intent" value="status"/><input type="hidden" name="mes" value={month}/><input type="hidden" name="status" value="pendiente"/><button type="submit" className="btn wizard-back">Reabrir</button></form>}
-     <details className="agenda-reprogram"><summary>Reprogramar</summary><AgendaRescheduleForm id={e.id} startsAt={e.startsAt.toISOString()} durationMinutes={e.durationMinutes} month={month}/></details>
+     <details className="agenda-reprogram"><summary>Reprogramar</summary><AgendaRescheduleForm id={e.id} startsAt={e.startsAt.toISOString()} durationMinutes={e.durationMinutes} month={month} meetingUrl={e.meetingUrl} mailEnabled={emailReady} type={e.type}/></details>
     </div>
    </article>)}</div>:<div className="admin-empty"><CalendarDays size={28}/><p>No hay actividades registradas con estos filtros.</p></div>}
    {events.length===300&&<p className="property-help">Se muestran las primeras 300 actividades. Acota los filtros para consultar otras fechas.</p>}
   </section>}
-  <p className="property-help">Las actividades son registros internos. Programarlas no envía automáticamente invitaciones por correo, WhatsApp ni recordatorios externos.</p>
+  <p className="property-help">Las reuniones son registros internos; se puede adjuntar una videollamada HTTPS sin crearla en el proveedor. Los avisos SMTP llegan únicamente al destinatario configurado, cuando se selecciona la opción de correo. No se envían invitaciones automáticas al prospecto ni recordatorios programados.</p>
  </section>;
 }
