@@ -22,3 +22,15 @@ export function agendaLabel(value:string){
 export function agendaStatusLabel(value:string){
  return AGENDA_STATUSES.find(s=>s.value===value)?.label||value;
 }
+
+/** HTTPS-only user-provided meeting link. Never fetched by the server. */
+export function parseMeetingUrl(raw:FormDataEntryValue|null):string|null|false{
+ if(raw===null||raw==="")return null;
+ if(typeof raw!=="string"||raw.length>500)return false;
+ try{
+  const url=new URL(raw.trim());
+  if(url.protocol!=="https:"||!!url.username||!!url.password||!url.hostname||
+     url.href.length>500)return false;
+  return url.href;
+ }catch{return false;}
+}
