@@ -22,8 +22,8 @@ export default async function SystemStatus({searchParams}:{searchParams:Promise<
    <p>Comprueba la compatibilidad entre la instalación actual y las funciones comerciales del dashboard.</p>
   </div></div>
   {q.status==="repaired"&&<p className="property-success" role="status">Se completaron las comprobaciones y actualizaciones del esquema comercial.</p>}
-  {q.status==="failed"&&<p className="admin-error" role="alert">La actualización no pudo finalizar. Consulta los registros de Dockploy y revisa los permisos SQL antes de intentarlo nuevamente. No repitas migraciones manuales a ciegas.</p>}
-  {failed?<div className="admin-panel"><AlertTriangle size={23}/><h2>No fue posible comprobar el esquema</h2><p>Verifica la conexión con MariaDB/PostgreSQL y los registros del contenedor. Ningún cambio fue aplicado.</p></div>:
+  {q.status==="failed"&&<p className="admin-error" role="alert">La actualización no pudo finalizar. Consulta los registros de Plesk/Passenger o del servidor Node.js y revisa los permisos SQL antes de intentarlo nuevamente. No repitas migraciones manuales a ciegas.</p>}
+  {failed?<div className="admin-panel"><AlertTriangle size={23}/><h2>No fue posible comprobar el esquema</h2><p>Verifica la conexión con MariaDB/PostgreSQL y los registros de Node.js en Plesk. Ningún cambio fue aplicado.</p></div>:
   <div className="admin-panel"><div className="heading-row"><h2>Estado del esquema comercial</h2><span>{state?.ready?"Actualizado":"Actualización pendiente"}</span></div>
    <div className="system-schema-list">{labels.map(([field,label])=><div key={field}>
     {state?.[field]?<CheckCircle2 size={19} color="#218456"/>:<AlertTriangle size={19} color="#b33c35"/>}
@@ -39,7 +39,7 @@ export default async function SystemStatus({searchParams}:{searchParams:Promise<
     <button className="btn btn-red" type="submit"><ShieldCheck size={17}/> Completar estructura</button>
    </form>
   </div>}
-  {state?.ready&&<div className="admin-panel"><p>Las estructuras comerciales requeridas están presentes. Esto no garantiza por sí mismo que todas las consultas de la aplicación funcionen; si el error continúa, revisa los registros de Dokploy para identificar la excepción concreta.</p><Link className="btn wizard-back" href="/admin">Regresar al dashboard</Link></div>}
+  {state?.ready&&<div className="admin-panel"><p>Las estructuras comerciales requeridas están presentes. Esto no garantiza por sí mismo que todas las consultas de la aplicación funcionen; si el error continúa, revisa los registros de Plesk/Passenger para identificar la excepción concreta.</p><Link className="btn wizard-back" href="/admin">Regresar al dashboard</Link></div>}
   <p className="property-help">Esta página no muestra contraseñas ni cadenas de conexión. Visible únicamente para los administradores de la empresa.</p>
  </section>;
 }
