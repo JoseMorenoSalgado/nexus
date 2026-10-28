@@ -31,7 +31,7 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{kind:string
   // Keep a detailed master: hero up to 2560px; logos stay sharp with lossless WebP.
   // Sharp strips EXIF/metadata after auto-rotation to avoid personal data exposure.
   const pixels=pipeline.rotate().resize({
-   width:kind==="hero"?2560:960,height:kind==="hero"?1600:960,
+   width:kind==="logo"?960:2560,height:kind==="logo"?960:1600,
    fit:"inside",withoutEnlargement:true,kernel:"lanczos3"
   });
   output=await pixels.webp(kind==="logo"
