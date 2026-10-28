@@ -9,6 +9,7 @@ import {notFound} from "next/navigation";
 import {getCatalogPage,getCatalogLocationSuggestions,CATALOG_PAGE_SIZE,type CatalogSort} from "@/lib/catalog";
 import {assertPagePublished} from "@/lib/site-pages";
 import {PublicFrame} from "@/components/public-frame";
+import {PageHeroMedia} from "@/components/page-hero-media";
 import {NexusInnerMotion} from "@/components/nexus-inner-motion";
 import {PageExtraSections} from "@/components/page-extra-sections";
 import {PropertyCard} from "@/components/property-card";
@@ -49,7 +50,7 @@ export default async function Catalog({searchParams}:{searchParams:Promise<Filte
  const filtersActive=Boolean(f.operacion||f.tipo||f.ubicacion||advancedActive||orden!=="recientes");
  const pageHref=(page:number)=>"/propiedades?"+new URLSearchParams({...Object.fromEntries(Object.entries(f).filter(([,v])=>v!==undefined&&v!=="").map(([k,v])=>[k,String(v)])),pagina:String(page)}).toString();
  return <PublicFrame tenant={tenant} demo={demo}><main id="contenido" data-nexus-inner-motion="catalogo"><NexusInnerMotion/>
-  <section className="nexus-inner-hero nexus-catalog-hero"><div className="container">
+  <section className="nexus-inner-hero nexus-catalog-hero"><PageHeroMedia tenantId={tenant.id} slug="propiedades"/><div className="container">
    <span className="nexus-section-kicker nexus-kicker-light">CATÁLOGO INMOBILIARIO</span>
    <div className="nexus-inner-hero-row"><div>
     <h1>Propiedades para <em>cada nueva etapa.</em></h1>
