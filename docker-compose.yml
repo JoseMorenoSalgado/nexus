@@ -14,6 +14,8 @@ services:
       NEXT_TELEMETRY_DISABLED: "1"
       DATABASE_URL: ${DATABASE_URL:-}
       INSTALLER_TOKEN: ${INSTALLER_TOKEN:-}
+      # Allow the initial browser wizard only during a restricted installation.
+      INSTALLER_AUTO_SETUP: ${INSTALLER_AUTO_SETUP:-false}
       APP_CONFIG_DIR: /app/.runtime
       SITE_PREVIEW_MODE: ${SITE_PREVIEW_MODE:-false}
       SITE_PREVIEW_HOST: ${SITE_PREVIEW_HOST:-inmo.elearningcloud.org}
