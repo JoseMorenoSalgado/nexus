@@ -36,7 +36,7 @@ export function SiteAssetManager({kind,exists,canEdit}:{kind:Kind;exists:boolean
  }
  return <div className="site-image-manager">
   <div className={"site-image-preview "+(kind==="logo"?"site-preview-logo":"site-preview-hero")}>
-   {exists?<img src={"/api/site-media/"+kind} alt={kind==="logo"?"Logo corporativo":kind==="about-photo"?"Imagen de Nosotros":"Banner de la página"}/>:kind==="logo"?<span className="site-empty-logo"><ImageIcon size={22} aria-hidden="true"/> Agrega el logotipo de tu organización</span>:<span>Se conservará la imagen o el diseño predeterminado hasta que subas una fotografía.</span>}
+   {exists?<img src={"/api/admin/site-media/"+kind} alt={kind==="logo"?"Logo corporativo":kind==="about-photo"?"Imagen de Nosotros":"Banner de la página"}/>:kind==="logo"?<span className="site-empty-logo"><ImageIcon size={22} aria-hidden="true"/> Agrega el logotipo de tu organización</span>:<span>Se conservará la imagen o el diseño predeterminado hasta que subas una fotografía.</span>}
   </div>
   <div className="site-image-actions">
    {canEdit&&<label className="property-upload-button"><ImagePlus size={17}/>{busy?"Procesando...":exists?"Reemplazar imagen":"Subir imagen"}
