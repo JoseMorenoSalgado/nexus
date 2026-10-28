@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+async function main(){
 const origin=process.env.TEST_ORIGIN||"http://localhost:3000";
 assert.equal(new URL(origin).hostname,"localhost","Security tests must run only against ephemeral localhost");
 async function send(path:string,body:string,extra:Record<string,string>={}){
@@ -14,3 +15,6 @@ for(const path of ["/api/leads","/api/events"]){
 }
 assert.equal((await send("/api/events",'{"kind":"view","path":"/"}')).status,201,"Same-origin telemetry must remain operational");
 console.log("NEXUS public API security: byte limits, cross-site rejection and valid telemetry verified.");
+
+}
+void main().catch(error=>{console.error(error);process.exitCode=1;});
