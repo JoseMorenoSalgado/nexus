@@ -247,6 +247,7 @@ jobs:
           curl -fsSL -c /tmp/mysql-install-cookies.txt -b /tmp/mysql-install-cookies.txt http://localhost:3002/instalar -o /tmp/nexus-wizard.html
           grep -qi "instalación inicial" /tmp/nexus-wizard.html
           test -s "$INSTALL_TMP/installer-session.json"
+          docker run --rm --init --network host -e TEST_ORIGIN=http://localhost:3002 -e PLAYWRIGHT_COOKIE_FILE=/tmp/nexus-installer-cookies.txt -v "$PWD:/workspace:ro" -v /tmp/mysql-install-cookies.txt:/tmp/nexus-installer-cookies.txt:ro -w /workspace mcr.microsoft.com/playwright:v1.56.1-noble node scripts/check-nexus-webkit-installer.mjs
           # No setup key is copied or displayed in the browser.
           node -e 'const fs=require("node:fs");const data={dbType:"mariadb",dbHost:"127.0.0.1",dbPort:"3306",dbName:"webappecloud_install_ci",dbUser:"ciuser",dbPassword:"ci_password_only",institution:"Nexus Real Estate",institutionEmail:"nexus@example.com",adminName:"Administrador Nexus",adminEmail:"admin-nexus@example.com",adminPassword:"long-safe-password-for-test-1234"};fs.writeFileSync("/tmp/webappecloud-install-request.json",JSON.stringify(data),{mode:0o600});'
           curl -fsS -b /tmp/mysql-install-cookies.txt -H 'Origin: http://localhost:3002' -H 'Content-Type: application/json' -X POST http://localhost:3002/api/install \
