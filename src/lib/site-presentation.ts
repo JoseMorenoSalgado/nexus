@@ -4,9 +4,14 @@ import {type SiteTemplateKey} from "@/lib/site-template-registry";
 /**
  * This is presentation-only separation, not yet a tenant-selectable CMS theme.
  * Existing NEXUS pages keep their approved labels and fallback image.
+ * The first-run installer can save the full legal/trading name.
  */
+export function isNexusBrandName(name:string){
+ const normalized=name.trim().toLocaleLowerCase("es").replace(/[^a-z0-9]/g,"");
+ return normalized==="nexusrealestate"||normalized==="nexusrealestatenicaragua";
+}
 export function sitePresentation(tenant:PublicTenant,templateKey:SiteTemplateKey="real-estate"){
- const nexus=templateKey==="real-estate"&&tenant.name.trim().toLowerCase()==="nexus real estate";
+ const nexus=templateKey==="real-estate"&&isNexusBrandName(tenant.name);
  return nexus?{
   variant:"nexus" as const,
   name:"NEXUS",subtitle:"REAL ESTATE",fallbackLogo:"/brand/nexus-icon.webp",

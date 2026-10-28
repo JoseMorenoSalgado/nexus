@@ -118,6 +118,11 @@ export function AdminNav({role="admin",roles=[role],userId,userName,notification
     <button type="button" className="admin-mobile-overlay" onClick={()=>setMobileOpen(false)} aria-label="Cerrar navegación"/>
     <aside ref={drawer} id="admin-mobile-drawer" className="admin-mobile-drawer" role="dialog" aria-modal="true" aria-label="Navegación del panel">
      <div className="admin-mobile-drawer-head"><strong>Navegación</strong><button type="button" ref={closeButton} onClick={()=>{setMobileOpen(false);menuTrigger.current?.focus();}} aria-label="Cerrar menú"><X size={20}/></button></div>
+     {manager&&<div className="admin-mobile-site-shortcuts" aria-label="Accesos rápidos a la web">
+      <Link href="/admin/personalizar/inicio" onClick={()=>setMobileOpen(false)}><FileText size={18} aria-hidden="true"/> Mi sitio web</Link>
+      <Link href="/admin/personalizar/identidad" onClick={()=>setMobileOpen(false)}><Settings size={18} aria-hidden="true"/> Logotipo y colores</Link>
+      <Link href="/admin/personalizar/paginas" onClick={()=>setMobileOpen(false)}><FileText size={18} aria-hidden="true"/> Editar páginas</Link>
+     </div>}
      <nav className="admin-nav admin-nav-mobile-list" aria-label="Navegación móvil">
       <span className="admin-nav-section-label">Trabajo diario</span>{entries(main,()=>setMobileOpen(false))}
       {tools.length>0&&<><span className="admin-nav-section-label">Más herramientas</span>{entries(tools,()=>setMobileOpen(false))}</>}

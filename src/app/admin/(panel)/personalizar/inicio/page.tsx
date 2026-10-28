@@ -1,11 +1,12 @@
 import Link from "next/link";
-import {ArrowUpRight,CheckCircle2,CircleAlert,FileText,Globe2,ImageIcon,LayoutTemplate,ListTree,Mail,Plus} from "lucide-react";
+import {ArrowUpRight,CheckCircle2,CircleAlert,FileText,Globe2,ImageIcon,LayoutTemplate,ListTree,Mail,Palette,Plus} from "lucide-react";
 import {requireRole} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {getPageDefinitions,getSiteMenu} from "@/lib/site-pages";
 import {getSiteTemplate} from "@/lib/site-template-store";
 import {hasSiteAsset} from "@/lib/site-assets";
 import {SITE_TEMPLATES} from "@/lib/site-template-registry";
+import {isNexusBrandName} from "@/lib/site-presentation";
 import {SiteCustomizerNav} from "@/components/site-customizer-nav";
 import "./site-hub.css";
 
@@ -22,7 +23,7 @@ export default async function SiteHub(){
   hasSiteAsset(user.tenantId,"logo"),
   prisma.tenant.findUniqueOrThrow({where:{id:user.tenantId},select:{contactEmail:true,whatsapp:true}})
  ]);
- const logoFromTheme=template.key==="real-estate"&&user.tenantName.trim().toLowerCase()==="nexus real estate";
+ const logoFromTheme=template.key==="real-estate"&&isNexusBrandName(user.tenantName);
  const logoReady=hasLogo||logoFromTheme;
  const menu=await getSiteMenu(user.tenantId,pages);
  const totalPublished=pages.filter(page=>page.published).length;
@@ -51,6 +52,7 @@ export default async function SiteHub(){
     <p>Tipo de sitio: <strong>{templateLabel}</strong>. Las propiedades, páginas y módulos se administran por separado.</p>
     <div className="site-hub-summary-actions">
      <Link href="/admin/personalizar/paginas" className="btn btn-red"><FileText size={17} aria-hidden="true"/> Editar páginas</Link>
+     <Link href="/admin/personalizar/identidad" className="site-hub-text-link"><Palette size={16} aria-hidden="true"/> Logotipo y colores</Link>
      <Link href="/admin/personalizar/plantilla" className="site-hub-text-link"><LayoutTemplate size={16} aria-hidden="true"/> Ver diseño inmobiliario</Link>
      <Link href="/admin/personalizar/medios" className="site-hub-text-link"><ImageIcon size={16} aria-hidden="true"/> Biblioteca de imágenes</Link>
     </div>
