@@ -102,6 +102,7 @@ jobs:
         run: |
           node --check app.js
           node --check plesk-server.cjs
+          node scripts/check-plesk-ready.mjs
           node scripts/check-plesk-startup.mjs
         env:
           NODE_ENV: production
