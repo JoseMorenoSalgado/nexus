@@ -72,7 +72,7 @@ export function AdminNav({role="admin",roles=[role],userId,userName,notification
   &&(realEstate||["/admin","/admin/leads","/admin/personalizar/inicio"].includes(x.href)))
   .filter(allowed)
   .map(x=>!realEstate&&x.href==="/admin/leads"?{...x,label:"Consultas"}:x);
- const tools=secondary.filter(x=>(manager||agent)&&realEstate).filter(allowed);
+ const tools=secondary.filter(x=>realEstate&&(manager||(agent&&x.href==="/admin/notificaciones"))).filter(allowed);
  if(has("admin")){
   if(realEstate&&enabled.has("properties"))tools.push({href:"/admin/clientes-agentes",label:"Equipo y usuarios",Icon:ShieldCheck});
   tools.push({href:"/admin/modulos",label:"Módulos",Icon:Settings});
