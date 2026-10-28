@@ -10,12 +10,12 @@ const cookie=login.headers.getSetCookie().find(v=>v.startsWith("webappecloud_ses
 assert.ok(cookie);
 const auth={Cookie:cookie,Origin:origin};
 const entry=await fetch(origin+"/admin/personalizar",{headers:{Cookie:cookie},redirect:"manual"});
-assert.ok([303,307,308].includes(entry.status),"Personalizar should open compact page list.");
-assert.match(entry.headers.get("location")||"",/\/admin\/personalizar\/paginas/);
+assert.ok([303,307,308].includes(entry.status),"Personalizar should open the website hub.");
+assert.match(entry.headers.get("location")||"",/\/admin\/personalizar\/inicio/);
 const list=await fetch(origin+"/admin/personalizar/paginas",{headers:{Cookie:cookie}});
 assert.equal(list.status,200);
 const html=await list.text();
-for(const text of ["Páginas","Nueva página","Menú principal","Identidad visual","Inicio","Nosotros","Servicios","Contacto"]){
+for(const text of ["Páginas","Nueva página","Menú principal","Logotipo y colores","Inicio","Nosotros","Servicios","Contacto"]){
  assert.ok(html.includes(text),"Missing management action "+text);
 }
 assert.ok(html.includes('href="/admin/personalizar/paginas/nueva"'),"New page creation must be visible");
