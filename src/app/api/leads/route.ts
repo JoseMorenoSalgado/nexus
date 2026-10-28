@@ -8,6 +8,7 @@ import {readJsonObjectLimited,RequestPayloadError} from "@/lib/limited-json";
 const missingColumn=(error:unknown)=>!!(error&&typeof error==="object"&&"code" in error&&error.code==="P2022");
 export async function POST(req:NextRequest){
  if(!hasDatabaseConfig())return NextResponse.json({error:"Formulario disponible cuando se configure la base de datos."},{status:503});
+ if(req.headers.get("sec-fetch-site")==="cross-site")return NextResponse.json({error:"Origen no autorizado"},{status:403});
  const origin=req.headers.get("origin");
  if(origin){try{if(new URL(origin).host!==req.headers.get("host"))return NextResponse.json({error:"Origen no autorizado"},{status:403});}catch{return NextResponse.json({error:"Origen inválido"},{status:403});}}
  let b:Record<string,unknown>;
