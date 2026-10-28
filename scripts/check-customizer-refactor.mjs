@@ -12,6 +12,11 @@ for(const [file,current] of [
 ]){
  assert.ok(read(file).includes(current),"Navegación independiente incompleta: "+file);
 }
+const pageData=read("src/lib/site-pages.ts");
+assert.ok(pageData.includes('getPageDefinitions(tenantId,{includeSummary:false})'),
+ "Public site navigation must avoid loading all custom page content");
+assert.ok(pageData.includes('select:{slug:true,title:true,published:true}'),
+ "Public menu lookup must select only metadata");
 const pages=read("src/app/admin/(panel)/personalizar/paginas/page.tsx");
 assert.ok(pages.includes("tabHref(t.id)"),"Los filtros deben conservar la búsqueda");
 assert.ok(!pages.includes("getSiteMenu("),"Evitar leer el menú desde el índice de páginas");
