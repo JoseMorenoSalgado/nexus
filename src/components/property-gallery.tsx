@@ -1,13 +1,12 @@
 "use client";
 
-import {useCallback,useEffect,useMemo,useState,type PointerEvent,type SyntheticEvent} from "react";
+import {useCallback,useEffect,useState,type PointerEvent,type SyntheticEvent} from "react";
+import dynamic from "next/dynamic";
 import useEmblaCarousel from "embla-carousel-react";
-import Lightbox from "yet-another-react-lightbox";
-import Zoom from "yet-another-react-lightbox/plugins/zoom";
 import {ChevronLeft,ChevronRight,Expand,Image as ImageIcon,ZoomIn} from "lucide-react";
-import "yet-another-react-lightbox/styles.css";
 import {mediaVariantUrl} from "@/lib/media-url";
 
+const DeferredLightbox=dynamic(()=>import("@/components/property-lightbox").then(m=>m.PropertyLightbox),{ssr:false});
 type PhotoSize={width:number;height:number};
 export function PropertyGallery({photos,title}:{photos:string[];title:string}){
  const [emblaRef,emblaApi]=useEmblaCarousel({loop:photos.length>1,align:"start",duration:23});
@@ -16,7 +15,6 @@ export function PropertyGallery({photos,title}:{photos:string[];title:string}){
  const [hoverIndex,setHoverIndex]=useState<number|null>(null);
  const [position,setPosition]=useState({x:50,y:50});
  const [imageDimensions,setImageDimensions]=useState<Record<number,PhotoSize>>({});
- const slides=useMemo(()=>photos.map(src=>({src,alt:title})),[photos,title]);
  const choose=useCallback(()=>{
   if(emblaApi){setIndex(emblaApi.selectedScrollSnap());setHoverIndex(null);}
  },[emblaApi]);
@@ -51,7 +49,7 @@ export function PropertyGallery({photos,title}:{photos:string[];title:string}){
    <div className="property-gallery-track">
     {photos.map((photo,i)=><div className="property-gallery-slide" key={photo+"-"+i}>
      <div className="property-gallery-stage" onPointerMove={e=>onPointerMove(e,i)} onPointerLeave={()=>setHoverIndex(null)}>
-      <div className="property-gallery-backdrop" style={{backgroundImage:`url("${photo.replace(/"/g,"%22")}")`}} aria-hidden="true"/>
+      <div className="property-gallery-backdrop" style={{backgroundImage:Math.abs(i-index)<=1?`url("${photo.replace(/"/g,"%22")}")`:undefined}} aria-hidden="true"/>
       <img className={"property-gallery-photo"+(hoverIndex===i?" property-gallery-photo-zoom":"")}
         src={photo} alt={title+" — fotografía "+(i+1)}
         loading={i===0?"eager":"lazy"} decoding="async" onLoad={e=>onLoaded(e,i)}
@@ -77,9 +75,7 @@ export function PropertyGallery({photos,title}:{photos:string[];title:string}){
     <img src={mediaVariantUrl(photo,"thumb")} alt="" loading="lazy" decoding="async"/>
    </button>)}
   </div>}
-  <Lightbox open={lightboxOpen} close={()=>setLightboxOpen(false)} index={index}
-   slides={slides} plugins={[Zoom]} zoom={{maxZoomPixelRatio:2}}
-   carousel={{finite:!multiple}} controller={{closeOnBackdropClick:true}}
-   on={{view:({index:current})=>{if(current!==index)emblaApi?.scrollTo(current);}}}/>
+  {lightboxOpen&&<DeferredLightbox photos={photos} title={title} index={index}
+   onClose={()=>setLightboxOpen(false)} onView={current=>{if(current!==index)emblaApi?.scrollTo(current);}}/>}
  </section>;
 }
