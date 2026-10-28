@@ -18,7 +18,8 @@ assert.match(nav,/className="admin-mobile-site-shortcuts"/,"El menú móvil debe
 assert.match(nav,/entries\(pinned,/,"Faltan enlaces principales fijados.");
 assert.match(nav,/entries\(mobileMain,/,"Falta listado diario sin duplicados.");
 assert.match(nav,/!pinned\.some/,"El menú móvil no debe repetir accesos fijados.");
-assert.match(nav,/x\.href==="\/admin\/personalizar\/inicio"/,"Falta Mi sitio web en accesos principales.");
+assert.match(nav,/tools\\.unshift\\(\\{href:"\\/admin\\/personalizar\\/inicio"/,"Mi sitio web debe estar dentro de Más opciones.");
+assert.match(nav,/const pinned=main\\.filter\\(x=>x\\.href==="\\/admin"\\)/,"El móvil debe dejar solo Resumen como acceso fijo.");
 assert.ok(!nav.includes('href="/admin/personalizar/identidad"'),"Identidad se edita dentro de Mi sitio web, no se repite en el menú global.");
 assert.ok(!nav.includes('href="/admin/actualizaciones"'),"No mostrar simulaciones de mantenimiento como navegación diaria.");
 assert.match(focused,/\.admin-shell \.admin-mobile-site-shortcuts/,"Faltan estilos de accesos principales.");
