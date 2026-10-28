@@ -1,5 +1,5 @@
 {
-  "name": "webappecloud",
+  "name": "nexus-real-estate",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -12,18 +12,19 @@
     "installation:restore": "node scripts/restore-installation.mjs",
     "test:recovery": "node --test scripts/restore-installation.test.mjs",
     "db:seed": "tsx prisma/seed.ts",
-    "predev": "npm run db:generate"
+    "predev": "npm run db:generate",
+    "check:plesk": "node scripts/check-plesk-ready.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.3.0",
     "lucide-react": "^0.468.0",
-    "next": "^15.3.0",
+    "next": "^15.5.28",
     "pdf-lib": "^1.17.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "recharts": "^2.15.0",
     "server-only": "^0.0.1",
-    "sharp": "^0.34.4",
+    "sharp": "^0.35.5",
     "embla-carousel-react": "^8.6.0",
     "yet-another-react-lightbox": "^3.32.2",
     "prisma": "^6.3.0"
@@ -37,5 +38,8 @@
     "tailwindcss": "^3.4.17",
     "postcss": "^8.4.49",
     "autoprefixer": "^10.4.20"
+  },
+  "engines": {
+    "node": ">=22 <27"
   }
 }

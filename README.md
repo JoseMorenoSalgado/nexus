@@ -1,6 +1,6 @@
 # NEXUS — CMS inmobiliario
 
-Aplicación de **NEXUS Real Estate Nicaragua**, desarrollada en Next.js 15, TypeScript, Tailwind, Prisma y MariaDB/MySQL o PostgreSQL. Se despliega mediante **Docker en Dokploy**.
+Aplicación de **NEXUS Real Estate Nicaragua**, desarrollada en Next.js 15, TypeScript, Tailwind, Prisma y MariaDB/MySQL o PostgreSQL. Se despliega en **Plesk (Node.js 22 + Passenger)** o mediante **Docker en Dokploy**, manteniendo servidores y bases de datos independientes.
 
 > Este repositorio es una copia **independiente** del proyecto base WebAppECloud. No es un fork sincronizado: los cambios de NEXUS no se propagan a otras categorías o clientes.
 
@@ -20,9 +20,9 @@ El motor mantiene el aislamiento de empresas en base de datos por seguridad, per
 
 ## Instalación
 
-- Node.js 22 para desarrollo y Docker para producción.
-- Crear una **base de datos exclusiva** por despliegue y proporcionar la conexión mediante variables privadas de Dokploy o el asistente `/instalar`.
-- Mantener persistente `/app/.runtime` y el almacenamiento de fotografías y archivos del CMS.
+- Node.js 22 en desarrollo y producción. En Plesk, el archivo de inicio es `app.js` (Passenger) o el adaptador nativo de Next.js generado por Plesk; en Dokploy se usa Docker.
+- Crear una **base de datos exclusiva** por despliegue y proporcionar la conexión mediante variables privadas del servidor o el asistente `/instalar`.
+- Mantener `APP_CONFIG_DIR` persistente y **fuera del directorio público** (Plesk), o un volumen privado en `/app/.runtime` (Dokploy). Esto incluye credenciales, fotografías y PDF.
 - Habilitar `INSTALLER_AUTO_SETUP=true` temporalmente para una instalación inicial restringida; desactivarlo después.
 - Usar secretos y credenciales fuera de Git. No reutilizar bases de datos o volúmenes de otros clientes.
 
@@ -37,7 +37,7 @@ npm run dev
 
 Para preparar una base **vacía de desarrollo**, configurar primero `DATABASE_URL` y utilizar `npx prisma db push`, seguido de `npm run db:seed`, únicamente en instalaciones descartables. **No usar `prisma db push` como mecanismo automático de actualización de una base de producción.**
 
-Antes de desplegar, validar backups restaurables de SQL y archivos, el proceso de migración y la rama que Dokploy utiliza. Ver `docs/DEPLOY-DOCKPLOY.md` y `docs/INSTALACION-WEB.md`.
+Antes de desplegar, validar backups recuperables de SQL y archivos, el proceso de migración y la rama utilizada por el servidor. Para el dominio real consulta **`docs/DEPLOY-PLESK.md`** y ejecuta `node scripts/check-plesk-ready.mjs` tras compilar. Para instalaciones Docker, ver `docs/DEPLOY-DOCKPLOY.md`.
 
 ## Calidad y seguridad
 

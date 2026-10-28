@@ -9,6 +9,9 @@
  * This entry point does not change the existing Docker npm start command.
  */
 const http = require("node:http");
+// Passenger may start with a different working directory; Prisma, .next and
+// the private installer directory must resolve from this project root.
+process.chdir(__dirname);
 const next = require("next");
 
 const app = next({dev:false,dir:__dirname});

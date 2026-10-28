@@ -41,6 +41,9 @@ try {
  await page.waitForTimeout(1000);
  assert.equal(await page.locator(".wizard-error").count(),0,"Installer session was rejected");
  assert.equal(await page.locator('input[type="password"]').count(),1,"Expected SQL password input");
+ await page.getByRole("textbox",{name:"Servidor de base de datos"}).fill("127.0.0.1");
+ await page.getByRole("textbox",{name:"Nombre de la base de datos"}).fill("nexus_ci");
+ await page.getByRole("textbox",{name:"Usuario de la base de datos"}).fill("nexus_ci_user");
  await page.locator('input[type="password"]').fill("ci-only-not-a-production-secret");
  await page.getByRole("button",{name:/Continuar/}).click();
  await page.getByRole("heading",{name:"Configura tu espacio de trabajo"}).waitFor();
