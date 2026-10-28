@@ -31,13 +31,17 @@ export function textBlocks(raw:unknown):{summary:string;body:string;sections:Pag
  return {summary:typeof obj.summary==="string"?obj.summary.slice(0,240):"",
   body:typeof obj.body==="string"?obj.body.slice(0,12000):"",sections:normalizePageSections(obj.sections)};
 }
-export async function getPageDefinitions(tenantId:string):Promise<PageDefinition[]>{
+export async function getPageDefinitions(tenantId:string,options:{includeSummary?:boolean}={}):Promise<PageDefinition[]>{
  const template=await getSiteTemplate(tenantId);
  const available=await getTenantModules(tenantId,template.key);
  const enabledPages=staticPages.filter(p=>p.id!=="propiedades"||available.includes("properties"));
- const rows=await prisma.sitePage.findMany({where:{tenantId,OR:[
+ // Public menus only need page titles and visibility, not potentially large JSON blocks.
+ const where={tenantId,OR:[
   {slug:{in:staticPages.map(x=>x.slug)}},{slug:{startsWith:CUSTOM_PAGE_PREFIX}}
- ]},select:{slug:true,title:true,published:true,blocks:true},orderBy:{updatedAt:"desc"}});
+ ]};
+ const rows=options.includeSummary===false
+  ?await prisma.sitePage.findMany({where,select:{slug:true,title:true,published:true},orderBy:{updatedAt:"desc"}})
+  :await prisma.sitePage.findMany({where,select:{slug:true,title:true,published:true,blocks:true},orderBy:{updatedAt:"desc"}});
  const lookup=new Map(rows.map(x=>[x.slug,x]));
  const builtins:PageDefinition[]=enabledPages.map(p=>({
   ...p,title:p.title,published:p.id==="home"?true:p.id==="asesoria-empresarial"?(lookup.get(p.slug)?.published===true):(lookup.get(p.slug)?.published??true),
@@ -46,7 +50,7 @@ export async function getPageDefinitions(tenantId:string):Promise<PageDefinition
  const extras=rows.filter(r=>r.slug.startsWith(CUSTOM_PAGE_PREFIX)).map(r=>{
   const slug=r.slug.slice(CUSTOM_PAGE_PREFIX.length);
   return {id:"pagina:"+slug,slug,title:r.title,href:"/pagina/"+slug,
-   published:r.published,builtIn:false,summary:textBlocks(r.blocks).summary};
+   published:r.published,builtIn:false,summary:options.includeSummary===false?"":textBlocks("blocks" in r?r.blocks:null).summary};
  }).filter(x=>validCustomSlug(x.slug));
  return [...builtins,...extras];
 }
@@ -68,7 +72,7 @@ export function normalizedMenu(value:unknown,pages:PageDefinition[]):SiteMenuIte
 }
 export async function getSiteMenu(tenantId:string,existingPages?:PageDefinition[]):Promise<SiteMenuItem[]>{
  const [pages,template,stored]=await Promise.all([
-  existingPages||getPageDefinitions(tenantId),getSiteTemplate(tenantId),
+  existingPages||getPageDefinitions(tenantId,{includeSummary:false}),getSiteTemplate(tenantId),
   prisma.sitePage.findUnique({where:{tenantId_slug:{tenantId,slug:MENU_SLUG}},select:{blocks:true}})
  ]);
  const defaults=()=>normalizedMenu(defaultMenuForTemplate(template.key),pages);
