@@ -277,7 +277,7 @@
  .admin-shell .admin-mobile-account form button{min-height:44px}
 }
 
-/* Accesos de edición visibles incluso cuando la lista larga del menú está desplazada. */
+/* Accesos principales visibles, sin duplicarlos en la lista desplazable del menú. */
 @media(max-width:720px){
  .admin-shell .admin-mobile-site-shortcuts{
   display:grid;
@@ -308,5 +308,16 @@
  .admin-shell .admin-mobile-site-shortcuts a:focus-visible{
   outline:3px solid #1d65a5;
   outline-offset:1px;
+ }
+}
+
+@media(max-width:720px){
+ .admin-shell .admin-mobile-site-shortcuts a[aria-current="page"]{
+  background:#fff1f3;
+  color:#a91b2b;
+ }
+ .admin-shell .admin-mobile-site-shortcuts a[aria-current="page"] > span{
+  color:inherit;
+  font-weight:800;
  }
 }
