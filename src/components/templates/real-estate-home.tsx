@@ -36,6 +36,13 @@ export async function RealEstateHome(){
   <main id="contenido" data-nexus-home-motion>
    <NexusHomeMotion/>
    <section className={"nexus-hero"+(heroImage?" nexus-hero-custom":"")}>
+    <img className="nexus-hero-media" alt="" aria-hidden="true"
+     src={heroImage?"/api/site-media/hero":"https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=1900&q=82"}
+     {...(!heroImage?{
+      srcSet:"https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=900&q=78 900w, https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=1500&q=80 1500w, https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=1900&q=82 1900w",
+      sizes:"100vw"
+     }:{})}
+     width={1900} height={1100} loading="eager" decoding="async" fetchPriority="high"/>
     <div className="container nexus-hero-layout nexus-hero-layout-simple">
      <div className="nexus-hero-copy">
       <p className="nexus-eyebrow-on-dark"><span className="nexus-eyebrow-line"/> {settings.heroEyebrow===DEFAULT_EYEBROW?tenant.name.toUpperCase()+" · NICARAGUA":settings.heroEyebrow}</p>
