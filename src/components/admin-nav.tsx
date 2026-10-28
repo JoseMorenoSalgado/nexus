@@ -14,7 +14,6 @@ import {
 type Entry={href:string;label:string;Icon:LucideIcon};
 const primary:Entry[]=[
  {href:"/admin",label:"Resumen",Icon:LayoutDashboard},
- {href:"/admin/personalizar/inicio",label:"Mi sitio web",Icon:FileText},
  {href:"/admin/propiedades",label:"Propiedades",Icon:Building2},
  {href:"/admin/leads",label:"Prospectos",Icon:UsersRound},
  {href:"/admin/agenda",label:"Agenda",Icon:CalendarDays},
@@ -73,6 +72,7 @@ export function AdminNav({role="admin",roles=[role],userId,userName,notification
   .filter(allowed)
   .map(x=>!realEstate&&x.href==="/admin/leads"?{...x,label:"Consultas"}:x);
  const tools=secondary.filter(x=>realEstate&&(manager||(agent&&x.href==="/admin/notificaciones"))).filter(allowed);
+ if(manager)tools.unshift({href:"/admin/personalizar/inicio",label:"Mi sitio web",Icon:FileText});
  if(has("admin")){
   if(realEstate&&enabled.has("properties"))tools.push({href:"/admin/clientes-agentes",label:"Equipo y usuarios",Icon:ShieldCheck});
   tools.push({href:"/admin/modulos",label:"Módulos",Icon:Settings});
@@ -92,7 +92,7 @@ export function AdminNav({role="admin",roles=[role],userId,userName,notification
    aria-current={active?"page":undefined}><x.Icon size={18} aria-hidden="true"/><span>{x.label}</span>{notifyBadge(x)}</Link>;
  });
  // Una sola fuente de enlaces para escritorio y móvil, sin mostrar accesos repetidos.
- const pinned=main.filter(x=>x.href==="/admin"||x.href==="/admin/personalizar/inicio");
+ const pinned=main.filter(x=>x.href==="/admin");
  const mobileMain=main.filter(x=>!pinned.some(y=>y.href===x.href));
  const toolActive=tools.some(x=>selectedLink(pathname,x.href));
  return <>
