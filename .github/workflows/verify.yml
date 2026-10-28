@@ -56,6 +56,8 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Probar recuperación no destructiva
         run: npm run test:recovery
+      - name: Comprobar límites de recursos en JSON público
+        run: npx tsx scripts/check-request-limits.ts
       - name: Validar esquema Prisma
         run: |
           npx prisma validate --schema prisma/schema.prisma
@@ -136,6 +138,8 @@ jobs:
           echo 'Smoke tests exitosos'
         env:
           NODE_ENV: production
+      - name: Probar protección de las API públicas
+        run: npx tsx scripts/check-public-api-security.ts
       - name: Probar inicio de sesión real y dashboard
         run: node scripts/check-admin-access.mjs
       - name: Verificar dashboard y portada simplificados
