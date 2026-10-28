@@ -66,7 +66,7 @@ export default async function CommercialAgenda({searchParams}:{searchParams:Prom
   </div>
   {(q.created||q.updated||q.activated)&&<p className="property-success" role="status">{q.activated?"Agenda activada correctamente.":q.created?"Actividad programada correctamente.":"Agenda actualizada correctamente."}</p>}
   {q.mail==="sent"&&<p className="property-success" role="status">Notificación entregada al servidor SMTP para su envío.</p>}
-  {q.mail==="failed"&&<p role="alert" className="admin-error">La actividad quedó guardada, pero el envío SMTP falló. Revisa la configuración de correo en Plesk.</p>}}
+  {q.mail==="failed"&&<p role="alert" className="admin-error">La actividad quedó guardada, pero el envío SMTP falló. Revisa la configuración de correo en Plesk.</p>}
   {q.error&&<p className="admin-error" role="alert">{errors[q.error]||errors.servidor}</p>}
   <div className="agenda-metrics">
    <div><AlertTriangle size={19}/><span>Actividades vencidas</span><strong>{overdue}</strong><small>Pendientes con horario ya pasado</small></div>
