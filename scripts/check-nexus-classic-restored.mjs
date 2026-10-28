@@ -15,7 +15,9 @@ assert.ok(!files.layout.includes("nexus-home-premium")&&!files.layout.includes("
 assert.ok(!files.frame.includes("nexus-site-premium"),"Premium layout class leaked");
 assert.ok(!files.home.includes("nexus-home-premium")&&!files.home.includes("nexus-hero-photo-note"),"Premium Home layout was not restored");
 assert.ok(files.home.includes("nexus-hero-layout-simple"),"Original full-photo hero must remain");
-assert.ok(files.classic.includes("nexus-hero:before")&&files.classic.includes("nexus-hero:after"),"Original full-bleed hero photo/overlay missing");
+assert.ok(files.classic.includes(".nexus-hero-media")&&files.classic.includes("nexus-hero:after"),"Original full-bleed hero photo/overlay missing");
+assert.ok(files.home.includes('fetchPriority="high"')&&files.home.includes('loading="eager"'),"LCP image must be visible in HTML with high priority");
+assert.ok(!files.classic.includes("nexus-hero:before"),"CSS background image delays LCP discovery");
 assert.ok(files.home.includes("settings.heroHeading")&&files.home.includes("settings.heroHighlight")&&files.home.includes("settings.featuredIds"),"Dynamic CMS configuration lost");
 assert.ok(files.home.includes('method="get" action="/propiedades"'),"Property search integration lost");
 assert.ok(files.home.includes("ContactForm")&&files.home.includes("PageExtraSections"),"CMS/contact integration lost");
