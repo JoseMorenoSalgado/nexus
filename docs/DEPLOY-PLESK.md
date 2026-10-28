@@ -13,7 +13,7 @@ Plesk Obsidian **18.0.81+** detecta Next.js y genera automáticamente el archivo
 En Plesk > Sitios web y dominios > NEXUS > Administrador de archivos, comprueba que la carpeta publicada de la aplicación contiene:
 
 - `package.json`, `next.config.mjs`, `src/`, `public/`, `prisma/`, `scripts/`.
-- El archivo `plesk-server.cjs` **solo para Plesk sin autoconfiguración**.
+- `app.js` (arranque convencional de Plesk) y `plesk-server.cjs` (servidor Passenger de Next.js). Si Plesk 18.0.81+ genera un adaptador correcto, puedes usar el autogenerado.
 
 Configura **Application Root** como la carpeta que contiene `package.json`, por ejemplo `httpdocs` solo si Git ha desplegado ahí el proyecto completo. La **Document Root** debe ser la subcarpeta pública de la aplicación, por ejemplo `httpdocs/public` si el panel permite esta estructura. El directorio que contiene `package.json`, `src`, `prisma` y `.runtime` **no** debe ser directamente accesible como archivos estáticos desde Internet. Si Plesk 18.0.81+ ofrece otra ruta segura autoconfigurada para Next.js, utiliza y verifica esa configuración. No ajustes el document root sin revisar la configuración del dominio.
 
@@ -29,7 +29,7 @@ Plesk > Sitios web y dominios > NEXUS > Node.js:
 | Package manager | npm |
 | Application mode | Production |
 | Application root | Carpeta real de `package.json` |
-| Startup file | Archivo autogenerado por Plesk 18.0.81+, o `plesk-server.cjs` en versiones anteriores |
+| Startup file | Adaptador autogenerado correcto (18.0.81+) o **`app.js`** del repositorio (alternativa: `plesk-server.cjs`) |
 | PORT | No definir ni fijar manualmente. Passenger lo administra |
 | Estado | Enable Node.js |
 
@@ -69,11 +69,11 @@ Plesk > Node.js > Custom environment variables:
 ```dotenv
 NODE_ENV=production
 SITE_PREVIEW_MODE=false
-APP_CONFIG_DIR=.runtime
+APP_CONFIG_DIR=/var/www/vhosts/nexusrealestatenicaragua.com/nexus-runtime
 INSTALLER_AUTO_SETUP=true
 ```
 
-`APP_CONFIG_DIR=.runtime` se resuelve desde la raíz del proceso; comprueba que Plesk ha establecido ese directorio correctamente y que **no está expuesto públicamente**. En caso de duda usa la ruta absoluta privada dentro de la suscripción.
+Crea antes `nexus-runtime` con permisos de escritura para el usuario de la suscripción, **fuera de `httpdocs`**. La ruta absoluta indicada es una propuesta: verifica la ruta real y el usuario del dominio en tu servidor. No la confundas con el directorio público `public`. Esta carpeta contiene credenciales SQL y todos los medios/documentos gestionados por el CMS; protégela, respáldala y no la sobrescribas en despliegues.
 
 Durante una primera instalación **NO definir `DATABASE_URL`**, ya que el asistente almacenará la conexión SQL en `.runtime/installation.json`. Si ya existe una `DATABASE_URL` válida o `installation.json`, el asistente se bloquea a propósito; **no borres estas configuraciones** sin confirmar qué datos hay.
 
@@ -93,7 +93,7 @@ Paso 2: inmobiliaria **Nexus Real Estate Nicaragua**, correo institucional y adm
 
 Al finalizar, el asistente crea tablas y registra institución/dominio/admin. El instalador solo acepta una **base completamente vacía**. Si detecta tablas o sesión ocupada, no borres contenido ni fuerces reintentos.
 
-Cambia inmediatamente `INSTALLER_AUTO_SETUP=false` y reinicia desde Plesk. La conexión privada se conserva en `.runtime/installation.json`; respalda este directorio junto con la BD.
+Cambia inmediatamente `INSTALLER_AUTO_SETUP=false` y reinicia desde Plesk. La conexión privada se conserva en `APP_CONFIG_DIR/installation.json`; respalda este directorio junto con la BD.
 
 ## 7. Comprobar funcionamiento
 
@@ -105,8 +105,9 @@ Cambia inmediatamente `INSTALLER_AUTO_SETUP=false` y reinicia desde Plesk. La co
 
 ## Problemas comunes
 
-- **Startup file does not exist**: el archivo elegido debe existir en Application Root, o usar el archivo generado por el detector Next.js de Plesk 18.0.81+.
-- **502 / Passenger startup failed**: comprobar que la compilación `.next` existe, la versión Node coincide y el proceso Passenger usa `process.env.PORT`. No fijar `PORT=3000`.
+- **Startup file does not exist**: selecciona `app.js` del repositorio en Application Root, o el archivo autogenerado y válido de Plesk 18.0.81+. No apuntes a un archivo inexistente.
+- **502 / Passenger startup failed**: comprueba que la compilación `.next` existe, la versión Node coincide, `app.js` está en Application Root, el proceso Passenger usa `process.env.PORT` y `APP_CONFIG_DIR` es escribible. No fijes `PORT=3000`.
+- **404 con el dibujo de Plesk, no de Next.js**: normalmente la solicitud no está llegando al proceso Node/Passenger o la ruta pública está mal configurada; revisa `Enable Node.js`, Document Root, startup file y logs antes de volver a instalar SQL.
 - **P2021 Domain**: base de datos sin tablas; comprobar si es una instalación nueva o si se seleccionó por error una base distinta. No borrar la base anterior.
 - **/instalar?estado=ocupado**: sesión ya reclamada, posiblemente en otro navegador. Usa el navegador que abrió el instalador y evita manipular archivos de bloqueo durante una instalación.
 - **Client-side exception tras abrir la web**: revisar las URLs `/_next/static/` para detectar archivos JS cacheados/no encontrados; compilar y reiniciar una sola versión, comprobar consola Safari y los logs.
@@ -117,11 +118,13 @@ Los logs de Passenger en Plesk Linux (Node.js Toolkit moderno) se encuentran nor
 
 ## Después de cada actualización por Git
 
-1. Validar rama y commit del sitio correcto.
-2. `npm install --include=dev` si hay dependencias modificadas; `npm run build`.
+1. Validar rama y commit del sitio correcto; desde Plesk Git → **Pull Updates** → **Deploy from Repository** si el modo es manual.
+2. En Plesk Node.js → Run Script (sin repetir el prefijo `npm`): `install --include=dev` y después `run build`. En SSH sí escribe `npm install --include=dev` y `npm run build` completos.
 3. Reiniciar la aplicación desde la sección Node.js de Plesk.
 4. Verificar web pública, /api/live, /api/health y administrador.
-5. Nunca sobrescribir/borrar `.runtime` ni la BD en despliegues Git; respaldar siempre los archivos subidos y SQL.
+5. Nunca sobrescribir/borrar `APP_CONFIG_DIR` ni la BD en despliegues Git; respaldar siempre medios, documentos y SQL.
+6. Verificar que `/api/live` devuelve `service: nexus` y `release: 2026-10-27-plesk-r1` tras desplegar esta versión. Si no coincide, se está sirviendo un proceso antiguo.
+7. En Plesk el `Document Root` debe ser un subdirectorio del `Application Root` en Linux (por ejemplo `httpdocs/public`). Nunca publiques `node_modules`, `src`, `prisma` ni credenciales como recursos estáticos.
 
 ### Documentación oficial
 
