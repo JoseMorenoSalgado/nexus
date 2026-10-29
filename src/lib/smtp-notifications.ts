@@ -1,20 +1,37 @@
 import "server-only";
 import nodemailer from "nodemailer";
+import {environmentIntegrations,integrationsForTenant,smtpValid,type SmtpConfig} from "@/lib/integration-config";
 
-/** SMTP configured in private Plesk environment settings, never in the browser or database. */
-const EMAIL=/^[^\s@,<>]+@[^\s@,<>]+\.[^\s@,<>]+$/;
-export function smtpEnabled(){
- const v=process.env;
- return v.SMTP_ENABLED==="true"&&!!v.SMTP_HOST&&!!v.SMTP_USER&&!!v.SMTP_PASSWORD&&
-  !!v.SMTP_FROM&&EMAIL.test(v.SMTP_FROM)&&!!v.SMTP_NOTIFY_TO&&EMAIL.test(v.SMTP_NOTIFY_TO);
+export function smtpEnabled(){return smtpValid(environmentIntegrations().smtp);}
+export async function smtpReadyForTenant(tenantId:string){
+ return smtpValid(integrationsForTenant(tenantId).smtp);
 }
 export type MailResult="disabled"|"sent"|"failed";
-export async function notifyAgendaEmail({title,startsAt,type,leadName,meetingUrl,action}:{
- title:string;startsAt:Date;type:string;leadName:string;meetingUrl:string|null;action:"programada"|"reprogramada";
+async function sendViaSmtp(config:SmtpConfig,subject:string,body:string):Promise<MailResult>{
+ if(!smtpValid(config))return "disabled";
+ try{
+  const transport=nodemailer.createTransport({
+   host:config.host,port:config.port,secure:config.port===465,requireTLS:config.port===587,
+   auth:{user:config.user,pass:config.password},
+   connectionTimeout:5000,greetingTimeout:5000,socketTimeout:8000,
+   tls:{rejectUnauthorized:true}
+  });
+  const delivery=await transport.sendMail({from:config.from,to:config.to,subject,text:body});
+  return delivery.accepted?.length?"sent":"failed";
+ }catch(error){
+  console.warn("[smtp] notification failed",error instanceof Error?error.name:"unknown");
+  return "failed";
+ }
+}
+export async function testTenantSmtp(tenantId:string):Promise<MailResult>{
+ const config=integrationsForTenant(tenantId).smtp;
+ return sendViaSmtp(config,"NEXUS: prueba de correo SMTP",
+  "El servidor SMTP aceptó esta prueba de NEXUS. La entrega definitiva depende del proveedor y de los filtros del destinatario.");
+}
+export async function notifyAgendaEmail({tenantId,title,startsAt,type,leadName,meetingUrl,action}:{
+ tenantId:string;title:string;startsAt:Date;type:string;leadName:string;meetingUrl:string|null;action:"programada"|"reprogramada";
 }):Promise<MailResult>{
- if(!smtpEnabled())return "disabled";
- const port=Number(process.env.SMTP_PORT||"587");
- if(!Number.isInteger(port)||![465,587].includes(port))return "failed";
+ const config=integrationsForTenant(tenantId).smtp;
  const lines=[
   "NEXUS Real Estate — notificación de agenda",
   "Actividad "+action,
@@ -25,22 +42,5 @@ export async function notifyAgendaEmail({title,startsAt,type,leadName,meetingUrl
   ...(meetingUrl?["Videoconferencia: "+meetingUrl]:[]),
   "Consulta el panel de NEXUS para los detalles y cambios."
  ];
- try{
-  const transport=nodemailer.createTransport({
-   host:process.env.SMTP_HOST,port,secure:port===465,requireTLS:port===587,
-   auth:{user:process.env.SMTP_USER!,pass:process.env.SMTP_PASSWORD!},
-   connectionTimeout:5000,greetingTimeout:5000,socketTimeout:8000,
-   tls:{rejectUnauthorized:true}
-  });
-  const response=await transport.sendMail({
-   from:process.env.SMTP_FROM!,
-   to:process.env.SMTP_NOTIFY_TO!,
-   subject:"NEXUS: actividad "+action,
-   text:lines.join("\n")
-  });
-  return response.accepted?.length?"sent":"failed";
- }catch(error){
-  console.warn("[smtp] notification failed",error instanceof Error?error.name:"unknown");
-  return "failed";
- }
+ return sendViaSmtp(config,"NEXUS: actividad "+action,lines.join("\n"));
 }
