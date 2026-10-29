@@ -16,6 +16,9 @@ export default async function Integraciones({searchParams}:{searchParams:Promise
  const captchaActive=captcha?captchaValid(captcha):false;
  const alerts:Record<string,string>={
   "smtp-saved":"La configuración de SMTP se guardó en el almacenamiento privado.",
+  "smtp-sent":"El servidor SMTP aceptó el mensaje de prueba. Comprueba la bandeja de entrada.",
+  "smtp-failed":"No fue posible enviar la prueba SMTP. Revisa las credenciales y la conexión.",
+  "smtp-disabled":"Primero activa y guarda el correo SMTP para enviar una prueba.",
   "captcha-saved":"La configuración de reCAPTCHA se guardó.",
   "smtp-invalid":"Comprueba host, puerto, remitente, destinatario y credenciales SMTP.",
   "captcha-invalid":"Para activar reCAPTCHA, proporciona las claves pública y privada.",
@@ -46,6 +49,9 @@ export default async function Integraciones({searchParams}:{searchParams:Promise
      <label>Correo que recibe avisos <input type="email" name="to" maxLength={180} defaultValue={smtp?.to||""} placeholder="administracion@tudominio.com" required/></label>
      <label className="integration-checkbox"><input type="checkbox" name="enabled" defaultChecked={smtp?.enabled||false}/> Activar envío de avisos SMTP</label>
      <button className="btn btn-red" disabled={loadError} type="submit">Guardar correo SMTP</button>
+    </form>
+    <form method="post" action="/api/admin/integraciones/test">
+     <button type="submit" className="btn wizard-back" disabled={!smtpActive||loadError}>Enviar correo de prueba</button>
     </form>
     <p className="property-help">Los avisos se envían al correo interno que indiques, después de guardar o reprogramar una reunión. No se envían correos automáticos al prospecto.</p>
    </section>
