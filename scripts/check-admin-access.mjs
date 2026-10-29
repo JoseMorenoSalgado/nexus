@@ -31,4 +31,25 @@ assert.equal(new URL(anonymous.headers.get('location'),origin).pathname,'/admin/
 const noCookie=await fetch(origin+'/api/admin/session',{redirect:'manual'});
 assert.equal(noCookie.status,303);
 assert.equal(new URL(noCookie.headers.get('location'),origin).searchParams.get('error'),'sesion');
-console.log('Stable login form, session issuance, verification and protected dashboard passed.');
+const integrations=await fetch(origin+'/admin/integraciones',{headers:{Cookie:cookieHeader},redirect:'manual'});
+assert.equal(integrations.status,200,'Administrator must be able to open Email and Security settings');
+const integrationsHtml=await integrations.text();
+assert.match(integrationsHtml,/Correo y seguridad/);
+assert.match(integrationsHtml,/Servidor SMTP/);
+assert.match(integrationsHtml,/Clave secreta/);
+assert.ok(!integrationsHtml.includes('test-private-secret'),'Sensitive tokens must never appear in SSR markup');
+const anonymousSettings=await fetch(origin+'/admin/integraciones',{redirect:'manual'});
+assert.equal(anonymousSettings.status,307,'Integrations must require admin session');
+const forgedLogout=await fetch(origin+'/api/admin/logout',{method:'POST',
+ headers:{Origin:'https://attacker.invalid',Cookie:cookieHeader},redirect:'manual'});
+assert.equal(forgedLogout.status,403,'Cross-origin logout must fail');
+const logout=await fetch(origin+'/api/admin/logout',{method:'POST',
+ headers:{Origin:origin,Cookie:cookieHeader},redirect:'manual'});
+assert.equal(logout.status,303,'Logout should work as stable POST');
+assert.equal(new URL(logout.headers.get('location'),origin).pathname,'/admin/acceso');
+const cleared=logout.headers.getSetCookie().find(c=>c.startsWith('webappecloud_session='));
+assert.ok(cleared&&/max-age=0/i.test(cleared),'Logout must expire the session cookie');
+const afterLogout=await fetch(origin+'/admin',{headers:{Cookie:cookieHeader},redirect:'manual'});
+assert.equal(afterLogout.status,307,'Logout must revoke the server-side session token');
+assert.equal(new URL(afterLogout.headers.get('location'),origin).pathname,'/admin/acceso');
+console.log('Stable login and logout, cookie revocation, CSRF defense and protected integrations passed.');

@@ -42,7 +42,7 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
   const month=intent==="reschedule"&&data.startsAt?data.startsAt.toISOString().slice(0,7):originalMonth;
   if(!result.count)return back("noexiste");
   const notify=form.get("notifyByEmail")==="on"&&intent==="reschedule";
-  const mail=notify&&data.startsAt?await notifyAgendaEmail({title:existing.title,
+  const mail=notify&&data.startsAt?await notifyAgendaEmail({tenantId:user.tenantId,title:existing.title,
    startsAt:data.startsAt,type:existing.type,leadName:existing.lead.name,
    meetingUrl:data.meetingUrl===undefined?existing.meetingUrl:data.meetingUrl,
    action:"reprogramada"}):"disabled";

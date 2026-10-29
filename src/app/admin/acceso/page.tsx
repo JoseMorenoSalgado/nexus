@@ -1,6 +1,8 @@
 import Link from "next/link";
 import Script from "next/script";
-import {recaptchaRequired,recaptchaSiteKey} from "@/lib/recaptcha";
+import {captchaForHost} from "@/lib/recaptcha";
+import {headers} from "next/headers";
+import {normalizeSiteHost} from "@/lib/preview";
 import {redirect} from "next/navigation";
 import {hasDatabaseConfig} from "@/lib/server-config";
 import type {Metadata} from "next";
@@ -57,7 +59,8 @@ export default async function Access({searchParams}:{searchParams:Promise<{error
  if(await currentAdmin())redirect("/admin");
  const q=await searchParams;
  const notice=q.error?errors[q.error]||errors.servidor:null;
- const captcha=recaptchaRequired(),siteKey=recaptchaSiteKey();
+ const loginCaptcha=await captchaForHost(normalizeSiteHost((await headers()).get("host")||""));
+ const captcha=loginCaptcha.enabled,siteKey=loginCaptcha.siteKey;
  return <main className="login-page"><style data-nexus-login-critical="1">{criticalLoginCss}</style><form method="post" action="/api/admin/session" className="login-card">
   <div className="brand"><span className="brand-icon"><img src="/brand/nexus-icon.webp" alt=""/></span><span><strong>NEXUS</strong><small>REAL ESTATE</small></span></div>
   <h1>Acceso administrativo</h1><p>Ingresa tus credenciales para gestionar tu sitio web.</p>

@@ -58,6 +58,8 @@ jobs:
         run: npm run test:recovery
       - name: Comprobar límites de recursos en JSON público
         run: npx tsx scripts/check-request-limits.ts
+      - name: Probar configuración privada cifrada SMTP y reCAPTCHA
+        run: npx tsx scripts/check-private-integrations.ts
       - name: Probar protección reCAPTCHA del login
         run: npx tsx scripts/check-recaptcha.ts
       - name: Validar esquema Prisma

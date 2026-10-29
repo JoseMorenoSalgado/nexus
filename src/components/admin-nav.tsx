@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import {signOut} from "@/app/admin/actions";
+
 import {type SiteTemplateKey} from "@/lib/site-template-registry";
 import {defaultEnabledModules,type ModuleKey} from "@/lib/tenant-modules-registry";
 import {useEffect,useRef,useState} from "react";
@@ -77,6 +77,7 @@ export function AdminNav({role="admin",roles=[role],userId,userName,notification
   if(realEstate&&enabled.has("properties"))tools.push({href:"/admin/clientes-agentes",label:"Equipo y usuarios",Icon:ShieldCheck});
   tools.push({href:"/admin/modulos",label:"Módulos",Icon:Settings});
   tools.push({href:"/admin/sistema",label:"Estado técnico",Icon:Settings});
+  tools.push({href:"/admin/integraciones",label:"Correo y seguridad",Icon:ShieldCheck});
  }
  if(realEstate&&enabled.has("analytics")&&agent&&!manager){
   tools.push({href:"/admin/reportes/agentes",label:"Mi rendimiento",Icon:ChartNoAxesCombined});
@@ -108,7 +109,7 @@ export function AdminNav({role="admin",roles=[role],userId,userName,notification
    </Link>
    <div className="admin-account-desktop">
     <span className="admin-account-name">{userName}</span>
-    <form action={signOut}><button type="submit"><LogOut size={17} aria-hidden="true"/> Cerrar sesión</button></form>
+    <form method="post" action="/api/admin/logout"><button type="submit"><LogOut size={17} aria-hidden="true"/> Cerrar sesión</button></form>
    </div>
   </nav>
   <div className="admin-nav-mobile">
@@ -130,7 +131,7 @@ export function AdminNav({role="admin",roles=[role],userId,userName,notification
      <div className="admin-mobile-account">
       <span className="admin-mobile-account-label">Sesión actual</span>
       <strong>{userName}</strong>
-      <form action={signOut}><button type="submit"><LogOut size={17} aria-hidden="true"/> Cerrar sesión</button></form>
+      <form method="post" action="/api/admin/logout"><button type="submit"><LogOut size={17} aria-hidden="true"/> Cerrar sesión</button></form>
      </div>
     </aside>
    </>}
