@@ -8,7 +8,7 @@ import {AgendaCreateForm,AgendaRescheduleForm} from "@/components/agenda-forms";
 import {agendaTableReady} from "@/lib/agenda-schema";
 import {AgendaCalendar,AgendaLocalDate,type AgendaView} from "@/components/agenda-calendar";
 import {parseRoles} from "@/lib/roles";
-import {smtpEnabled} from "@/lib/smtp-notifications";
+import {smtpReadyForTenant} from "@/lib/smtp-notifications";
 export const dynamic="force-dynamic";
 
 const errors:Record<string,string>={
@@ -26,7 +26,7 @@ export default async function CommercialAgenda({searchParams}:{searchParams:Prom
  const user=await requireRole(["admin","editor","agente"]);
  const q=await searchParams;
  if(!await agendaTableReady())return <section className="agenda-dashboard"><div className="admin-heading"><div><h1>Agenda comercial</h1><p>Programa llamadas, visitas y reuniones relacionadas con tus prospectos.</p></div></div><div className="admin-panel"><h2>Activar agenda comercial</h2><p>La agenda necesita activar su tabla o incorporar el campo opcional de videoconferencia. Se conservarán los prospectos, propiedades y reuniones existentes.</p>{q.error&&<p role="alert" className="admin-error">{errors[q.error]||errors.activacion}</p>}{user.roles.includes("admin")?<form action="/api/admin/agenda/activate" method="post"><button type="submit" className="btn btn-red">Activar agenda</button></form>:<p className="property-help">Un administrador de esta empresa debe activar la agenda antes de usarla.</p>}</div></section>;
- const emailReady=smtpEnabled();
+ const emailReady=await smtpReadyForTenant(user.tenantId);
  const now=new Date();
  const current=now.toISOString().slice(0,7);
  const month=/^\d{4}-(0[1-9]|1[0-2])$/.test(q.mes||"")?q.mes!:current;
