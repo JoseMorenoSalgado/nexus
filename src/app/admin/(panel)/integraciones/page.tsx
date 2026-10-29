@@ -41,12 +41,12 @@ export default async function Integraciones({searchParams}:{searchParams:Promise
     <span className={"integration-state "+(smtpActive?"is-enabled":"")}>{smtpActive?"Configurado y activado":"Sin activar"}</span>
     <form method="post" action="/api/admin/integraciones" className="integration-form">
      <input type="hidden" name="section" value="smtp"/>
-     <label>Servidor SMTP <input type="text" name="host" maxLength={253} autoComplete="off" defaultValue={smtp?.host||""} placeholder="smtp.ejemplo.com" required/></label>
+     <label>Servidor SMTP <input type="text" name="host" maxLength={253} autoComplete="off" defaultValue={smtp?.host||""} placeholder="smtp.ejemplo.com"/></label>
      <label>Puerto <select name="port" defaultValue={smtp?.port||587}><option value="587">587 — STARTTLS</option><option value="465">465 — TLS directo</option></select></label>
-     <label>Usuario SMTP <input name="user" maxLength={180} autoComplete="off" defaultValue={smtp?.user||""} required/></label>
+     <label>Usuario SMTP <input name="user" maxLength={180} autoComplete="off" defaultValue={smtp?.user||""}/></label>
      <label>Contraseña SMTP <input type="password" name="password" maxLength={256} autoComplete="new-password" placeholder={smtp?.password?"Configurada; dejar vacío para conservar":"Escribe la contraseña SMTP"}/></label>
-     <label>Correo remitente <input type="email" name="from" maxLength={180} defaultValue={smtp?.from||""} placeholder="notificaciones@tudominio.com" required/></label>
-     <label>Correo que recibe avisos <input type="email" name="to" maxLength={180} defaultValue={smtp?.to||""} placeholder="administracion@tudominio.com" required/></label>
+     <label>Correo remitente <input type="email" name="from" maxLength={180} defaultValue={smtp?.from||""} placeholder="notificaciones@tudominio.com"/></label>
+     <label>Correo que recibe avisos <input type="email" name="to" maxLength={180} defaultValue={smtp?.to||""} placeholder="administracion@tudominio.com"/></label>
      <label className="integration-checkbox"><input type="checkbox" name="enabled" defaultChecked={smtp?.enabled||false}/> Activar envío de avisos SMTP</label>
      <button className="btn btn-red" disabled={loadError} type="submit">Guardar correo SMTP</button>
     </form>
@@ -62,7 +62,7 @@ export default async function Integraciones({searchParams}:{searchParams:Promise
     <p className="property-help">Crea claves <strong>reCAPTCHA v2, casilla «No soy un robot»</strong> para tu dominio en Google. Prueba las claves antes de activar el bloqueo.</p>
     <form method="post" action="/api/admin/integraciones" className="integration-form">
      <input type="hidden" name="section" value="captcha"/>
-     <label>Clave del sitio (pública) <input type="text" name="siteKey" maxLength={256} autoComplete="off" defaultValue={captcha?.siteKey||""} placeholder="Clave pública de reCAPTCHA" required/></label>
+     <label>Clave del sitio (pública) <input type="text" name="siteKey" maxLength={256} autoComplete="off" defaultValue={captcha?.siteKey||""} placeholder="Clave pública de reCAPTCHA"/></label>
      <label>Clave secreta <input type="password" name="secretKey" maxLength={256} autoComplete="new-password" placeholder={captcha?.secretKey?"Configurada; dejar vacío para conservar":"Clave privada de Google"}/></label>
      <label className="integration-checkbox"><input type="checkbox" name="enabled" defaultChecked={captcha?.enabled||false}/> Exigir reCAPTCHA al iniciar sesión</label>
      <button className="btn btn-red" disabled={loadError} type="submit">Guardar reCAPTCHA</button>
