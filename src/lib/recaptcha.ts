@@ -1,7 +1,5 @@
 /** reCAPTCHA v2 checkbox; verification always happens on the server. */
 import {normalizeSiteHost} from "@/lib/preview";
-import {prisma} from "@/lib/prisma";
-import {hasDatabaseConfig} from "@/lib/server-config";
 import {environmentIntegrations,integrationsForTenant,type CaptchaConfig} from "@/lib/integration-config";
 
 // Preserve environment-only deployments and existing test helpers.
@@ -13,6 +11,8 @@ export async function captchaForHost(host:string):Promise<CaptchaConfig>{
  // Emergency recovery switch available to the server operator via Plesk.
  if(process.env.NEXUS_DISABLE_CAPTCHA==="true")return {enabled:false,siteKey:"",secretKey:""};
  const fallback=environmentIntegrations().captcha;
+ if(!process.env.APP_CONFIG_DIR||!process.env.APP_CONFIG_DIR.startsWith("/"))return fallback;
+ const [{hasDatabaseConfig},{prisma}]=await Promise.all([import("@/lib/server-config"),import("@/lib/prisma")]);
  if(!hasDatabaseConfig())return fallback;
  const domain=await prisma.domain.findUnique({where:{hostname:normalizeSiteHost(host)},select:{tenantId:true}});
  if(!domain)return fallback;
