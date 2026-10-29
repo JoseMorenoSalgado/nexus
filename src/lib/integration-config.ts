@@ -1,7 +1,7 @@
 import {createCipheriv,createDecipheriv,createHash,randomBytes} from "node:crypto";
 import {chmodSync,existsSync,mkdirSync,openSync,closeSync,readFileSync,writeFileSync,renameSync,unlinkSync} from "node:fs";
 import {join,resolve,relative,isAbsolute,basename} from "node:path";
-import {configDir} from "@/lib/server-config";
+// The existing installation uses APP_CONFIG_DIR; avoid importing the database client here.
 
 export type SmtpConfig={enabled:boolean;host:string;port:465|587;user:string;password:string;from:string;to:string};
 export type CaptchaConfig={enabled:boolean;siteKey:string;secretKey:string};
@@ -31,7 +31,7 @@ const inside=(child:string,parent:string)=>{
 function protectedDir(){
  const configured=process.env.APP_CONFIG_DIR||"";
  if(!isAbsolute(configured))throw new Error("APP_CONFIG_DIR debe ser una ruta privada absoluta.");
- const root=resolve(configDir()),publicRoot=resolve(process.cwd(),"public");
+ const root=resolve(configured),publicRoot=resolve(process.cwd(),"public");
  const docs=process.env.PLESK_DOCUMENT_ROOT||process.env.DOCUMENT_ROOT||
   (basename(process.cwd())==="httpdocs"?process.cwd():publicRoot);
  if(inside(root,resolve(docs))||inside(root,publicRoot))
