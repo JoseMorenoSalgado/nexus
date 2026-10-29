@@ -49,11 +49,33 @@ try{
   assert.equal(response.status,200,"Bundled asset not served: "+asset);
   assert.ok(Number(response.headers.get("content-length")||0)>0||((await response.arrayBuffer()).byteLength>0));
  }
+ // Plesk regressions can affect nested login CSS while the homepage still works.
+ // Validate the actual SSR login HTML and every referenced stylesheet.
+ const loginResponse=await fetch(origin+"/admin/acceso?error=credenciales",{
+  signal:AbortSignal.timeout(10000)
+ });
+ assert.equal(loginResponse.status,200,"Admin login page must be reachable without a session");
+ const loginHtml=await loginResponse.text();
+ assert.match(loginHtml,/data-nexus-login-critical="1"/,"Missing SSR fallback for admin login layout");
+ assert.match(loginHtml,/\.login-page \.login-card/,"Critical login CSS not rendered in initial HTML");
+ const loginCss=[...loginHtml.matchAll(/href="(\/_next\/static\/[^"]+\.css(?:\?[^"]*)?)"/g)]
+  .map(match=>match[1].replaceAll("&amp;","&"));
+ assert.ok(loginCss.length>0,"Admin login HTML has no Next.js stylesheet references");
+ let containsLoginRules=false;
+ for(const asset of [...new Set(loginCss)]){
+  const response=await fetch(origin+asset,{signal:AbortSignal.timeout(10000)});
+  assert.equal(response.status,200,"Admin login stylesheet returned an error: "+asset);
+  assert.match(response.headers.get("content-type")||"",/text\/css/,"Invalid CSS MIME type: "+asset);
+  const body=await response.text();
+  assert.ok(body.length>100,"Empty admin login CSS chunk: "+asset);
+  if(body.includes(".login-page")&&body.includes(".login-card"))containsLoginRules=true;
+ }
+ assert.ok(containsLoginRules,"Legacy login styling was not bundled for /admin/acceso");
  const health=await fetch(origin+"/api/health",{signal:AbortSignal.timeout(10000)});
  assert.equal(health.status,200,"Prisma readiness failed");
  const db=await health.json();
  assert.equal(db.status,"ok");
- console.log("PASS Plesk app.js: Node startup, SSR home, Next.js JS/CSS, Prisma health.");
+ console.log("PASS Plesk app.js: Node startup, SSR home, admin login styling, Next.js CSS/JS, Prisma health.");
 }catch(error){
  console.error("Plesk startup smoke failed:",error instanceof Error?error.message:"unknown");
  console.error("Last startup logs:",logs.slice(-1300));
