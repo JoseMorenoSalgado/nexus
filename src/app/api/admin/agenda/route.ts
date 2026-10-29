@@ -36,7 +36,7 @@ export async function POST(req:NextRequest){
   await prisma.agendaEvent.create({data:{tenantId:user.tenantId,leadId:lead.id,type,title,
    startsAt,durationMinutes:duration,location:location||null,meetingUrl:meetingUrl||null,
    notes:notes||null,createdByName:user.name.slice(0,120)}});
-  const mail=notifyByEmail?await notifyAgendaEmail({title,startsAt,type,leadName:lead.name,
+  const mail=notifyByEmail?await notifyAgendaEmail({tenantId:user.tenantId,title,startsAt,type,leadName:lead.name,
    meetingUrl:meetingUrl||null,action:"programada"}):"disabled";
   return propertyRedirect("/admin/agenda?mes="+startsAt.toISOString().slice(0,7)+"&created=1&mail="+mail);
  }catch(error){
