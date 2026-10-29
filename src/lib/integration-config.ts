@@ -1,4 +1,3 @@
-import "server-only";
 import {createCipheriv,createDecipheriv,createHash,randomBytes} from "node:crypto";
 import {chmodSync,existsSync,mkdirSync,openSync,closeSync,readFileSync,writeFileSync,renameSync,unlinkSync} from "node:fs";
 import {join,resolve,relative,isAbsolute,basename} from "node:path";
@@ -62,6 +61,8 @@ function masterKey(create:boolean){
  return key;
 }
 export function storedIntegrations(tenantId:string):IntegrationConfig|null{
+ // Existing installations still using env variables need no private settings file.
+ if(!isAbsolute(process.env.APP_CONFIG_DIR||""))return null;
  const path=tenantPath(tenantId);
  if(!existsSync(path))return null;
  const obj=JSON.parse(readFileSync(path,"utf8")) as Envelope;
