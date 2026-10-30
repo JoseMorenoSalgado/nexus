@@ -74,6 +74,7 @@ try{
  assert.match((await post("/api/admin/crm/leads/"+leadId,association,agent)).headers.get("location")||"",/propertySaved=1/);
  const changed=await db.lead.findUnique({where:{id:leadId},include:{propertyHistory:true}});
  assert.equal(changed.propertyId,ownedId);assert.equal(changed.propertyHistory.length,1);
+ assert.match(changed.propertyHistory[0].fromExternalDescription||"",/Marketplace/);
  const denied=new FormData();denied.set("intent","property");denied.set("propertyId",created[0].id);
  denied.set("externalPropertyInterest","");
  assert.match((await post("/api/admin/crm/leads/"+leadId,denied,agent)).headers.get("location")||"",/error=propiedad/);
