@@ -55,9 +55,16 @@ export default async function EditProperty({params,searchParams}:{params:Promise
   <details id="editar-pdf" className="admin-panel property-photo-panel editor-disclosure editor-pdf-disclosure"><summary><span><strong>Ficha técnica en PDF</strong><small>Descargar ficha o gestionar un PDF corporativo</small></span><span className="editor-chevron" aria-hidden="true">⌄</span></summary><div className="editor-disclosure-body">
    <p className="property-help">La ficha se genera automáticamente con los datos del inmueble o puedes subir una versión personalizada de tu empresa.</p>
    <div className="property-pdf-auto">
-    <div><strong>Ficha automática</strong><span>Se genera con el precio, ubicación, descripción y fotografías del inmueble.</span></div>
-    {property.published?<Link href={"/api/propiedades/"+encodeURIComponent(property.slug)+"/pdf"} className="btn wizard-back">Descargar automática</Link>:<span className="property-help">Disponible al publicar el inmueble</span>}
+    <div><strong>Ficha automática optimizada</strong><span>Resumen de una página o ficha ampliada de máximo dos páginas.</span></div>
    </div>
+   {property.published?<form action={"/api/propiedades/"+encodeURIComponent(property.slug)+"/pdf"} method="get" target="_blank" className="admin-form" aria-label="Exportar ficha técnica">
+     <label>Formato de exportación<select name="formato" defaultValue="ampliada"><option value="resumida">Resumida — 1 página</option><option value="ampliada">Ampliada — máximo 2 páginas</option></select></label>
+     <fieldset><legend>Seleccionar fotografías destacadas (máximo 5)</legend>
+      {property.photos.slice(0,8).map((photo,i)=><label key={photo.id} className="property-check"><input name="fotos" type="checkbox" value={photo.id} defaultChecked={i<5}/>{photo.alt||"Fotografía "+(i+1)}</label>)}
+     </fieldset>
+     <p className="property-help">Las imágenes restantes se consultan en la galería de la página pública. Puedes ordenar la galería en la sección de fotografías.</p>
+     <div className="property-editor-actions"><button type="submit" name="vista" value="1" className="btn wizard-back">Previsualizar PDF</button><button type="submit" name="vista" value="0" className="btn btn-red">Descargar PDF</button></div>
+    </form>:<p className="property-help">Publica el inmueble para previsualizar o descargar la ficha automática.</p>}
    <PropertyDocumentManager propertyId={id} hasDocument={hasDocument} canEdit={canEdit}/>
   </div></details>
   {admin.roles.includes("admin")&&<details className="property-danger"><summary><Trash2 size={16}/> Eliminar inmueble</summary>
