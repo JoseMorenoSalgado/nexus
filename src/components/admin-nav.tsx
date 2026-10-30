@@ -67,7 +67,7 @@ export function AdminNav({role="admin",roles=[role],userId,userName,notification
  const enabled=new Set(enabledModules??defaultEnabledModules(templateKey));
  const entryModule:Record<string,ModuleKey>={"/admin/propiedades":"properties","/admin/leads":"inquiries","/admin/agenda":"agenda","/admin/cierres":"closings","/admin/reportes":"analytics"};
  const allowed=(entry:Entry)=>!entryModule[entry.href]||enabled.has(entryModule[entry.href]);
- const main=primary.filter(x=>(manager||(agent&&["/admin","/admin/leads","/admin/agenda","/admin/cierres"].includes(x.href))||x.href==="/admin")
+ const main=primary.filter(x=>(manager||(agent&&["/admin","/admin/propiedades","/admin/leads","/admin/agenda","/admin/cierres"].includes(x.href))||x.href==="/admin")
   &&(realEstate||["/admin","/admin/leads","/admin/personalizar/inicio"].includes(x.href)))
   .filter(allowed)
   .map(x=>!realEstate&&x.href==="/admin/leads"?{...x,label:"Consultas"}:x);
