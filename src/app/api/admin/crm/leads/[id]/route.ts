@@ -54,6 +54,7 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
     await tx.leadPropertyHistory.create({data:{
      tenantId:admin.tenantId,leadId:id,
      fromPropertyId:current.propertyId,fromRef:current.property?.refCode||null,
+     fromExternalDescription:current.externalPropertyInterest||null,
      toPropertyId:chosen?.id||null,toRef:chosen?.refCode||null,
      externalDescription:externalPropertyInterest||null,changedByName:admin.name.slice(0,120)
     }});
