@@ -308,6 +308,7 @@ model LeadPropertyHistory {
   lead Lead @relation(fields:[leadId],references:[id],onDelete:Cascade)
   fromPropertyId String?
   fromRef String?
+  fromExternalDescription String? @db.VarChar(300)
   toPropertyId String?
   toRef String?
   externalDescription String? @db.VarChar(300)
