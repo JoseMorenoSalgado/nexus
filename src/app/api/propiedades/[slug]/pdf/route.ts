@@ -48,7 +48,9 @@ export async function GET(req:NextRequest,{params}:{params:Promise<{slug:string}
   }
  }
  if(!property)return NextResponse.json({error:"Propiedad no encontrada"},{status:404});
- const publicUrl=new URL("/propiedades/"+encodeURIComponent(property.slug),req.nextUrl.origin).toString();
+ const scheme=req.headers.get("x-forwarded-proto")==="https"?"https":
+  req.headers.get("x-forwarded-proto")==="http"?"http":req.nextUrl.protocol.replace(":","");
+ const publicUrl=new URL("/propiedades/"+encodeURIComponent(property.slug),scheme+"://"+hostname).toString();
  const {bytes}=await buildPropertyPdf(property,{mode,photoIds:selected,tenantName,primaryColor,publicUrl});
  const filename="nexus-"+property.refCode.replace(/[^A-Za-z0-9-]/g,"")+
   (mode==="resumida"?"-resumida":"-ampliada")+".pdf";
