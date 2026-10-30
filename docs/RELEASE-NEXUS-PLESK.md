@@ -41,7 +41,9 @@ Preparar una suscripción/dominio de staging **separados** con:
 - Bloqueo de indexación y autenticación de acceso, sin reutilizar el dominio público de producción.
 - Rama `feat/mejoras-nexus-20261030`, Node.js >=22, Passenger y directorio persistente.
 
-Comprobar qué motor Prisma corresponde. En staging, **después de backup y revisar historial real**:
+Comprobar qué motor Prisma corresponde. **Advertencia importante:** el CLI de Prisma exige una `DATABASE_URL` definida en su entorno. Si la instalación de Plesk guarda la conexión únicamente en `APP_CONFIG_DIR/installation.json`, el CLI **no la lee automáticamente**. En ese caso el operador debe preparar una variable temporal segura para la base exclusiva de staging, verificar sin revelar credenciales el host y nombre de base, y solo entonces ejecutar el SQL. Nunca copiar la contraseña al repositorio, documentación ni logs. Si no puede verificarse la conexión real del CLI, detener la operación.
+
+En staging, **después de backup, revisión del historial real y verificar `DATABASE_URL` temporal de staging**:
 
 MySQL/MariaDB (instalación no administrada por Prisma Migrate):
 ```bash
@@ -53,7 +55,7 @@ PostgreSQL (solo si staging usa este motor):
 npx prisma db execute --schema prisma/schema.postgres.prisma --file prisma/migrations-postgres/20261030050000_nexus_functional_enhancements/migration.sql
 ```
 
-**Una sola ejecución del archivo correspondiente**, nunca ambos. Los comandos dependen de que `DATABASE_URL` o `installation.json` apunte realmente a la copia de staging; confirmar esto antes de pulsar Enter. Si hay historial Prisma Migrate, reconciliarlo en lugar de aplicar manualmente y repetir. No ejecutar `prisma db push`, `migrate reset`, `migrate dev` ni volver a instalar sobre bases existentes.
+**Una sola ejecución del archivo correspondiente**, nunca ambos. Los comandos dependen exclusivamente de la conexión que recibe el **CLI de Prisma** por su entorno. `installation.json` de la aplicación no sustituye esa variable. Confirmar el destino de staging antes de pulsar Enter. Si hay historial Prisma Migrate, reconciliarlo en lugar de aplicar manualmente y repetir. No ejecutar `prisma db push`, `migrate reset`, `migrate dev` ni volver a instalar sobre bases existentes.
 
 Después:
 ```bash
