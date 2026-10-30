@@ -58,7 +58,7 @@ assert.equal(weekView.status,200);
 assert.match(await weekView.text(),/vista=dia/);
 const agentEmail="notices-"+stamp+"@example.test",pass="Long-password-for-alerts-CI-2026";
 const userForm=new FormData();userForm.set("intent","create");userForm.set("name","Agente avisos CI");
-userForm.set("email",agentEmail);userForm.set("password",pass);userForm.append("roles","agente");
+userForm.set("email",agentEmail);userForm.set("password",pass);userForm.set("confirmPassword",pass);userForm.append("roles","agente");
 const createdAgent=await post("/api/admin/users",userForm,admin);
 assert.match(createdAgent.headers.get("location")||"",/status=creado/);
 const directory=await (await request("/admin/clientes-agentes",admin)).text();
