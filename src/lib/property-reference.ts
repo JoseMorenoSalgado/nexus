@@ -36,7 +36,10 @@ export async function createPropertyWithReference(tenantId:string, data:Omit<Pri
    },{isolationLevel:"Serializable",timeout:20000,maxWait:12000});
   }catch(error){
    const code=error&&typeof error==="object"&&"code" in error?error.code:"";
-   if((code==="P2034"||code==="P2002")&&attempt<5)continue;
+   if((code==="P2034"||code==="P2002")&&attempt<5){
+    await new Promise(resolve=>setTimeout(resolve,25*(attempt+1)));
+    continue;
+   }
    throw error;
   }
  }
