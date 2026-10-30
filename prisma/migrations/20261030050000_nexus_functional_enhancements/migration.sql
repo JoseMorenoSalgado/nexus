@@ -26,6 +26,7 @@ CREATE TABLE `LeadPropertyHistory` (
   `leadId` VARCHAR(191) NOT NULL,
   `fromPropertyId` VARCHAR(191) NULL,
   `fromRef` VARCHAR(191) NULL,
+  `fromExternalDescription` VARCHAR(300) NULL,
   `toPropertyId` VARCHAR(191) NULL,
   `toRef` VARCHAR(191) NULL,
   `externalDescription` VARCHAR(300) NULL,
