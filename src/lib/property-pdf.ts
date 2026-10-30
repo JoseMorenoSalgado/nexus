@@ -98,8 +98,8 @@ export async function buildPropertyPdf(property:PropertyPdfInput,options:{
  await drawPhoto(pdf,page,property.tenantId,photos[0],{x:40,y:284,width:515,height:267},regular);
  page.drawText("DESCRIPCIÓN",{x:40,y:262,size:11,font:bold,color:ink});
  const lines=wrapped(property.description,regular,10,515);
- const page1Lines=lines.slice(0,10);
- drawParagraph(page,page1Lines,40,241,regular,10,10);
+ const page1Lines=lines.slice(0,9);
+ drawParagraph(page,page1Lines,40,241,regular,10,9);
  footer(page,regular,options.tenantName);
  let remaining=lines.slice(page1Lines.length);
  const extraPhotos=options.mode==="ampliada"?photos.slice(1,5):[];
@@ -118,7 +118,7 @@ export async function buildPropertyPdf(property:PropertyPdfInput,options:{
   const textY=extraPhotos.length>2?286:extraPhotos.length?475:687;
   if(remaining.length){
    page2.drawText("MÁS INFORMACIÓN",{x:40,y:textY,font:bold,size:11,color:ink});
-   const lineCount=Math.max(0,Math.floor((textY-114)/14));
+   const lineCount=Math.max(0,Math.floor((textY-140)/14));
    drawParagraph(page2,remaining,40,textY-22,regular,10,lineCount);
    remaining=remaining.slice(lineCount);
   }
@@ -131,9 +131,9 @@ export async function buildPropertyPdf(property:PropertyPdfInput,options:{
   const png=await QRCode.toBuffer(options.publicUrl,{type:"png",width:180,margin:1,errorCorrectionLevel:"M"});
   const qr=await pdf.embedPng(png);
   const last=pdf.getPages()[pdf.getPageCount()-1];
-  last.drawRectangle({x:467,y:25,width:88,height:106,color:paper});
-  last.drawText("VER FICHA WEB",{x:473,y:120,font:bold,size:8,color:accent});
-  last.drawImage(qr,{x:478,y:32,width:68,height:68});
+  last.drawRectangle({x:461,y:18,width:94,height:108,color:paper});
+  last.drawText("VER FICHA WEB",{x:468,y:110,font:bold,size:8,color:accent});
+  last.drawImage(qr,{x:472,y:28,width:76,height:76});
  }
  return {bytes:new Uint8Array(await pdf.save()),pageCount:pdf.getPageCount()};
 }
