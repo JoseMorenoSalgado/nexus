@@ -101,7 +101,7 @@ const agentEmail="agenda-agent-"+stamp+"@example.test";
 const password="CI-agenda-agent-password-2026-123";
 const createUser=new FormData();
 createUser.set("intent","create");createUser.set("name","Agente Agenda CI");createUser.set("email",agentEmail);
-createUser.set("password",password);createUser.append("roles","agente");
+createUser.set("password",password);createUser.set("confirmPassword",password);createUser.append("roles","agente");
 const created=await post("/api/admin/users",createUser,admin);
 assert.match(created.headers.get("location")||"",/status=creado/);
 const usersPage=await (await get("/admin/clientes-agentes",admin)).text();
