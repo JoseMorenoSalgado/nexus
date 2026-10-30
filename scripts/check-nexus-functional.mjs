@@ -29,7 +29,7 @@ function lead(name,source="facebook"){
  form.set("source",source);form.set("consent","on");return form;
 }
 function idFrom(response,kind){
- return new URL(response.headers.get("location"),origin).pathname.match(new RegExp("/admin/"+kind+"/([a-z0-9]+)/"))?.[1];
+ const parts=new URL(response.headers.get("location"),origin).pathname.split("/").filter(Boolean); return kind==="propiedades"?parts.at(-2):parts.at(-1);
 }
 try{
  const admin=await login(process.env.ADMIN_EMAIL,process.env.ADMIN_PASSWORD);
