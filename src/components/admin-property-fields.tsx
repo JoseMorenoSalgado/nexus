@@ -7,7 +7,7 @@ type Data={
 /** The initial view keeps all required fields visible for native form validation.
  * Only optional commercial/promotion settings live in a disclosure.
  */
-export function AdminPropertyFields({property,agents=[]}:{property?:Data;agents?:{id:string;name:string;email:string}[]}){
+export function AdminPropertyFields({property,agents=[],allowAssignment=true}:{property?:Data;agents?:{id:string;name:string;email:string}[];allowAssignment?:boolean}){
  const value=(key:keyof Data,fallback:string|number=""):string|number=>{
   const x=property?.[key];
   return typeof x==="string"||typeof x==="number"?x:fallback;
@@ -16,7 +16,7 @@ export function AdminPropertyFields({property,agents=[]}:{property?:Data;agents?
   <section className="property-form-section property-fields-essential" aria-labelledby="property-main-heading">
    <div className="editor-section-heading"><div><h2 id="property-main-heading">Información principal</h2><p>Datos que verán los visitantes en el catálogo y la ficha.</p></div><span className="editor-section-step">1</span></div>
    <div className="admin-form-grid">
-    <label>Referencia *<input name="refCode" placeholder="NX-102" defaultValue={value("refCode")} minLength={3} maxLength={40} required/></label>
+    <label>Referencia de inventario{property?<input value={property.refCode} aria-label="Referencia asignada" readOnly/>:<p className="property-help">Se asignará automáticamente al guardar (ejemplo: NRE-000001).</p>}</label>
     <label>Título de la propiedad *<input name="title" placeholder="Casa moderna en Zona Ejecutiva" defaultValue={value("title")} minLength={5} maxLength={140} required/></label>
    </div>
    <div className="admin-form-grid">
@@ -47,7 +47,7 @@ export function AdminPropertyFields({property,agents=[]}:{property?:Data;agents?
   <details className="editor-disclosure property-form-section">
    <summary><span><strong>Más opciones</strong><small>Agente responsable y propiedad destacada</small></span><span className="editor-chevron" aria-hidden="true">⌄</span></summary>
    <div className="editor-disclosure-body">
-    <label>Agente responsable<select name="assignedAgentId" defaultValue={property?.assignedAgentId||""}><option value="">Sin asignar</option>{agents.map(agent=><option key={agent.id} value={agent.id}>{agent.name} — {agent.email}</option>)}</select></label>
+    {allowAssignment&&<label>Agente responsable<select name="assignedAgentId" defaultValue={property?.assignedAgentId||""}><option value="">Sin asignar</option>{agents.map(agent=><option key={agent.id} value={agent.id}>{agent.name} — {agent.email}</option>)}</select></label>}
     <label className="property-check"><input type="checkbox" name="featured" defaultChecked={Boolean(property?.featured)}/> Destacar en la página principal</label>
     <p className="property-help">Estas opciones son opcionales y podrás modificarlas después.</p>
    </div>
