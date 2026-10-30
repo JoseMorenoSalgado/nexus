@@ -79,7 +79,7 @@ export default async function CrmLead({params,searchParams}:{params:Promise<{id:
      </form>}
      <details className="crm-secondary-disclosure"><summary>Historial de propiedades ({lead.propertyHistory.length})</summary>
       {lead.propertyHistory.length?<ol className="crm-assignment-history">{lead.propertyHistory.map(h=><li key={h.id}>
-       <strong>{h.fromRef||"Sin asignar"} → {h.toRef||h.externalDescription||"Sin asignar"}</strong>
+       <strong>{h.fromRef||h.fromExternalDescription||"Sin asignar"} → {h.toRef||h.externalDescription||"Sin asignar"}</strong>
        <small>{stamped(h.createdAt)} · {h.changedByName}</small>
       </li>)}</ol>:<p className="property-help">No se han modificado las propiedades de interés.</p>}
      </details>
