@@ -2,7 +2,7 @@ import {NextRequest} from "next/server";
 import {requireAdmin} from "@/lib/auth";
 import {validMutationOrigin,propertyRedirect} from "@/lib/admin-property-request";
 import {prisma} from "@/lib/prisma";
-import {validLeadSourceCode} from "@/lib/lead-sources";
+import {validLeadSourceCode,DEFAULT_LEAD_SOURCES} from "@/lib/lead-sources";
 export const runtime="nodejs";
 const back=(status:string)=>propertyRedirect("/admin/leads/canales?status="+status);
 export async function POST(req:NextRequest){
@@ -26,8 +26,11 @@ export async function POST(req:NextRequest){
  if(intent==="toggle"){
   const active=form.get("active")==="true";
   const existing=await prisma.leadSource.findUnique({where:{tenantId_code:{tenantId:admin.tenantId,code}}});
-  if(!existing)return back("datos");
-  await prisma.leadSource.update({where:{id:existing.id},data:{active}});
+  const standard=DEFAULT_LEAD_SOURCES.find(s=>s.code===code);
+  if(!existing&&!standard)return back("datos");
+  await prisma.leadSource.upsert({where:{tenantId_code:{tenantId:admin.tenantId,code}},
+   create:{tenantId:admin.tenantId,code,name:standard?.name||existing?.name||code,active},
+   update:{active}});
   return back("guardado");
  }
  return back("datos");
