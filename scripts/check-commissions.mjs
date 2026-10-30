@@ -25,7 +25,7 @@ const code=Date.now().toString(36);
 const person="Comision agente "+code,email="commission-"+code+"@example.test";
 const password="Commission-agent-long-test-password-2026";
 const createAgent=new FormData();createAgent.set("intent","create");createAgent.set("name",person);
-createAgent.set("email",email);createAgent.set("password",password);createAgent.append("roles","agente");
+createAgent.set("email",email);createAgent.set("password",password);createAgent.set("confirmPassword",password);createAgent.append("roles","agente");
 assert.match((await post("/api/admin/users",createAgent,admin)).headers.get("location")||"",/status=creado/);
 const directory=await (await get("/admin/clientes-agentes",admin)).text();
 const index=directory.indexOf(email);assert.ok(index>=0);

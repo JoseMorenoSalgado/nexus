@@ -6,6 +6,7 @@ import {prisma} from "@/lib/prisma";
 import {crmTablesReady} from "@/lib/crm-schema";
 import {managesAllLeads} from "@/lib/agent-scope";
 import {parseRoles} from "@/lib/roles";
+import {tenantLeadSources} from "@/lib/lead-sources";
 import {propertyRedirect,validMutationOrigin} from "@/lib/admin-property-request";
 
 export const runtime="nodejs";
@@ -31,14 +32,15 @@ export async function POST(req:NextRequest){
   const phone=field("phone",30);
   const email=field("email",180).toLowerCase();
   const message=field("message",2000);
-  const source=field("source",20);
+  const source=field("source",32);
   const propertyId=field("propertyId",80);
+  const externalPropertyInterest=field("externalPropertyInterest",300);
   if(name.length<2||!/^[+\d() -]{7,30}$/.test(phone))return back("datos");
   if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return back("correo");
-  if(!["whatsapp","telefono","manual"].includes(source))return back("datos");
+  if(!(await tenantLeadSources(admin.tenantId)).some(s=>s.active&&s.code===source))return back("datos");
+  if(propertyId&&externalPropertyInterest)return back("datos");
   if(form.get("consent")!=="on")return back("consentimiento");
-  const realEstate=(await getSiteTemplate(admin.tenantId)).key==="real-estate";
-  if(realEstate&&!managesAllLeads(admin)&&!propertyId)return back("propiedad");
+
   let assignedAgentId:string|null=null;
   if(propertyId){
    const property=await prisma.property.findFirst({where:{tenantId:admin.tenantId,id:propertyId,...(!managesAllLeads(admin)?{assignedAgentId:admin.userId}:{})},select:{id:true,assignedAgentId:true,assignedAgent:{select:{active:true,role:true,tenantId:true}}}});
@@ -58,7 +60,7 @@ export async function POST(req:NextRequest){
   }else assignedAgentId=admin.userId;
   const lead=await prisma.lead.create({data:{
    tenantId:admin.tenantId,propertyId:propertyId||null,assignedAgentId,name,phone,email:email||null,
-   message:message||null,source,consent:true
+   message:message||null,source,consent:true,externalPropertyInterest:externalPropertyInterest||null
   }});
   return propertyRedirect("/admin/leads/"+encodeURIComponent(lead.id)+"?created=1");
  }catch(error){

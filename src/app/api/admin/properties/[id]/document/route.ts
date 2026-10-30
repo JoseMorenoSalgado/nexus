@@ -6,6 +6,7 @@ import {NextRequest,NextResponse} from "next/server";
 import {prisma} from "@/lib/prisma";
 import {customPdfPath,MAX_CUSTOM_PDF_BYTES,pdfDownloadResponse,readCustomPdf,sanitizePropertyPdf} from "@/lib/property-document";
 import {propertyEditor,validMutationOrigin} from "@/lib/admin-property-request";
+import {propertyWhere} from "@/lib/agent-scope";
 
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
@@ -14,7 +15,7 @@ const fail=(message:string,status:number)=>NextResponse.json({error:message},{st
 async function identify(id:string){
  const admin=await propertyEditor();
  if(!await tenantModuleEnabled(admin.tenantId,"properties"))return {admin,property:null,disabled:true};
- const property=await prisma.property.findFirst({where:{id,tenantId:admin.tenantId},select:{id:true,refCode:true}});
+ const property=await prisma.property.findFirst({where:{id,...propertyWhere(admin)},select:{id:true,refCode:true}});
  return {admin,property};
 }
 
@@ -59,7 +60,7 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
   await mkdir(dirname(target),{recursive:true,mode:0o700});
   await writeFile(temp,safe,{flag:"wx",mode:0o600});
   // Do not leave an orphaned document for a property removed during processing.
-  const stillExists=await prisma.property.findFirst({where:{id:property.id,tenantId:admin.tenantId},select:{id:true}});
+  const stillExists=await prisma.property.findFirst({where:{id:property.id,...propertyWhere(admin)},select:{id:true}});
   if(!stillExists)return fail("El inmueble ya no existe.",404);
   await rename(temp,target);
   return NextResponse.json({ok:true},{headers:{"Cache-Control":"no-store"}});

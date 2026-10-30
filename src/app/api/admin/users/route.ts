@@ -18,9 +18,10 @@ export async function POST(req:NextRequest){
   const name=String(form.get("name")||"").trim().slice(0,120);
   const email=String(form.get("email")||"").trim().toLowerCase().slice(0,180);
   const password=String(form.get("password")||"");
+  const confirmation=String(form.get("confirmPassword")||"");
   const roles=form.getAll("roles").map(String);
   const role=serializeRoles(roles.filter(isUserRole));
-  if(name.length<2||!/^\S+@\S+\.\S+$/.test(email)||password.length<12||password.length>256||!roles.length||roles.length!==new Set(roles).size||!roles.every(isUserRole))return redirect(req,"datos");
+  if(name.length<2||!/^\S+@\S+\.\S+$/.test(email)||password.length<12||password.length>256||password!==confirmation||!/[a-z]/i.test(password)||!/\d/.test(password)||/[\x00-\x1F]/.test(password)||!roles.length||roles.length!==new Set(roles).size||!roles.every(isUserRole))return redirect(req,"datos");
   try{await prisma.adminUser.create({data:{tenantId:admin.tenantId,name,email,role,passwordHash:hashPassword(password),active:true}});}
   catch{return redirect(req,"duplicado");}
   return redirect(req,"creado");

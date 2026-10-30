@@ -3,6 +3,7 @@ import {NextRequest} from "next/server";
 import {prisma} from "@/lib/prisma";
 import {validateAssignedAgent} from "@/lib/property-agent";
 import {parseProperty,PropertyFormError} from "@/lib/property-form";
+import {propertyWhere} from "@/lib/agent-scope";
 import {propertyRedirect,validMutationOrigin,propertyEditor,propertyErrorPath} from "@/lib/admin-property-request";
 import {unlink} from "node:fs/promises";
 import {mediaFilePath} from "@/lib/property-media";
@@ -15,13 +16,14 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
  if(!admin.canEdit)return propertyRedirect("/admin/propiedades?error=permisos");
  if(!validMutationOrigin(req))return propertyRedirect(propertyErrorPath("origen",id));
  if(Number(req.headers.get("content-length")||0)>28000)return propertyRedirect(propertyErrorPath("datos",id));
- const property=await prisma.property.findFirst({where:{id,tenantId:admin.tenantId},include:{photos:{select:{id:true,url:true}}}});
+ const property=await prisma.property.findFirst({where:{id,...propertyWhere(admin)},include:{photos:{select:{id:true,url:true}}}});
  if(!property)return propertyRedirect("/admin/propiedades?error=noexiste");
  try{
   const form=await req.formData();
   const intent=String(form.get("intent")||"save");
   if(intent==="publish"||intent==="unpublish"){
-   await prisma.property.update({where:{id:property.id},data:{published:intent==="publish"}});
+   const changed=await prisma.property.updateMany({where:{id:property.id,...propertyWhere(admin)},data:{published:intent==="publish"}});
+   if(!changed.count)return propertyRedirect("/admin/propiedades?error=permisos");
    return propertyRedirect("/admin/propiedades?updated=1");
   }
   if(intent==="delete"){
@@ -37,8 +39,9 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
   }
   if(intent!=="save")return propertyRedirect(propertyErrorPath("datos",id));
   const data=parseProperty(form);
-  const assignedAgentId=await validateAssignedAgent(admin.tenantId,form.get("assignedAgentId"));
-  await prisma.property.update({where:{id:property.id},data:{...data,assignedAgentId}});
+  const assignedAgentId=admin.canManageAll?await validateAssignedAgent(admin.tenantId,form.get("assignedAgentId")):property.assignedAgentId;
+  const changed=await prisma.property.updateMany({where:{id:property.id,...propertyWhere(admin)},data:{...data,assignedAgentId}});
+  if(!changed.count)return propertyRedirect("/admin/propiedades?error=permisos");
   return propertyRedirect("/admin/propiedades/"+encodeURIComponent(id)+"/editar?saved=1");
  }catch(error){
   if(error instanceof Error&&error.message==="AGENT_INVALID")return propertyRedirect(propertyErrorPath("datos",id));

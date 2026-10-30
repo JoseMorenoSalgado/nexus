@@ -1,6 +1,7 @@
 // Full custom-PDF flow against CI's isolated localhost tenant and database.
 import assert from "node:assert/strict";
 import {PDFDocument,PDFName} from "pdf-lib";
+import {PrismaClient} from "@prisma/client";
 import {execFileSync} from "node:child_process";
 
 const origin=process.env.TEST_ORIGIN||"http://localhost:3000";
@@ -28,7 +29,11 @@ const dest=new URL(created.headers.get("location"),origin);
 const id=dest.pathname.match(/^\/admin\/propiedades\/([^/]+)\/editar$/)?.[1];
 assert.ok(id,"Could not resolve the created property.");
 const adminDoc=origin+"/api/admin/properties/"+id+"/document";
-const publicDoc=origin+"/api/propiedades/casa-con-pdf-corporativo-ci-nx-pdf-ci/pdf-personalizado";
+const client=new PrismaClient();
+const record=await client.property.findUnique({where:{id},select:{slug:true,refCode:true}});
+await client.$disconnect();
+assert.ok(record?.slug&&record.refCode.startsWith("NRE-"));
+const publicDoc=origin+"/api/propiedades/"+record.slug+"/pdf-personalizado";
 
 const missing=await fetch(adminDoc,{headers:{Cookie:cookie}});
 assert.equal(missing.status,404,"Missing document should return 404.");
@@ -64,11 +69,18 @@ const foreignStatus=execFileSync("curl",[
  "-H","X-Forwarded-Host: other-tenant.test",publicDoc
 ],{encoding:"utf8"}).trim();
 assert.equal(foreignStatus,"404","Foreign domains must not access the PDF.");
-const auto=await fetch(origin+"/api/propiedades/casa-con-pdf-corporativo-ci-nx-pdf-ci/pdf");
+const auto=await fetch(origin+"/api/propiedades/"+record.slug+"/pdf");
 assert.equal(auto.status,200,"Automatic PDF must stay available.");
+for(const [format,maxPages] of [["resumida",1],["ampliada",2]]){
+ const generated=await fetch(origin+"/api/propiedades/"+record.slug+"/pdf?formato="+format+"&vista=1");
+ assert.equal(generated.status,200);
+ assert.match(generated.headers.get("content-disposition")||"",/inline/i);
+ const parsed=await PDFDocument.load(await generated.arrayBuffer());
+ assert.ok(parsed.getPageCount()>=1&&parsed.getPageCount()<=maxPages,"PDF must respect the page limit.");
+}
 
 const deleted=await fetch(adminDoc,{method:"DELETE",headers:authHeaders});
 assert.equal(deleted.status,200);
 assert.equal((await fetch(publicDoc)).status,404,"Removed personalized PDFs must not remain public.");
-assert.equal((await fetch(origin+"/api/propiedades/casa-con-pdf-corporativo-ci-nx-pdf-ci/pdf")).status,200,"Automatic PDF remains available.");
+assert.equal((await fetch(origin+"/api/propiedades/"+record.slug+"/pdf")).status,200,"Automatic PDF remains available.");
 console.log("Custom PDF: upload, sanitization, private drafts, publication, tenant isolation, deletion and automatic brochure passed.");

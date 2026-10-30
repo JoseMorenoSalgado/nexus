@@ -17,6 +17,9 @@ model Tenant {
   active Boolean @default(true)
   domains Domain[]
   properties Property[]
+  propertySequence PropertySequence?
+  leadSources LeadSource[]
+  leadPropertyHistory LeadPropertyHistory[]
   leads Lead[]
   closings CommercialClosing[]
   events VisitEvent[]
@@ -84,12 +87,14 @@ model Lead {
   phone String
   message String? @db.Text
   source String @default("web")
+  externalPropertyInterest String? @db.VarChar(300)
   consent Boolean @default(false)
   crm LeadCrm?
   notes LeadNote[]
   assignedAgentId String?
   assignedAgent AdminUser? @relation("AgentLeads",fields:[assignedAgentId],references:[id],onDelete:SetNull)
   assignmentHistory LeadAssignmentHistory[]
+  propertyHistory LeadPropertyHistory[]
   agendaEvents AgendaEvent[]
   closing CommercialClosing?
   createdAt DateTime @default(now())
@@ -269,4 +274,45 @@ model CommissionPayment {
  createdAt DateTime @default(now())
  @@index([tenantId,closingId,paidAt])
  @@index([tenantId,paidAt])
+}
+
+
+/** Tenant-scoped, transactional next-number allocator. Existing Property.refCode never changes. */
+model PropertySequence {
+  tenantId String @id
+  tenant Tenant @relation(fields:[tenantId],references:[id],onDelete:Cascade)
+  prefix String @default("NRE")
+  nextNumber Int @default(1)
+  updatedAt DateTime @updatedAt
+}
+
+/** Sources can be disabled without changing historical Lead.source values. */
+model LeadSource {
+  id String @id @default(cuid())
+  tenantId String
+  tenant Tenant @relation(fields:[tenantId],references:[id],onDelete:Cascade)
+  code String
+  name String
+  active Boolean @default(true)
+  createdAt DateTime @default(now())
+  @@unique([tenantId,code])
+  @@index([tenantId,active])
+}
+
+/** Append-only property association history for existing and external interests. */
+model LeadPropertyHistory {
+  id String @id @default(cuid())
+  tenantId String
+  tenant Tenant @relation(fields:[tenantId],references:[id],onDelete:Cascade)
+  leadId String
+  lead Lead @relation(fields:[leadId],references:[id],onDelete:Cascade)
+  fromPropertyId String?
+  fromRef String?
+  fromExternalDescription String? @db.VarChar(300)
+  toPropertyId String?
+  toRef String?
+  externalDescription String? @db.VarChar(300)
+  changedByName String
+  createdAt DateTime @default(now())
+  @@index([tenantId,leadId,createdAt])
 }

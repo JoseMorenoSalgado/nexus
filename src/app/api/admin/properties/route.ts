@@ -2,7 +2,8 @@ import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {NextRequest} from "next/server";
 import {prisma} from "@/lib/prisma";
 import {validateAssignedAgent} from "@/lib/property-agent";
-import {parseProperty,propertySlug,PropertyFormError} from "@/lib/property-form";
+import {parseProperty,PropertyFormError} from "@/lib/property-form";
+import {createPropertyWithReference} from "@/lib/property-reference";
 import {propertyRedirect,validMutationOrigin,propertyEditor,propertyErrorPath} from "@/lib/admin-property-request";
 export const runtime="nodejs";
 export async function POST(req:NextRequest){
@@ -14,10 +15,8 @@ export async function POST(req:NextRequest){
  try{
   const form=await req.formData();
   const data=parseProperty(form);
-  const assignedAgentId=await validateAssignedAgent(admin.tenantId,form.get("assignedAgentId"));
-  const property=await prisma.property.create({data:{
-   ...data,slug:propertySlug(data.title,data.refCode),tenantId:admin.tenantId,assignedAgentId
-  }});
+  const assignedAgentId=admin.canManageAll?await validateAssignedAgent(admin.tenantId,form.get("assignedAgentId")):admin.userId;
+  const property=await createPropertyWithReference(admin.tenantId,{...data,assignedAgentId});
   return propertyRedirect("/admin/propiedades/"+encodeURIComponent(property.id)+"/editar?created=1");
  }catch(error){
   if(error instanceof Error&&error.message==="AGENT_INVALID")return propertyRedirect(propertyErrorPath("datos"));

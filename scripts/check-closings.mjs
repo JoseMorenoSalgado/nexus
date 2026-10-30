@@ -24,7 +24,7 @@ const stamp=Date.now().toString(36);
 const email="closing-agent-"+stamp+"@example.test",password="agent-long-password-closing-2026";
 const account=new FormData();
 account.set("intent","create");account.set("name","Asesor cierre CI "+stamp);
-account.set("email",email);account.set("password",password);account.append("roles","agente");
+account.set("email",email);account.set("password",password);account.set("confirmPassword",password);account.append("roles","agente");
 const accountResult=await post("/api/admin/users",account,cookie);
 assert.match(accountResult.headers.get("location")||"",/status=creado/);
 const directory=await (await page("/admin/clientes-agentes",cookie)).text();

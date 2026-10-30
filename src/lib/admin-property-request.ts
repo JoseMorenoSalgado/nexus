@@ -17,5 +17,5 @@ export function propertyErrorPath(code:string,id?:string){
 }
 export async function propertyEditor(){
  const admin=await requireAdmin();
- return {tenantId:admin.tenantId,canEdit:admin.roles.some(canEditProperties),canDelete:admin.roles.some(canManageUsers)};
+ return {tenantId:admin.tenantId,userId:admin.userId,roles:admin.roles,canEdit:admin.roles.some(canEditProperties),canManageAll:admin.roles.some(r=>r==="admin"||r==="editor"),canDelete:admin.roles.some(canManageUsers)};
 }

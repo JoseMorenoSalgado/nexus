@@ -3,7 +3,7 @@ import {requireAdmin} from "@/lib/auth";
 import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {prisma} from "@/lib/prisma";
 import {crmTablesReady} from "@/lib/crm-schema";
-import {leadWhere} from "@/lib/agent-scope";
+import {leadWhere,propertyWhere} from "@/lib/agent-scope";
 import {parseRoles} from "@/lib/roles";
 import {isCrmStatus} from "@/lib/crm-status";
 import {propertyRedirect,validMutationOrigin} from "@/lib/admin-property-request";
@@ -34,6 +34,39 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
  let form:FormData;
  try{form=await req.formData();}catch{return back(id,"error=datos");}
  const intent=form.get("intent");
+ if(intent==="property"){
+  const raw=form.get("propertyId"),externalRaw=form.get("externalPropertyInterest");
+  if(typeof raw!=="string"||raw.length>100||typeof externalRaw!=="string"||externalRaw.length>300)return back(id,"error=datos");
+  const externalPropertyInterest=externalRaw.trim();
+  if(raw&&externalPropertyInterest)return back(id,"error=datos");
+  const chosen=raw?await prisma.property.findFirst({where:{id:raw,...propertyWhere(admin)},select:{id:true,refCode:true}}):null;
+  if(raw&&!chosen)return back(id,"error=propiedad");
+  try{
+   const result=await prisma.$transaction(async tx=>{
+    const current=await tx.lead.findFirst({where:{id,...leadWhere(admin)},
+     select:{propertyId:true,externalPropertyInterest:true,property:{select:{refCode:true}}}});
+    if(!current)return "missing";
+    if(current.propertyId===(chosen?.id||null)&&(current.externalPropertyInterest||"")===externalPropertyInterest)return "unchanged";
+    const changed=await tx.lead.updateMany({where:{id,...leadWhere(admin)},data:{
+     propertyId:chosen?.id||null,externalPropertyInterest:externalPropertyInterest||null
+    }});
+    if(!changed.count)return "missing";
+    await tx.leadPropertyHistory.create({data:{
+     tenantId:admin.tenantId,leadId:id,
+     fromPropertyId:current.propertyId,fromRef:current.property?.refCode||null,
+     fromExternalDescription:current.externalPropertyInterest||null,
+     toPropertyId:chosen?.id||null,toRef:chosen?.refCode||null,
+     externalDescription:externalPropertyInterest||null,changedByName:admin.name.slice(0,120)
+    }});
+    return "changed";
+   },{isolationLevel:"Serializable"});
+   if(result==="missing")return propertyRedirect("/admin/leads?error=noexiste");
+   return back(id,result==="changed"?"propertySaved=1":"propertyUnchanged=1");
+  }catch(error){
+   console.error("[crm] property association",error instanceof Error?error.name:"unknown");
+   return back(id,"error=servidor");
+  }
+ }
  if(intent==="assign"){
   if(!admin.roles.some(r=>r==="admin"||r==="editor"))return back(id,"error=permisos");
   const raw=form.get("assignedAgentId");

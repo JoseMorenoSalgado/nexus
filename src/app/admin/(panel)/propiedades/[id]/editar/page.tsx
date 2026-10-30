@@ -6,6 +6,7 @@ import {ExternalLink,Save,Trash2,Users,UserPlus,Images} from "lucide-react";
 import {requireRole} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {parseRoles} from "@/lib/roles";
+import {propertyWhere} from "@/lib/agent-scope";
 import {AdminPropertyFields} from "@/components/admin-property-fields";
 import {PropertyPhotoUploader} from "@/components/property-photo-uploader";
 import {PropertyDocumentManager} from "@/components/property-document-manager";
@@ -17,20 +18,20 @@ const errors:Record<string,string>={
  duplicado:"Ya existe una propiedad con la misma referencia.",
  origen:"No se pudo verificar el origen del formulario.",
  confirmacion:"Para eliminar el inmueble debes confirmar su referencia. Solo un administrador puede hacerlo.",
- servidor:"No fue posible guardar los cambios. Revisa los registros de Dokploy."
+ servidor:"No fue posible guardar los cambios. Revisa los registros de Plesk."
 };
 export default async function EditProperty({params,searchParams}:{params:Promise<{id:string}>;searchParams:Promise<{error?:string;created?:string;saved?:string}>}){
- const admin=await requireRole(["admin","editor"]);
+ const admin=await requireRole(["admin","editor","agente"]);
  const {id}=await params;
  const q=await searchParams;
- const property=await prisma.property.findFirst({where:{id,tenantId:admin.tenantId},include:{photos:{orderBy:{sortOrder:"asc"}}}});
+ const property=await prisma.property.findFirst({where:{id,...propertyWhere(admin)},include:{photos:{orderBy:{sortOrder:"asc"}}}});
  if(!property)notFound();
  const photoSizes=Object.fromEntries(await Promise.all(property.photos.map(async photo=>{
   const paths=[mediaFilePath(admin.tenantId,photo.id),mediaVariantPath(admin.tenantId,photo.id,"card"),mediaVariantPath(admin.tenantId,photo.id,"thumb")];
   const sizes=await Promise.all(paths.map(path=>stat(path).then(file=>file.size).catch(()=>null)));
   return [photo.id,{full:sizes[0],card:sizes[1],thumb:sizes[2]}] as const;
  })));
- const canEdit=admin.roles.some(r=>["admin","editor"].includes(r));
+ const canEdit=admin.roles.some(r=>["admin","editor","agente"].includes(r));
  const hasDocument=await hasCustomPdf(admin.tenantId,property.id);
  const users=await prisma.adminUser.findMany({where:{tenantId:admin.tenantId,active:true},select:{id:true,name:true,email:true,role:true}});
  const agents=users.filter(u=>parseRoles(u.role).includes("agente"));
@@ -42,7 +43,7 @@ export default async function EditProperty({params,searchParams}:{params:Promise
   <nav className="editor-quick-nav" aria-label="Ir a una sección de la propiedad"><a href="#editar-datos">Datos principales</a><a href="#editar-fotos">Fotografías ({property.photos.length})</a><a href="#editar-pdf">Ficha PDF</a></nav>
   {canEdit&&<form id="editar-datos" action={"/api/admin/properties/"+encodeURIComponent(id)} method="post" className="admin-form property-editor">
    <input type="hidden" name="intent" value="save"/>
-   <AdminPropertyFields property={{...property,price:Number(property.price)}} agents={agents}/>
+   <AdminPropertyFields property={{...property,price:Number(property.price)}} agents={agents} allowAssignment={admin.roles.some(r=>r==="admin"||r==="editor")}/>
    <div className="property-editor-actions">
     <button type="submit" className="btn btn-red"><Save size={17}/> Guardar cambios</button>
     {property.published&&<Link className="btn wizard-back" href={"/propiedades/"+encodeURIComponent(property.slug)} target="_blank">Ver publicada <ExternalLink size={15}/></Link>}
@@ -54,9 +55,16 @@ export default async function EditProperty({params,searchParams}:{params:Promise
   <details id="editar-pdf" className="admin-panel property-photo-panel editor-disclosure editor-pdf-disclosure"><summary><span><strong>Ficha técnica en PDF</strong><small>Descargar ficha o gestionar un PDF corporativo</small></span><span className="editor-chevron" aria-hidden="true">⌄</span></summary><div className="editor-disclosure-body">
    <p className="property-help">La ficha se genera automáticamente con los datos del inmueble o puedes subir una versión personalizada de tu empresa.</p>
    <div className="property-pdf-auto">
-    <div><strong>Ficha automática</strong><span>Se genera con el precio, ubicación, descripción y fotografías del inmueble.</span></div>
-    {property.published?<Link href={"/api/propiedades/"+encodeURIComponent(property.slug)+"/pdf"} className="btn wizard-back">Descargar automática</Link>:<span className="property-help">Disponible al publicar el inmueble</span>}
+    <div><strong>Ficha automática optimizada</strong><span>Resumen de una página o ficha ampliada de máximo dos páginas.</span></div>
    </div>
+   {property.published?<form action={"/api/propiedades/"+encodeURIComponent(property.slug)+"/pdf"} method="get" target="_blank" className="admin-form" aria-label="Exportar ficha técnica">
+     <label>Formato de exportación<select name="formato" defaultValue="ampliada"><option value="resumida">Resumida — 1 página</option><option value="ampliada">Ampliada — máximo 2 páginas</option></select></label>
+     <fieldset><legend>Seleccionar fotografías destacadas (máximo 5)</legend>
+      {property.photos.slice(0,8).map((photo,i)=><label key={photo.id} className="property-check"><input name="fotos" type="checkbox" value={photo.id} defaultChecked={i<5}/>{photo.alt||"Fotografía "+(i+1)}</label>)}
+     </fieldset>
+     <p className="property-help">Las imágenes restantes se consultan en la galería de la página pública. Puedes ordenar la galería en la sección de fotografías.</p>
+     <div className="property-editor-actions"><button type="submit" name="vista" value="1" className="btn wizard-back">Previsualizar PDF</button><button type="submit" name="vista" value="0" className="btn btn-red">Descargar PDF</button></div>
+    </form>:<p className="property-help">Publica el inmueble para previsualizar o descargar la ficha automática.</p>}
    <PropertyDocumentManager propertyId={id} hasDocument={hasDocument} canEdit={canEdit}/>
   </div></details>
   {admin.roles.includes("admin")&&<details className="property-danger"><summary><Trash2 size={16}/> Eliminar inmueble</summary>
