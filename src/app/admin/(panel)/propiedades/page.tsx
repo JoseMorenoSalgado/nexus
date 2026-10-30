@@ -2,16 +2,17 @@ import Link from "next/link";
 import {Building2,MapPin,Pencil,Plus,Search,Image as ImageIcon,ExternalLink,Users,X} from "lucide-react";
 import {prisma} from "@/lib/prisma";
 import {requireRole} from "@/lib/auth";
+import {propertyWhere} from "@/lib/agent-scope";
 export const dynamic="force-dynamic";
 type Filters={q?:string;status?:string;operation?:string;page?:string;updated?:string;deleted?:string;error?:string};
 const money=(x:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0}).format(x);
 export default async function AdminProperties({searchParams}:{searchParams:Promise<Filters>}){
- const admin=await requireRole(["admin","editor"]);
+ const admin=await requireRole(["admin","editor","agente"]);
  const x=await searchParams;
  const q=(x.q||"").trim().slice(0,70),status=x.status||"",operation=x.operation||"";
  const page=Math.max(1,Math.min(10000,Number.parseInt(x.page||"1",10)||1));
  const where={
-  tenantId:admin.tenantId,
+  ...propertyWhere(admin),
   ...(q?{OR:[{title:{contains:q}},{refCode:{contains:q}},{city:{contains:q}}]}:{}),
   ...(status==="publicada"?{published:true}:status==="borrador"?{published:false}:{}),
   ...(["venta","alquiler"].includes(operation)?{operation}:{})
@@ -19,8 +20,8 @@ export default async function AdminProperties({searchParams}:{searchParams:Promi
  const [total,rows,activeCount,draftCount]=await Promise.all([
   prisma.property.count({where}),
   prisma.property.findMany({where,select:{id:true,slug:true,title:true,refCode:true,city:true,neighborhood:true,price:true,operation:true,published:true,bedrooms:true,bathrooms:true,areaM2:true,photos:{select:{url:true},orderBy:{sortOrder:"asc"},take:1}},orderBy:{createdAt:"desc"},skip:(page-1)*12,take:12}),
-  prisma.property.count({where:{tenantId:admin.tenantId,published:true}}),
-  prisma.property.count({where:{tenantId:admin.tenantId,published:false}})
+  prisma.property.count({where:{...propertyWhere(admin),published:true}}),
+  prisma.property.count({where:{...propertyWhere(admin),published:false}})
  ]);
  const filters=new URLSearchParams();
  if(q)filters.set("q",q);
@@ -30,7 +31,7 @@ export default async function AdminProperties({searchParams}:{searchParams:Promi
  const nextUrl=(p:number)=>{const params=new URLSearchParams(filters);params.set("page",String(p));return queryUrl(params);};
  const statusUrl=(value:""|"publicada"|"borrador")=>{const params=new URLSearchParams(filters);params.delete("page");if(value)params.set("status",value);else params.delete("status");return queryUrl(params);};
  const isFiltered=filters.size>0;
- const canEdit=admin.role==="admin"||admin.role==="editor";
+ const canEdit=admin.roles.some(r=>["admin","editor","agente"].includes(r));
  return <>
   <div className="admin-heading"><div><h1>Propiedades</h1><p>Organiza, publica y administra el catálogo de tu inmobiliaria.</p></div>{canEdit&&<Link href="/admin/propiedades/nueva" className="btn btn-red"><Plus size={18}/> Nueva propiedad</Link>}</div>
   {(x.updated||x.deleted)&&<div className="property-success" role="status">{x.deleted?"Propiedad eliminada.":"Estado de publicación actualizado."}</div>}
