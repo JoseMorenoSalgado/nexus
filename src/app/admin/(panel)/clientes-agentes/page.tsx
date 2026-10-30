@@ -3,6 +3,7 @@ import {prisma} from "@/lib/prisma";
 import {ROLE_LABELS,parseRoles} from "@/lib/roles";
 import {redirect} from "next/navigation";
 import Link from "next/link";
+import {UserPasswordFields} from "@/components/user-password-fields";
 export const dynamic="force-dynamic";
 const messages:Record<string,string>={creado:"Usuario creado correctamente.",perfil:"Perfil actualizado. Debe iniciarse una nueva sesión para aplicar el cambio.",guardado:"Permisos actualizados.",datos:"Revisa los datos ingresados.",duplicado:"No se pudo crear el usuario. Verifica si el correo ya existe.",propia:"No puedes modificar tu propia cuenta desde esta sección.",ultimo:"Debe quedar al menos un administrador activo."};
 export default async function Users({searchParams}:{searchParams:Promise<{status?:string}>}){
@@ -28,7 +29,7 @@ export default async function Users({searchParams}:{searchParams:Promise<{status
    <input type="hidden" name="intent" value="create"/>
    <label>Nombre completo<input name="name" minLength={2} maxLength={120} required autoComplete="name"/></label>
    <label>Correo de acceso<input name="email" type="email" required autoComplete="off"/></label>
-   <label>Contraseña inicial<input name="password" type="password" minLength={12} maxLength={256} required autoComplete="new-password"/></label>
+   <UserPasswordFields/>
    <fieldset className="user-role-options"><legend>Roles del usuario (puedes seleccionar varios)</legend>{Object.entries(ROLE_LABELS).map(([value,label])=><label key={value}><input type="checkbox" name="roles" value={value} defaultChecked={value==="agente"}/>{label}</label>)}</fieldset>
    <button className="btn btn-red" type="submit">Crear usuario</button>
   </form><p className="property-help">Las contraseñas deben tener al menos 12 caracteres. Cada usuario solo accederá a la empresa a la que pertenece.</p></div>
