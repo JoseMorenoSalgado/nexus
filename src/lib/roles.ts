@@ -13,5 +13,5 @@ export function primaryRole(roles:UserRole[]):UserRole{return ROLE_ORDER.find(r=
 export function canManageUsers(role:string){return parseRoles(role).includes("admin");}
 export function canEditProperties(role:string){return parseRoles(role).some(r=>r==="admin"||r==="editor"||r==="agente");}
 export function canManageLeads(role:string){return parseRoles(role).some(r=>r==="admin"||r==="editor"||r==="agente");}
-export function canEditSite(role:string){return canEditProperties(role);}
-export function canViewReports(role:string){return canEditProperties(role);}
+export function canEditSite(role:string){return parseRoles(role).some(r=>r==="admin"||r==="editor");}
+export function canViewReports(role:string){return parseRoles(role).some(r=>r==="admin"||r==="editor");}
