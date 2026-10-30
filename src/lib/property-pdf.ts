@@ -125,7 +125,8 @@ export async function buildPropertyPdf(property:PropertyPdfInput,options:{
   footer(page2,regular,options.tenantName);
  }
  // The full description and all non-selected photographs remain on the public property page.
- const hasExtraImages=property.photos.length>photos.length;
+ const shown=options.mode==="resumida"?Math.min(1,photos.length):Math.min(photos.length,5);
+ const hasExtraImages=property.photos.length>shown;
  if(hasExtraImages||remaining.length||titleLines.length>2){
   const png=await QRCode.toBuffer(options.publicUrl,{type:"png",width:180,margin:1,errorCorrectionLevel:"M"});
   const qr=await pdf.embedPng(png);
