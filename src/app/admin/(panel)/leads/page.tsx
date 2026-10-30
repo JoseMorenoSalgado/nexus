@@ -47,12 +47,13 @@ export default async function AdminLeads({searchParams}:{searchParams:Promise<Se
  else if(status)filters.push({crm:{is:{status,tenantId:admin.tenantId}}});
  const base=leadWhere(admin);
  const where:Prisma.LeadWhereInput={...base,...(filters.length?{AND:filters}:{})};
- const [total,leads,allCount,managed]=await Promise.all([
+ const [total,leads,allCount,managed,sourceTotals]=await Promise.all([
   prisma.lead.count({where}),
   prisma.lead.findMany({where,orderBy:{createdAt:"desc"},skip:(page-1)*12,take:12,
    include:{property:{select:{refCode:true,title:true}},assignedAgent:{select:{name:true}},crm:true}}),
   prisma.lead.count({where:base}),
-  prisma.leadCrm.groupBy({by:["status"],where:{tenantId:admin.tenantId,...(!managesAllLeads(admin)?{lead:{is:base}}:{})},_count:{_all:true}})
+  prisma.leadCrm.groupBy({by:["status"],where:{tenantId:admin.tenantId,...(!managesAllLeads(admin)?{lead:{is:base}}:{})},_count:{_all:true}}),
+  prisma.lead.groupBy({by:["source"],where:base,_count:{_all:true}})
  ]);
  const counts=new Map(managed.map(x=>[x.status,x._count._all]));
  const newCount=allCount-managed.filter(x=>x.status!=="nuevo").reduce((n,x)=>n+x._count._all,0);
@@ -80,6 +81,7 @@ export default async function AdminLeads({searchParams}:{searchParams:Promise<Se
    {managesAllLeads(admin)&&<label><span>Responsable</span><select name="agent" defaultValue={agentFilter}><option value="">Todos los agentes</option><option value="none">Sin asignar</option>{agents.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></label>}
    <div className="admin-filter-actions"><button className="btn btn-dark" type="submit"><Filter size={16}/> Aplicar</button>{hasFilters&&<Link href="/admin/leads" className="admin-clear-filters"><X size={15}/> Limpiar</Link>}</div>
   </form>
+  <details className="admin-panel"><summary><strong>Reporte de captación por canal</strong></summary><div className="user-table-wrap"><table className="admin-table"><thead><tr><th>Canal</th><th>Prospectos</th></tr></thead><tbody>{sourceTotals.map(s=><tr key={s.source}><td>{sources.find(x=>x.code===s.source)?.name||s.source}</td><td>{s._count._all}</td></tr>)}</tbody></table></div></details>
   <div className="property-result-heading"><strong>{total} resultados</strong><span>Página {page} de {Math.max(1,Math.ceil(total/12))}</span></div>
   {leads.length?<div className="crm-list crm-list-compact">
    {leads.map(l=>{
