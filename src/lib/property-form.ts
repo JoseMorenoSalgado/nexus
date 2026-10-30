@@ -1,5 +1,5 @@
 export type PropertyValues={
- refCode:string;title:string;city:string;neighborhood:string;type:string;operation:string;price:number;
+ title:string;city:string;neighborhood:string;type:string;operation:string;price:number;
  bedrooms:number;bathrooms:number;areaM2:number;description:string;published:boolean;featured:boolean;
 };
 export class PropertyFormError extends Error{constructor(public readonly code:string){super(code);}}
@@ -20,18 +20,17 @@ const whole=(form:FormData,name:string)=>{
 };
 export function parseProperty(form:FormData):PropertyValues{
  const title=read(form,"title",140);
- const refCode=read(form,"refCode",40).toUpperCase();
  const city=read(form,"city",80);
  const neighborhood=read(form,"neighborhood",80);
  const description=read(form,"description",8000);
  const type=read(form,"type",40),operation=read(form,"operation",20);
  const rawPrice=read(form,"price",24);
  const price=Number(rawPrice);
- if(title.length<5||city.length<2||description.length<10||!/^[A-Z0-9][A-Z0-9-]{2,39}$/.test(refCode))throw new PropertyFormError("datos");
+ if(title.length<5||city.length<2||description.length<10)throw new PropertyFormError("datos");
  if(!allowedTypes.has(type)||!["venta","alquiler"].includes(operation))throw new PropertyFormError("datos");
  if(!/^\d{1,11}(\.\d{1,2})?$/.test(rawPrice)||!Number.isFinite(price)||price<=0)throw new PropertyFormError("precio");
  return {
-  title,refCode,city,neighborhood,description,type,operation,price,
+  title,city,neighborhood,description,type,operation,price,
   bedrooms:whole(form,"bedrooms"),bathrooms:whole(form,"bathrooms"),areaM2:whole(form,"areaM2"),
   published:form.get("published")==="on",featured:form.get("featured")==="on"
  };
