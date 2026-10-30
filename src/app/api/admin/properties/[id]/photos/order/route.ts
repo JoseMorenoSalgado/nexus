@@ -2,6 +2,7 @@ import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {NextRequest,NextResponse} from "next/server";
 import {prisma} from "@/lib/prisma";
 import {propertyEditor,validMutationOrigin} from "@/lib/admin-property-request";
+import {propertyWhere} from "@/lib/agent-scope";
 
 export const runtime="nodejs";
 const error=(message:string,status:number)=>NextResponse.json({error:message},{status,headers:{"Cache-Control":"no-store"}});
@@ -18,7 +19,7 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
  if(!Array.isArray(ids)||ids.length>15||!ids.every(x=>typeof x==="string")||new Set(ids).size!==ids.length)return error("Orden inválido.",400);
  try{
   await prisma.$transaction(async tx=>{
-   const property=await tx.property.findFirst({where:{id,tenantId:admin.tenantId},select:{id:true}});
+   const property=await tx.property.findFirst({where:{id,...propertyWhere(admin)},select:{id:true}});
    if(!property)throw new Error("NOT_FOUND");
    const existing=await tx.photo.findMany({where:{propertyId:id},select:{id:true}});
    if(existing.length!==ids.length||existing.some(p=>!ids.includes(p.id)))throw new Error("CONFLICT");
