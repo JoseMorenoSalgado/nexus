@@ -152,7 +152,7 @@ jobs:
         run: node scripts/check-crm.mjs
       - name: Validar perfiles y permisos de agentes en MariaDB
         run: node scripts/check-agent-access.mjs
-      - name: Verificar mejoras Nexus: referencias, agentes, fuentes, prospectos y PDF en MariaDB
+      - name: "Verificar mejoras Nexus: referencias, agentes, fuentes, prospectos y PDF en MariaDB"
         run: node scripts/check-nexus-functional.mjs
       - name: Probar agenda comercial y activación segura en MariaDB
         run: node scripts/check-agenda.mjs
