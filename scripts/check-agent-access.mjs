@@ -22,7 +22,7 @@ const suffix=Date.now().toString(36);
 const agentEmail="agent-ci-"+suffix+"@example.test",agentPassword="very-long-test-agent-password-2026";
 const addUser=new FormData();
 addUser.set("intent","create");addUser.set("name","Agente CI "+suffix);
-addUser.set("email",agentEmail);addUser.set("password",agentPassword);
+addUser.set("email",agentEmail);addUser.set("password",agentPassword);addUser.set("confirmPassword",agentPassword);
 addUser.append("roles","agente");
 const createdAgent=await post("/api/admin/users",addUser,adminCookie);
 assert.equal(createdAgent.status,303);
@@ -93,10 +93,10 @@ const invalidNote=await post("/api/admin/crm/leads/"+otherId,note,agentCookie);
 assert.match(invalidNote.headers.get("location")||"",/error=noexiste/);
 const forbidden=await page("/admin/clientes-agentes",agentCookie);
 assert.ok([303,307,308].includes(forbidden.status));
-const forbiddenProperty=await page("/admin/propiedades/"+propertyId+"/editar",agentCookie);
-assert.ok([303,307,308].includes(forbiddenProperty.status));
-const withoutAssignedProperty=await post("/api/admin/crm/leads",leadForm("Contacto no permitido"),agentCookie);
-assert.match(withoutAssignedProperty.headers.get("location")||"",/error=propiedad/);
+const ownProperty=await page("/admin/propiedades/"+propertyId+"/editar",agentCookie);
+assert.equal(ownProperty.status,200,"An agent can edit an assigned property.");
+const withoutAssignedProperty=await post("/api/admin/crm/leads",leadForm("Contacto sin inmueble"),agentCookie);
+assert.match(withoutAssignedProperty.headers.get("location")||"",/created=1/);
 
 // Public inquiries inherit a stable responsible agent when the property is submitted.
 const webLeadName="Consulta web comercial CI "+suffix;
@@ -111,7 +111,7 @@ assert.ok(webOwnedHtml.includes(webLeadName),"Public inquiry was not assigned to
 const secondEmail="agent-second-"+suffix+"@example.test";
 const secondUser=new FormData();
 secondUser.set("intent","create");secondUser.set("name","Agente Segundo "+suffix);
-secondUser.set("email",secondEmail);secondUser.set("password",agentPassword);secondUser.append("roles","agente");
+secondUser.set("email",secondEmail);secondUser.set("password",agentPassword);secondUser.set("confirmPassword",agentPassword);secondUser.append("roles","agente");
 const createdSecond=await post("/api/admin/users",secondUser,adminCookie);
 assert.match(createdSecond.headers.get("location")||"",/status=creado/);
 const directoryAfter=await (await page("/admin/clientes-agentes",adminCookie)).text();
@@ -120,11 +120,14 @@ assert.ok(secondIndex>=0);
 const secondMatch=directoryAfter.slice(secondIndex,secondIndex+1500).match(/href="\/admin\/clientes-agentes\/agentes\/([a-z0-9]{20,40})"/);
 assert.ok(secondMatch);
 const secondAgentId=secondMatch[1],secondCookie=await login(secondEmail,agentPassword);
+const secondNoProperty=await post("/api/admin/crm/leads",leadForm("Agente sin inventario "+suffix),secondCookie);
+assert.match(secondNoProperty.headers.get("location")||"",/created=1/,"Agent without properties must create a general lead.");
 
 // Reassign the property. Its existing leads must retain their original owner.
 property.set("intent","save");property.set("assignedAgentId",secondAgentId);
 const movedProperty=await post("/api/admin/properties/"+propertyId,property,adminCookie);
 assert.match(movedProperty.headers.get("location")||"",/saved=1/);
+assert.equal((await page("/admin/propiedades/"+propertyId+"/editar",agentCookie)).status,404,"Previous agent must lose edit access.");
 assert.equal((await page("/admin/leads/"+ownedId,agentCookie)).status,200,
  "Property reassignment should not take away existing lead ownership.");
 assert.equal((await page("/admin/leads/"+ownedId,secondCookie)).status,404,
