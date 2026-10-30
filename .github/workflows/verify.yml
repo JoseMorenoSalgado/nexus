@@ -71,6 +71,8 @@ jobs:
         run: npx prisma db push
       - name: Crear datos de prueba
         run: npm run db:seed
+      - name: Ensayar migración aditiva Nexus y conservación de datos históricos MariaDB
+        run: node scripts/check-nexus-additive-migration.mjs
       - name: Simular MariaDB existente antes de activar CRM
         run: |
           printf 'DROP TABLE IF EXISTS `LeadNote`;' | npx prisma db execute --schema prisma/schema.prisma --stdin
@@ -315,6 +317,10 @@ jobs:
           test ! -e "$INSTALL_PG_TMP/installer-session.json"
         env:
           NODE_ENV: production
+      - name: Ensayar migración aditiva Nexus y conservación de datos históricos PostgreSQL
+        run: node scripts/check-nexus-additive-migration.mjs
+        env:
+          DATABASE_URL: postgresql://pgci:pg_password_only@127.0.0.1:5432/webappecloud_pg_ci
       - name: Recuperar conexión existente en ambos motores
         run: |
           set -euo pipefail
