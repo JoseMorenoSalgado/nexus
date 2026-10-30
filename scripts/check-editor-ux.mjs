@@ -2,12 +2,14 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 
 const fields=readFileSync("src/components/admin-property-fields.tsx","utf8");
-for(const field of ["refCode","title","city","type","operation","price","description","areaM2","bedrooms","bathrooms","published","assignedAgentId","featured"]){
+for(const field of ["title","city","type","operation","price","description","areaM2","bedrooms","bathrooms","published","assignedAgentId","featured"]){
  assert.match(fields,new RegExp('name="'+field+'"'),"No se debe perder el campo "+field);
 }
+assert.match(fields,/Referencia de inventario/);
+assert.doesNotMatch(fields,/name="refCode"/,"La referencia no puede alterarse desde el formulario.");
 const optionalIndex=fields.indexOf('<details className="editor-disclosure');
 assert.ok(optionalIndex>0);
-for(const required of ["refCode","title","city","price","description","bedrooms","bathrooms","areaM2"]){
+for(const required of ["title","city","price","description","bedrooms","bathrooms","areaM2"]){
  const pos=fields.indexOf('name="'+required+'"');
  assert.ok(pos>0&&pos<optionalIndex,"Campo obligatorio oculto en sección plegada: "+required);
 }
