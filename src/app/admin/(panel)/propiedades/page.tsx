@@ -17,6 +17,7 @@ export default async function AdminProperties({searchParams}:{searchParams:Promi
   ...(status==="publicada"?{published:true}:status==="borrador"?{published:false}:{}),
   ...(["venta","alquiler"].includes(operation)?{operation}:{})
  };
+ const sequence=admin.roles.includes("admin")?await prisma.propertySequence.findUnique({where:{tenantId:admin.tenantId}}):null;
  const [total,rows,activeCount,draftCount]=await Promise.all([
   prisma.property.count({where}),
   prisma.property.findMany({where,select:{id:true,slug:true,title:true,refCode:true,city:true,neighborhood:true,price:true,operation:true,published:true,bedrooms:true,bathrooms:true,areaM2:true,photos:{select:{url:true},orderBy:{sortOrder:"asc"},take:1}},orderBy:{createdAt:"desc"},skip:(page-1)*12,take:12}),
@@ -34,6 +35,7 @@ export default async function AdminProperties({searchParams}:{searchParams:Promi
  const canEdit=admin.roles.some(r=>["admin","editor","agente"].includes(r));
  return <>
   <div className="admin-heading"><div><h1>Propiedades</h1><p>Organiza, publica y administra el catálogo de tu inmobiliaria.</p></div>{canEdit&&<Link href="/admin/propiedades/nueva" className="btn btn-red"><Plus size={18}/> Nueva propiedad</Link>}</div>
+  {admin.roles.includes("admin")&&<details className="admin-panel editor-disclosure"><summary><strong>Configurar referencia automática</strong></summary><div className="editor-disclosure-body"><p className="property-help">Los códigos anteriores no cambian. Próximo número: {sequence?.nextNumber||1}.</p><form method="post" action="/api/admin/properties/reference-settings" className="admin-form"><label>Prefijo de la empresa<input name="prefix" defaultValue={sequence?.prefix||"NRE"} pattern="[A-Z][A-Z0-9-]{0,10}[A-Z0-9]" minLength={2} maxLength={12} required/></label><button className="btn wizard-back" type="submit">Guardar prefijo</button></form></div></details>}
   {(x.updated||x.deleted)&&<div className="property-success" role="status">{x.deleted?"Propiedad eliminada.":"Estado de publicación actualizado."}</div>}
   {x.error&&<div className="admin-error" role="alert">No fue posible completar la operación solicitada.</div>}
   <nav className="admin-quick-filters" aria-label="Estado de las propiedades">
