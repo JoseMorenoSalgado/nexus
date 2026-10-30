@@ -25,6 +25,7 @@ CREATE TABLE "LeadPropertyHistory" (
  "leadId" TEXT NOT NULL,
  "fromPropertyId" TEXT,
  "fromRef" TEXT,
+ "fromExternalDescription" VARCHAR(300),
  "toPropertyId" TEXT,
  "toRef" TEXT,
  "externalDescription" VARCHAR(300),
