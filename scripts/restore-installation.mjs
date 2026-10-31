@@ -1,6 +1,7 @@
 /** Run only inside the application container; never pass credentials as arguments. */
 import {existsSync,mkdirSync,openSync,closeSync,writeFileSync,unlinkSync,linkSync} from 'node:fs';
 import {resolve,join} from 'node:path';
+import {homedir} from 'node:os';
 import {randomUUID} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
 
@@ -45,7 +46,7 @@ if (process.argv[1] && import.meta.url===pathToFileURL(resolve(process.argv[1]))
   try {
     await restoreInstallation({
       url:process.env.DATABASE_URL?.trim(),host:process.env.RECOVERY_HOST,
-      directory:resolve(process.env.APP_CONFIG_DIR||'.runtime'),
+      directory:resolve(process.env.APP_CONFIG_DIR||join(homedir(),'nexus-runtime')),
       createClient:async(protocol,url)=>{
         const module=protocol==='mysql:'?await import('@prisma/client'):await import('../src/generated/postgres/index.js');
         return new module.PrismaClient({datasources:{db:{url}},log:[]});
