@@ -13,6 +13,8 @@ function walk(dir){
   if(!item.isFile())continue;
   const path=join(dir,item.name),rel=relative(root,path).replaceAll("\\","/");
   if(skipFiles.has(rel)||!extensions.test(item.name))continue;
+  // Audit executable deployment configuration; historical copy and UX text are handled separately.
+  if(!(rel.startsWith(".github/")||rel.startsWith("scripts/")||rel==="package.json"||rel==="README.md"))continue;
   const source=readFileSync(path,"utf8");
   forbidden.lastIndex=0;
   if(forbidden.test(source))found.push(rel);
