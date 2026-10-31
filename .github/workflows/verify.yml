@@ -106,12 +106,10 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
-      - name: Simular el arranque real en Plesk Passenger
+      - name: Validar compilación y estructura para Enhance
         run: |
-          node --check app.js
-          node --check plesk-server.cjs
-          node scripts/check-plesk-ready.mjs
-          node scripts/check-plesk-startup.mjs
+          npm run check:enhance
+          node scripts/check-enhance-startup.mjs
         env:
           NODE_ENV: production
       - name: Auditar dependencias de ejecución sin cambiar versiones
