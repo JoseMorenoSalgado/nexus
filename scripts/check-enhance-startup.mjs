@@ -14,7 +14,8 @@ const origin="http://localhost:"+port;
 const child=spawn("npm",["start"],{
  cwd:root,
  env:{...process.env,NODE_ENV:"production",PORT:String(port)},
- stdio:["ignore","pipe","pipe"]
+ stdio:["ignore","pipe","pipe"],
+ detached:process.platform!=="win32"
 });
 let logs="";
 for(const stream of [child.stdout,child.stderr]){
@@ -81,7 +82,18 @@ try{
  console.error("Last startup logs:",logs.slice(-1300));
  process.exitCode=1;
 }finally{
- child.kill("SIGTERM");
- await Promise.race([new Promise(resolve=>child.once("exit",resolve)),sleep(2000)]);
- if(child.exitCode===null)child.kill("SIGKILL");
+ // npm launches a child shell and Next.js. Killing only npm leaves the
+ // descendants holding stdout/stderr open and GitHub Actions waiting forever.
+ const terminate=(signal)=>{
+  try{
+   if(process.platform!=="win32")process.kill(-child.pid,signal);
+   else child.kill(signal);
+  }catch(error){
+   if(error?.code!=="ESRCH")throw error;
+  }
+ };
+ terminate("SIGTERM");
+ await Promise.race([new Promise(done=>child.once("close",done)),sleep(2000)]);
+ if(child.exitCode===null)terminate("SIGKILL");
+ await Promise.race([new Promise(done=>child.once("close",done)),sleep(1000)]);
 }
