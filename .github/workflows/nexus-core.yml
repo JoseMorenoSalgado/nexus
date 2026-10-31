@@ -1,0 +1,53 @@
+name: Nexus core functional checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  core-mariadb:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: ci_root_only
+          MARIADB_DATABASE: nexus_ci
+          MARIADB_USER: ciuser
+          MARIADB_PASSWORD: ci_password_only
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: mysql://ciuser:ci_password_only@127.0.0.1:3306/nexus_ci
+      SEED_DOMAIN: localhost
+      ADMIN_EMAIL: admin@ci.invalid
+      ADMIN_PASSWORD: CI-PASSWORD-NOT-PRODUCTION-2345
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install
+        run: npm install --include=dev --no-audit --no-fund
+      - name: Generate Prisma and prepare disposable SQL
+        run: |
+          npm run db:generate
+          npx prisma db push
+          npm run db:seed
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Verify property references, agent roles, lead sources and PDFs
+        run: node scripts/check-nexus-functional.mjs
+      - name: Verify agent permissions
+        run: node scripts/check-agent-access.mjs
+      - name: Verify property PDF layout
+        run: node scripts/check-custom-pdf.mjs
