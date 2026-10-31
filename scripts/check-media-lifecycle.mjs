@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {existsSync} from "node:fs";
 import {readdir,stat,utimes} from "node:fs/promises";
 import {join,resolve} from "node:path";
+import {homedir} from "node:os";
 import sharp from "sharp";
 
 const origin=process.env.TEST_ORIGIN||"http://localhost:3000";
@@ -34,7 +35,8 @@ const csrf=await postJSON("archive","home",id,"ARCHIVAR",{Cookie:cookie,Origin:"
 assert.equal(csrf.status,403,"Trash mutations require same-origin");
 const noConfirm=await postJSON("archive","home",id);
 assert.equal(noConfirm.status,400,"Archive must require explicit confirmation");
-const config=resolve(process.env.APP_CONFIG_DIR||join(process.cwd(),".runtime"));
+// Match the application default: media persists outside the Git deployment directory.
+const config=resolve(process.env.APP_CONFIG_DIR||join(homedir(),"nexus-runtime"));
 const tenants=await readdir(join(config,"page-images"));
 let tenantId="";
 for(const value of tenants){
