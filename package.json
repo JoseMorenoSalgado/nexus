@@ -13,7 +13,6 @@
     "test:recovery": "node --test scripts/restore-installation.test.mjs",
     "db:seed": "tsx prisma/seed.ts",
     "predev": "npm run db:generate",
-    "check:plesk": "node scripts/check-plesk-ready.mjs",
     "check:enhance": "node scripts/check-enhance-ready.mjs"
   },
   "dependencies": {
