@@ -1,6 +1,6 @@
 # NEXUS — CMS inmobiliario
 
-Aplicación de **NEXUS Real Estate Nicaragua**, desarrollada en Next.js 15, TypeScript, Tailwind, Prisma y MariaDB/MySQL o PostgreSQL. Se despliega en **Plesk (Node.js 22 + Passenger)** o mediante **Docker en Dokploy**, manteniendo servidores y bases de datos independientes.
+Aplicación de **NEXUS Real Estate Nicaragua**, desarrollada en Next.js 15, TypeScript, Tailwind, Prisma y MariaDB/MySQL o PostgreSQL. El despliegue principal es **Enhance Control Panel** con Node.js 22, GitHub y proxy HTTP. Los archivos persistentes permanecen fuera de los directorios de cada despliegue.
 
 > Este repositorio es una copia **independiente** del proyecto base WebAppECloud. No es un fork sincronizado: los cambios de NEXUS no se propagan a otras categorías o clientes.
 
@@ -18,26 +18,24 @@ Este CMS es **solo inmobiliario**. No permite seleccionar Educación, Comercio e
 
 El motor mantiene el aislamiento de empresas en base de datos por seguridad, pero **no incluye otras categorías de negocio**. La asesoría empresarial es un servicio adicional de NEXUS, no una plantilla ni una categoría CMS independiente.
 
-## Instalación
+## Despliegue en Enhance
 
-- Node.js 22 en desarrollo y producción. En Plesk, el archivo de inicio es `app.js` (Passenger) o el adaptador nativo de Next.js generado por Plesk; en Dokploy se usa Docker.
-- Crear una **base de datos exclusiva** por despliegue y proporcionar la conexión mediante variables privadas del servidor o el asistente `/instalar`.
-- Mantener `APP_CONFIG_DIR` persistente y **fuera del directorio público** (Plesk), o un volumen privado en `/app/.runtime` (Dokploy). Esto incluye credenciales, fotografías y PDF.
-- Habilitar `INSTALLER_AUTO_SETUP=true` temporalmente para una instalación inicial restringida; desactivarlo después.
-- Usar secretos y credenciales fuera de Git. No reutilizar bases de datos o volúmenes de otros clientes.
+1. Configurar la aplicación Node.js 22 y el repositorio GitHub. Usar el directorio de trabajo `deploys/current` y el proxy HTTP al puerto de la aplicación.
+2. Ejecutar `npm install --include=dev`, luego `npm run build` y `npm run check:enhance`. Comando de inicio: `npm start`.
+3. Guardar archivos privados y multimedia en `~/nexus-runtime` (predeterminado) o en `APP_CONFIG_DIR` absoluto y persistente. No colocarlos en `deploys/current` ni en `public`.
+4. Para **una instalación nueva con base vacía**, habilitar `INSTALLER_AUTO_SETUP=true` solo durante una ventana de acceso restringido y completar `/instalar`. Desactivar después.
+5. Para **reconectar una base de datos existente**, no ejecutar el instalador ni `prisma db push`. Configurar `DATABASE_URL` en el entorno privado; si se necesita restaurar `installation.json`, definir también `RECOVERY_HOST` y ejecutar `npm run installation:restore` después de verificar backups. Este comando comprueba la existencia del dominio y administrador sin borrar tablas.
+6. Verificar inicio de sesión, propiedades, fotografías y persistencia después de un segundo despliegue. Mantener copia de seguridad de SQL y `~/nexus-runtime`.
 
-Para desarrollo local, con base de pruebas:
+No introducir contraseñas en el repositorio, ni ejecutar migraciones automáticas sin revisión y respaldo.
+
+Para desarrollo local:
 
 ```bash
 npm install --no-audit --no-fund
 cp .env.example .env
-npm run db:generate
 npm run dev
 ```
-
-Para preparar una base **vacía de desarrollo**, configurar primero `DATABASE_URL` y utilizar `npx prisma db push`, seguido de `npm run db:seed`, únicamente en instalaciones descartables. **No usar `prisma db push` como mecanismo automático de actualización de una base de producción.**
-
-Antes de desplegar, validar backups recuperables de SQL y archivos, el proceso de migración y la rama utilizada por el servidor. Para el dominio real consulta **`docs/DEPLOY-PLESK.md`** y ejecuta `node scripts/check-plesk-ready.mjs` tras compilar. Para instalaciones Docker, ver `docs/DEPLOY-DOCKPLOY.md`.
 
 ## Calidad y seguridad
 
