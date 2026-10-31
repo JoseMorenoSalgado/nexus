@@ -20,6 +20,8 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci --include=dev
+      - name: Reject obsolete Plesk configuration
+        run: npm run check:legacy-hosting
       - name: Test safe installation recovery
         run: npm run test:recovery
       - name: Build Next.js for Enhance
