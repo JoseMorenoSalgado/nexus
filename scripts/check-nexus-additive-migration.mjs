@@ -2,7 +2,7 @@
  * Rehearses the exact additive SQL migration on ephemeral GitHub Actions SQL.
  * SAFETY: deliberately removes new tables/column to simulate an older schema,
  * therefore runs ONLY in GitHub Actions against an explicit local *_ci DB.
- * NEVER execute in Plesk, production, staging with customer records, or locally.
+ * NEVER execute in production, staging with customer records, or locally.
  */
 import assert from "node:assert/strict";
 import {execFileSync} from "node:child_process";

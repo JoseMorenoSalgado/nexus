@@ -1,0 +1,29 @@
+name: Enhance deployment readiness
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  enhance-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install --include=dev --no-audit --no-fund
+      - name: Reject obsolete Plesk configuration
+        run: npm run check:legacy-hosting
+      - name: Test safe installation recovery
+        run: npm run test:recovery
+      - name: Build Next.js for Enhance
+        run: npm run build
+      - name: Validate Enhance deployment structure
+        run: npm run check:enhance
