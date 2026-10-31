@@ -45,9 +45,30 @@ jobs:
           npm run db:seed
       - name: Typecheck
         run: npx tsc --noEmit
+      - name: Build Next.js for HTTP integration checks
+        run: npm run build
+      - name: Start application and wait for HTTP readiness
+        run: |
+          (npm start > /tmp/nexus-core-next.log 2>&1 & echo $! > /tmp/nexus-core-next.pid)
+          for i in $(seq 1 60); do
+            if curl --silent --output /dev/null --max-time 3 http://127.0.0.1:3000/; then
+              echo "Next.js is responding"
+              exit 0
+            fi
+            if ! kill -0 "$(cat /tmp/nexus-core-next.pid)" 2>/dev/null; then
+              cat /tmp/nexus-core-next.log
+              exit 1
+            fi
+            sleep 2
+          done
+          cat /tmp/nexus-core-next.log
+          exit 1
       - name: Verify property references, agent roles, lead sources and PDFs
         run: node scripts/check-nexus-functional.mjs
       - name: Verify agent permissions
         run: node scripts/check-agent-access.mjs
       - name: Verify property PDF layout
         run: node scripts/check-custom-pdf.mjs
+      - name: Show server logs on failure
+        if: failure()
+        run: tail -n 150 /tmp/nexus-core-next.log || true
