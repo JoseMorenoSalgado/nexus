@@ -48,8 +48,8 @@ function slugify(s:string){return s.toLowerCase().normalize("NFD").replace(/[\u0
 function databaseError(error:unknown){
  const code=typeof error==="object"&&error&&"code" in error?String(error.code):"";
  if(code==="P1000")return "Usuario o contraseña incorrectos.";
- if(code==="P1001")return "No se pudo conectar al servidor SQL. Comprueba host, puerto y red de Docker.";
- if(code==="P1003")return "La base de datos no existe. Debes crearla primero en cPanel o Dockploy.";
+ if(code==="P1001")return "No se pudo conectar al servidor SQL. Comprueba host, puerto y acceso a la base de datos desde Enhance.";
+ if(code==="P1003")return "La base de datos no existe. Créala primero desde el panel de bases de datos de Enhance.";
  if(code==="P1017")return "La conexión a la base de datos se cerró inesperadamente.";
  return "No fue posible preparar la base de datos. Verifica permisos CREATE/ALTER y que esté vacía.";
 }

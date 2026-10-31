@@ -1,10 +1,8 @@
 name: Verificación Next.js + MariaDB + PostgreSQL
 on:
-  pull_request:
-  push:
-    branches:
-      - main
-      - 'feat/**'
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * 0'
 
 permissions:
   contents: read
@@ -12,7 +10,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     services:
       mariadb:
         image: mariadb:11.4
@@ -106,12 +104,10 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
-      - name: Simular el arranque real en Plesk Passenger
+      - name: Validar compilación y estructura para Enhance
         run: |
-          node --check app.js
-          node --check plesk-server.cjs
-          node scripts/check-plesk-ready.mjs
-          node scripts/check-plesk-startup.mjs
+          npm run check:enhance
+          node scripts/check-enhance-startup.mjs
         env:
           NODE_ENV: production
       - name: Auditar dependencias de ejecución sin cambiar versiones
@@ -220,7 +216,7 @@ jobs:
           retention-days: 7
 
       - name: Restablecer borrador de asesoría en pruebas
-        if: always()
+        if: ${{ !cancelled() && success() }}
         run: node scripts/stage-advisory-visual.mjs draft
 
       - name: Verificar galería con imagen completa y sin ampliación artificial

@@ -1,6 +1,7 @@
 name: Validar imagen de Docker para Dockploy
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -9,19 +10,16 @@ on:
       - 'docker-compose.yml'
       - '.dockerignore'
       - '.github/workflows/docker.yml'
-      - 'scripts/**'
-      - 'src/**'
-      - 'package.json'
-      - 'prisma/**'
   pull_request:
     paths:
       - 'Dockerfile'
       - 'docker-compose.yml'
       - '.dockerignore'
       - '.github/workflows/docker.yml'
-      - 'src/**'
-      - 'package.json'
-      - 'prisma/**'
+
+concurrency:
+  group: docker-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read

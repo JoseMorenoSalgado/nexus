@@ -1,10 +1,15 @@
 import "server-only";
 import {readFileSync,existsSync,mkdirSync,openSync,closeSync,unlinkSync,writeFileSync,renameSync,chmodSync} from "node:fs";
 import {join,resolve} from "node:path";
+import {homedir} from "node:os";
 import {randomUUID,randomBytes} from "node:crypto";
 
 export type StoredInstallation={version:1;databaseUrl:string;installedAt:string};
-export function configDir(){return resolve(process.env.APP_CONFIG_DIR||join(process.cwd(),".runtime"));}
+/** Persistent per-account state: GitHub deploys/current is replaced on every release. */
+export function configDir(){
+ const explicit=process.env.APP_CONFIG_DIR?.trim();
+ return resolve(explicit || join(homedir(), "nexus-runtime"));
+}
 export function configPath(){return join(configDir(),"installation.json");}
 export function storedInstallation():StoredInstallation|null{
  const path=configPath();

@@ -1,5 +1,5 @@
 /**
- * Smoke test the exact Passenger-compatible entry point deployed on Plesk.
+ * Smoke test the exact Node-compatible entry point deployed on Enhance.
  * Runs against CI's temporary SQL and bound localhost port; never production.
  */
 import assert from "node:assert/strict";
@@ -11,10 +11,11 @@ const root=resolve(".");
 const port=3004;
 // Seeded CI tenant belongs to localhost; use the same Host for SSR routing.
 const origin="http://localhost:"+port;
-const child=spawn(process.execPath,[resolve(root,"app.js")],{
+const child=spawn("npm",["start"],{
  cwd:root,
  env:{...process.env,NODE_ENV:"production",PORT:String(port)},
- stdio:["ignore","pipe","pipe"]
+ stdio:["ignore","pipe","pipe"],
+ detached:process.platform!=="win32"
 });
 let logs="";
 for(const stream of [child.stdout,child.stderr]){
@@ -35,7 +36,7 @@ try{
   }catch{}
   await sleep(300);
  }
- assert.ok(ready,"Passenger app.js could not start: "+logs.slice(-1300));
+ assert.ok(ready,"Node npm start could not start: "+logs.slice(-1300));
  const htmlResponse=await fetch(origin+"/",{headers:{Host:"localhost:"+port},signal:AbortSignal.timeout(10000)});
  assert.equal(htmlResponse.status,200,"SSR homepage status");
  const html=await htmlResponse.text();
@@ -49,7 +50,7 @@ try{
   assert.equal(response.status,200,"Bundled asset not served: "+asset);
   assert.ok(Number(response.headers.get("content-length")||0)>0||((await response.arrayBuffer()).byteLength>0));
  }
- // Plesk regressions can affect nested login CSS while the homepage still works.
+ // Enhance regressions can affect nested login CSS while the homepage still works.
  // Validate the actual SSR login HTML and every referenced stylesheet.
  const loginResponse=await fetch(origin+"/admin/acceso?error=credenciales",{
   signal:AbortSignal.timeout(10000)
@@ -75,13 +76,24 @@ try{
  assert.equal(health.status,200,"Prisma readiness failed");
  const db=await health.json();
  assert.equal(db.status,"ok");
- console.log("PASS Plesk app.js: Node startup, SSR home, admin login styling, Next.js CSS/JS, Prisma health.");
+ console.log("PASS Enhance npm start: Node startup, SSR home, admin login styling, Next.js CSS/JS, Prisma health.");
 }catch(error){
- console.error("Plesk startup smoke failed:",error instanceof Error?error.message:"unknown");
+ console.error("Enhance startup smoke failed:",error instanceof Error?error.message:"unknown");
  console.error("Last startup logs:",logs.slice(-1300));
  process.exitCode=1;
 }finally{
- child.kill("SIGTERM");
- await Promise.race([new Promise(resolve=>child.once("exit",resolve)),sleep(2000)]);
- if(child.exitCode===null)child.kill("SIGKILL");
+ // npm launches a child shell and Next.js. Killing only npm leaves the
+ // descendants holding stdout/stderr open and GitHub Actions waiting forever.
+ const terminate=(signal)=>{
+  try{
+   if(process.platform!=="win32")process.kill(-child.pid,signal);
+   else child.kill(signal);
+  }catch(error){
+   if(error?.code!=="ESRCH")throw error;
+  }
+ };
+ terminate("SIGTERM");
+ await Promise.race([new Promise(done=>child.once("close",done)),sleep(2000)]);
+ if(child.exitCode===null)terminate("SIGKILL");
+ await Promise.race([new Promise(done=>child.once("close",done)),sleep(1000)]);
 }
