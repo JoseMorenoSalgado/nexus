@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
     "build": "npm run db:generate && next build",
-    "start": "next start -H 0.0.0.0 -p ${PORT:-3000}",
+    "start": "node scripts/start-server.mjs",
     "db:generate": "node scripts/generate-prisma-clients.mjs",
     "db:migrate": "prisma migrate deploy",
     "db:dev": "prisma migrate dev",
