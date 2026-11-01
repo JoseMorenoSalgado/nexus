@@ -97,7 +97,7 @@ export async function POST(req:NextRequest){
   }catch(error){return response(databaseError(error),422);}
   finally{await probe.$disconnect();}
   try{
-   await execute(process.execPath,[join(process.cwd(),"node_modules","prisma","build","index.js"),"db","push","--schema="+prismaSchemaFor(data.engine)],{
+   await execute(process.execPath,[join(process.cwd(),"node_modules","prisma","build","index.js"),"db","push","--skip-generate","--schema="+prismaSchemaFor(data.engine)],{
     cwd:process.cwd(),
     env:{...process.env,DATABASE_URL:data.url},
     timeout:120000,maxBuffer:512000
