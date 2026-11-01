@@ -105,8 +105,8 @@ export async function POST(req:NextRequest){
   }catch(error){
    const details=error instanceof Error?error.message:String(error);
    const stderr=typeof error==="object"&&error!==null&&"stderr" in error?String(error.stderr):"";
-   const diagnostic=(stderr+"\\n"+details).slice(0,12000);
-   const codes=[...diagnostic.matchAll(/\\b(?:P10\\d{2}|P20\\d{2}|ERROR:\\s*permission denied|permission denied for schema public|must be owner of|relation .* already exists|database .* does not exist|password authentication failed|ECONNREFUSED|ETIMEDOUT)\\b/gi)].map(x=>x[0]).slice(0,5);
+   const diagnostic=(stderr+"\n"+details).slice(0,12000);
+   const codes=[...diagnostic.matchAll(/\b(?:P10\d{2}|P20\d{2}|ERROR:\s*permission denied|permission denied for schema public|must be owner of|relation .* already exists|database .* does not exist|password authentication failed|ECONNREFUSED|ETIMEDOUT)\b/gi)].map(x=>x[0]).slice(0,5);
    console.error("[installer] Prisma db push failed",{
     engine:data.engine,
     errorCode:typeof error==="object"&&error!==null&&"code" in error?String(error.code):undefined,
