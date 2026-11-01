@@ -1,6 +1,6 @@
 import {NextRequest, NextResponse} from "next/server";
 import {installerAvailable} from "@/lib/server-config";
-import {automaticInstallerEnabled, issueInstallerSession, validInstallerSession, INSTALLER_SESSION_COOKIE, INSTALLER_SESSION_SECONDS} from "@/lib/installer-session";
+import {automaticInstallerEnabled, issueInstallerSession, validInstallerSession, validSetupToken, INSTALLER_SESSION_COOKIE, INSTALLER_SESSION_SECONDS} from "@/lib/installer-session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,24 +24,26 @@ function shouldUseSecureCookie(req: NextRequest) {
     || (process.env.NODE_ENV === "production" && !isLocal);
 }
 
-export function GET(req: NextRequest) {
+export async function POST(req: NextRequest) {
   if (!installerAvailable()) return redirectLocal("/admin/acceso");
-  if (!automaticInstallerEnabled()) return redirectLocal("/instalar");
-  const existing = req.cookies.get(INSTALLER_SESSION_COOKIE)?.value;
-  if (validInstallerSession(existing)) return redirectLocal("/instalar");
-
-  let token: string | null;
-  try { token = issueInstallerSession(); }
+  const origin=req.headers.get("origin");
+  const host=req.headers.get("host");
+  if (!origin || !host) return redirectLocal("/instalar?estado=invalido");
+  try { if (new URL(origin).host.toLowerCase() !== host.toLowerCase()) return redirectLocal("/instalar?estado=invalido"); }
+  catch { return redirectLocal("/instalar?estado=invalido"); }
+  if (Number(req.headers.get("content-length") || "0") > 4096) return redirectLocal("/instalar?estado=invalido");
+  let token="";
+  try { token=String((await req.formData()).get("token") || ""); }
+  catch { return redirectLocal("/instalar?estado=invalido"); }
+  try { if (!validSetupToken(token)) return redirectLocal("/instalar?estado=invalido"); }
   catch { return redirectLocal("/instalar?estado=almacenamiento"); }
-  if (!token) return redirectLocal("/instalar?estado=ocupado");
-
-  const res = redirectLocal("/instalar");
-  res.cookies.set(INSTALLER_SESSION_COOKIE, token, {
-    httpOnly: true,
-    secure: shouldUseSecureCookie(req),
-    sameSite: "strict",
-    path: "/",
-    maxAge: INSTALLER_SESSION_SECONDS
-  });
+  let session: string | null;
+  try { session=issueInstallerSession(); }
+  catch { return redirectLocal("/instalar?estado=almacenamiento"); }
+  if (!session) return redirectLocal("/instalar?estado=ocupado");
+  const res=new NextResponse(null,{status:303,headers:{Location:"/instalar","Cache-Control":"no-store"}});
+  res.cookies.set(INSTALLER_SESSION_COOKIE,session,{httpOnly:true,secure:shouldUseSecureCookie(req),sameSite:"strict",path:"/",maxAge:INSTALLER_SESSION_SECONDS});
   return res;
 }
+
+export function GET(){return redirectLocal("/instalar");}
