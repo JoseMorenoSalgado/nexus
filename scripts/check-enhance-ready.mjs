@@ -10,6 +10,11 @@ for(const file of ["package.json","next.config.mjs","prisma/schema.prisma","scri
 if(!existsSync(join(root,".next","BUILD_ID")))errors.push("Falta .next/BUILD_ID: ejecutar npm run build.");
 if(!existsSync(join(root,"node_modules","next")))errors.push("Falta Next.js: ejecutar npm install.");
 if(!existsSync(join(root,"node_modules","@prisma","client")))errors.push("Falta Prisma Client.");
+if(!existsSync(join(root,"node_modules","prisma","build","index.js")))errors.push("Falta Prisma CLI en producción: el instalador ejecuta prisma db push. Instalar con npm ci --include=dev.");
+if(!existsSync(join(root,"src","generated","postgres","index.js")))errors.push("Falta Prisma Client PostgreSQL: ejecutar npm run db:generate.");
+if(!existsSync(join(root,"node_modules",".prisma","client","index.js")))warnings.push("No se detectó el cliente Prisma MySQL generado en la ruta habitual; verificar npm run db:generate.");
+if(!existsSync(join(root,"prisma","schema.postgres.prisma")))errors.push("Falta esquema PostgreSQL.");
+
 if(Number(process.versions.node.split(".")[0])<22)errors.push("NEXUS requiere Node.js 22 o superior.");
 const configured=process.env.APP_CONFIG_DIR?.trim();
 const runtime=resolve(configured||join(homedir(),"nexus-runtime"));
