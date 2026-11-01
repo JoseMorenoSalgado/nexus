@@ -1,5 +1,5 @@
 import {NextRequest, NextResponse} from "next/server";
-import {installerAvailable} from "@/lib/server-config";
+import {installerAvailable,manualInstallerEnabled} from "@/lib/server-config";
 import {STEP_COOKIE,validStepProof} from "@/lib/installer-step";
 import {consumeWhmcsActivation,whmcsActivationEnabled} from "@/lib/whmcs-activation";
 import {automaticInstallerEnabled, issueInstallerSession, validInstallerSession, validSetupToken, INSTALLER_SESSION_COOKIE, INSTALLER_SESSION_SECONDS} from "@/lib/installer-session";
@@ -54,9 +54,11 @@ export async function POST(req: NextRequest) {
   catch { return redirectLocal("/instalar?estado=invalido"); }
   try {
     const domain=new URL(origin).hostname.toLowerCase();
-    const allowed=whmcsActivationEnabled()
-      ? await consumeWhmcsActivation(token,domain)
-      : validSetupToken(token);
+    const allowed=manualInstallerEnabled()
+      ? true
+      : whmcsActivationEnabled()
+        ? await consumeWhmcsActivation(token,domain)
+        : validSetupToken(token);
     if(!allowed)return redirectLocal("/instalar?paso=activar&estado=invalido");
   } catch { return redirectLocal("/instalar?paso=activar&estado=almacenamiento"); }
   let session: string | null;

@@ -1,7 +1,7 @@
 import "./module-options.css";
 import {cookies, headers} from "next/headers";
 import {redirect} from "next/navigation";
-import {installerAvailable} from "@/lib/server-config";
+import {installerAvailable,manualInstallerEnabled} from "@/lib/server-config";
 import {automaticInstallerEnabled, validInstallerSession, INSTALLER_SESSION_COOKIE} from "@/lib/installer-session";
 import {normalizeSiteHost} from "@/lib/preview";
 import InstallerForm from "@/components/installer-form";
@@ -18,6 +18,7 @@ export default async function InstallPage({searchParams}:{searchParams:Promise<{
  const activationStep = params.paso === "activar" && validStepProof((await cookies()).get(STEP_COOKIE)?.value);
  const enabled = automaticInstallerEnabled();
  const whmcsEnabled = whmcsActivationEnabled();
+ const manualEnabled = manualInstallerEnabled();
  const authorized = enabled && validInstallerSession((await cookies()).get(INSTALLER_SESSION_COOKIE)?.value);
 
  return <main className="install-screen"><div className="install-wrap">
@@ -35,11 +36,14 @@ export default async function InstallPage({searchParams}:{searchParams:Promise<{
            <button type="submit">Continuar</button>
          </form>
        </> : <>
-         <p>{whmcsEnabled ? "Introduce el código de activación generado en el área de clientes de Elearning Cloud." : "Introduce el código privado de activación proporcionado por Elearning Cloud. No lo compartas."}</p>
+         <p>{manualEnabled ? "Instalación manual temporal habilitada. Solo continúa desde una red con acceso restringido." : whmcsEnabled ? "Introduce el código de activación generado en el área de clientes de Elearning Cloud." : "Introduce el código privado de activación proporcionado por Elearning Cloud. No lo compartas."}</p>
          <form className="installer-access-form" action="/api/install/session" method="post">
+           {manualEnabled ? <input type="hidden" name="manual" value="1"/> : null}
+           {!manualEnabled ? <>
            <label htmlFor="setup-token">Código de activación</label>
            <input id="setup-token" name="token" type="password" autoComplete="off" minLength={whmcsEnabled ? 16 : 64} maxLength={whmcsEnabled ? 128 : 64} required/>
-           <button type="submit">Activar instalación</button>
+           </> : null}
+           <button type="submit">{manualEnabled ? "Iniciar instalación manual" : "Activar instalación"}</button>
          </form>
          <a className="installer-back" href="/instalar">Volver</a>
        </>}
