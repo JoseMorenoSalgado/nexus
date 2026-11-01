@@ -2,7 +2,7 @@ import "server-only";
 import {createHash, randomBytes, timingSafeEqual} from "node:crypto";
 import {closeSync, existsSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync} from "node:fs";
 import {join} from "node:path";
-import {configDir, installerAvailable} from "@/lib/server-config";
+import {configDir, installerAvailable, installerToken} from "@/lib/server-config";
 
 export const INSTALLER_SESSION_COOKIE = "wec_setup_session";
 export const INSTALLER_SESSION_SECONDS = 60 * 60;
@@ -17,7 +17,7 @@ function readClaim(): Claim | null {
  } catch {return null;}
 }
 export function automaticInstallerEnabled(){
- return process.env.INSTALLER_AUTO_SETUP === "true";
+ return installerAvailable();
 }
 export function validInstallerSession(token: string | undefined){
  if (!installerAvailable() || !automaticInstallerEnabled() || !token || !/^[a-f0-9]{64}$/.test(token)) return false;
@@ -57,4 +57,11 @@ export function issueInstallerSession(): string | null {
 export function clearInstallerSession(){
  const path = claimPath();
  if (existsSync(path)) unlinkSync(path);
+}
+
+/** Verify the private one-time setup secret before issuing a browser session. */
+export function validSetupToken(candidate: string){
+ if (!installerAvailable() || !/^[a-f0-9]{64}$/.test(candidate)) return false;
+ const expected=installerToken();
+ return /^[a-f0-9]{64}$/.test(expected) && timingSafeEqual(Buffer.from(candidate,"hex"),Buffer.from(expected,"hex"));
 }
