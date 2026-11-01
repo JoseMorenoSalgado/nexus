@@ -44,8 +44,9 @@ export async function POST(req: NextRequest) {
     const validOrigin=parsed.protocol==="https:" || parsed.protocol==="http:";
     const sameHost=parsed.host.toLowerCase()===directHost ||
       (internalHost && Boolean(forwardedHost) && parsed.host.toLowerCase()===forwardedHost);
-    if (!validOrigin || !sameHost) return redirectLocal("/instalar?estado=origen");
-  } catch { return redirectLocal("/instalar?estado=origen"); }
+    const browserSameOrigin=req.headers.get("sec-fetch-site")==="same-origin" && parsed.protocol==="https:" && process.env.NODE_ENV==="production";
+    if (!validOrigin || (!sameHost && !browserSameOrigin)) return redirectLocal("/instalar?paso=activar&estado=origen");
+  } catch { return redirectLocal("/instalar?paso=activar&estado=origen"); }
   if (Number(req.headers.get("content-length") || "0") > 4096) return redirectLocal("/instalar?paso=activar&estado=invalido");
   let token="";
   try { const form=await req.formData(); token=String(form.get("token") || ""); }
