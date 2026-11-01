@@ -58,7 +58,18 @@ export async function POST(req:NextRequest){
 
  const origin=req.headers.get("origin"),host=req.headers.get("host")||"";
  if(!origin||!host)return response("Origen de instalación no válido.",403);
- try{if(new URL(origin).host.toLowerCase()!==host.toLowerCase())return response("Origen no autorizado.",403);}catch{return response("Origen no válido.",403);}
+ try{
+  const parsed=new URL(origin);
+  const directHost=host.trim().toLowerCase();
+  const hostname=directHost.startsWith("[")?directHost.slice(1).split("]")[0]:directHost.split(":")[0];
+  const internalHost=hostname==="localhost"||hostname==="127.0.0.1"||hostname==="0.0.0.0"||
+   hostname.startsWith("10.")||hostname.startsWith("192.168.")||/^172\.(1[6-9]|2[0-9]|3[01])\./.test(hostname);
+  const forwardedHost=req.headers.get("x-forwarded-host")?.split(",")[0]?.trim().toLowerCase();
+  const sameHost=parsed.host.toLowerCase()===directHost||
+   (internalHost&&Boolean(forwardedHost)&&parsed.host.toLowerCase()===forwardedHost);
+  const browserSameOrigin=req.headers.get("sec-fetch-site")==="same-origin"&&parsed.protocol==="https:"&&process.env.NODE_ENV==="production";
+  if(!["http:","https:"].includes(parsed.protocol)||(!sameHost&&!browserSameOrigin))return response("Origen no autorizado.",403);
+ }catch{return response("Origen no válido.",403);}
  if(Number(req.headers.get("content-length")||"0")>15000)return response("Solicitud demasiado grande.",413);
  if(!automaticInstallerEnabled()||!validInstallerSession(req.cookies.get(INSTALLER_SESSION_COOKIE)?.value))return response("La sesión de instalación no está autorizada o ha expirado. Vuelve a abrir /instalar.",403);
  let input:Form;
