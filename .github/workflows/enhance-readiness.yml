@@ -31,6 +31,8 @@ jobs:
         run: npm install --include=dev --no-audit --no-fund
       - name: Reject obsolete Plesk configuration
         run: npm run check:legacy-hosting
+      - name: Test private Enhance runtime configuration
+        run: node --test scripts/enhance-private-env.test.mjs
       - name: Test safe installation recovery
         run: npm run test:recovery
       - name: Build Next.js for Enhance
