@@ -1,5 +1,6 @@
 import {NextRequest, NextResponse} from "next/server";
 import {installerAvailable} from "@/lib/server-config";
+import {STEP_COOKIE,validStepProof} from "@/lib/installer-step";
 import {automaticInstallerEnabled, issueInstallerSession, validInstallerSession, validSetupToken, INSTALLER_SESSION_COOKIE, INSTALLER_SESSION_SECONDS} from "@/lib/installer-session";
 
 export const runtime = "nodejs";
@@ -26,9 +27,10 @@ function shouldUseSecureCookie(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   if (!installerAvailable()) return redirectLocal("/admin/acceso");
+  if (!validStepProof(req.cookies.get(STEP_COOKIE)?.value)) return redirectLocal("/instalar?estado=calculo");
   const origin=req.headers.get("origin");
   const host=req.headers.get("host");
-  if (!origin || !host) return redirectLocal("/instalar?estado=origen");
+  if (!origin || !host) return redirectLocal("/instalar?paso=activar&estado=origen");
   // Only accept a forwarded public host if the direct Host is an internal proxy
   // address. A client-supplied X-Forwarded-Host must not override a public Host.
   const directHost=host.trim().toLowerCase();
@@ -44,18 +46,19 @@ export async function POST(req: NextRequest) {
       (internalHost && Boolean(forwardedHost) && parsed.host.toLowerCase()===forwardedHost);
     if (!validOrigin || !sameHost) return redirectLocal("/instalar?estado=origen");
   } catch { return redirectLocal("/instalar?estado=origen"); }
-  if (Number(req.headers.get("content-length") || "0") > 4096) return redirectLocal("/instalar?estado=invalido");
+  if (Number(req.headers.get("content-length") || "0") > 4096) return redirectLocal("/instalar?paso=activar&estado=invalido");
   let token="";
-  try { const form=await req.formData(); if(String(form.get("mathAnswer") || "")!=="56") return redirectLocal("/instalar?estado=calculo"); token=String(form.get("token") || ""); }
+  try { const form=await req.formData(); token=String(form.get("token") || ""); }
   catch { return redirectLocal("/instalar?estado=invalido"); }
   try { if (!validSetupToken(token)) return redirectLocal("/instalar?estado=invalido"); }
-  catch { return redirectLocal("/instalar?estado=almacenamiento"); }
+  catch { return redirectLocal("/instalar?paso=activar&estado=almacenamiento"); }
   let session: string | null;
   try { session=issueInstallerSession(); }
   catch { return redirectLocal("/instalar?estado=almacenamiento"); }
-  if (!session) return redirectLocal("/instalar?estado=ocupado");
+  if (!session) return redirectLocal("/instalar?paso=activar&estado=ocupado");
   const res=new NextResponse(null,{status:303,headers:{Location:"/instalar","Cache-Control":"no-store"}});
   res.cookies.set(INSTALLER_SESSION_COOKIE,session,{httpOnly:true,secure:shouldUseSecureCookie(req),sameSite:"strict",path:"/",maxAge:INSTALLER_SESSION_SECONDS});
+  res.cookies.set(STEP_COOKIE,"",{path:"/",maxAge:0});
   return res;
 }
 
