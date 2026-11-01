@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
   } catch { return redirectLocal("/instalar?estado=origen"); }
   if (Number(req.headers.get("content-length") || "0") > 4096) return redirectLocal("/instalar?estado=invalido");
   let token="";
-  try { token=String((await req.formData()).get("token") || ""); }
+  try { const form=await req.formData(); if(String(form.get("mathAnswer") || "")!=="56") return redirectLocal("/instalar?estado=calculo"); token=String(form.get("token") || ""); }
   catch { return redirectLocal("/instalar?estado=invalido"); }
   try { if (!validSetupToken(token)) return redirectLocal("/instalar?estado=invalido"); }
   catch { return redirectLocal("/instalar?estado=almacenamiento"); }
