@@ -28,9 +28,22 @@ export async function POST(req: NextRequest) {
   if (!installerAvailable()) return redirectLocal("/admin/acceso");
   const origin=req.headers.get("origin");
   const host=req.headers.get("host");
-  if (!origin || !host) return redirectLocal("/instalar?estado=invalido");
-  try { if (new URL(origin).host.toLowerCase() !== host.toLowerCase()) return redirectLocal("/instalar?estado=invalido"); }
-  catch { return redirectLocal("/instalar?estado=invalido"); }
+  if (!origin || !host) return redirectLocal("/instalar?estado=origen");
+  // Only accept a forwarded public host if the direct Host is an internal proxy
+  // address. A client-supplied X-Forwarded-Host must not override a public Host.
+  const directHost=host.trim().toLowerCase();
+  const hostname=directHost.replace(/^\\[/,"").split("]")[0].split(":")[0];
+  const internalHost=hostname==="localhost" || hostname==="0.0.0.0" ||
+    hostname==="127.0.0.1" || hostname.startsWith("10.") ||
+    hostname.startsWith("192.168.") || /^172\\.(1[6-9]|2[0-9]|3[01])\\./.test(hostname);
+  const forwardedHost=req.headers.get("x-forwarded-host")?.split(",")[0]?.trim().toLowerCase();
+  try {
+    const parsed=new URL(origin);
+    const validOrigin=parsed.protocol==="https:" || parsed.protocol==="http:";
+    const sameHost=parsed.host.toLowerCase()===directHost ||
+      (internalHost && Boolean(forwardedHost) && parsed.host.toLowerCase()===forwardedHost);
+    if (!validOrigin || !sameHost) return redirectLocal("/instalar?estado=origen");
+  } catch { return redirectLocal("/instalar?estado=origen"); }
   if (Number(req.headers.get("content-length") || "0") > 4096) return redirectLocal("/instalar?estado=invalido");
   let token="";
   try { token=String((await req.formData()).get("token") || ""); }
