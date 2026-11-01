@@ -32,10 +32,10 @@ export async function POST(req: NextRequest) {
   // Only accept a forwarded public host if the direct Host is an internal proxy
   // address. A client-supplied X-Forwarded-Host must not override a public Host.
   const directHost=host.trim().toLowerCase();
-  const hostname=directHost.replace(/^\\[/,"").split("]")[0].split(":")[0];
+  const hostname=directHost.startsWith("[") ? directHost.slice(1).split("]")[0] : directHost.split(":")[0];
   const internalHost=hostname==="localhost" || hostname==="0.0.0.0" ||
     hostname==="127.0.0.1" || hostname.startsWith("10.") ||
-    hostname.startsWith("192.168.") || /^172\\.(1[6-9]|2[0-9]|3[01])\\./.test(hostname);
+    hostname.startsWith("192.168.") || /^172\.(1[6-9]|2[0-9]|3[01])\./.test(hostname);
   const forwardedHost=req.headers.get("x-forwarded-host")?.split(",")[0]?.trim().toLowerCase();
   try {
     const parsed=new URL(origin);
