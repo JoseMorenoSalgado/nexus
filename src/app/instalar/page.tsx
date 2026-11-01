@@ -22,7 +22,7 @@ export default async function InstallPage({searchParams}:{searchParams:Promise<{
    {!authorized
     ? <div className="wizard-error"><strong>Instalación protegida.</strong> Introduce el token privado de instalación que se encuentra en <code>~/nexus-runtime/installer-token</code>. No lo compartas ni lo publiques. El asistente quedará bloqueado automáticamente al terminar.
        <form action="/api/install/session" method="post"><label htmlFor="setup-token">Token de instalación</label><input id="setup-token" name="token" type="password" autoComplete="off" minLength={64} maxLength={64} required /><button type="submit">Autorizar instalación</button></form>
-       {status === "ocupado" ? <p>Otra sesión de instalación está activa.</p> : status === "invalido" ? <p>Token inválido.</p> : status === "almacenamiento" ? <p>No se pudo crear la sesión privada.</p> : null}
+       {status === "ocupado" ? <p>Otra sesión de instalación está activa.</p> : status === "invalido" ? <p>Token inválido. Comprueba que lo copiaste completo.</p> : status === "origen" ? <p>No se pudo validar el origen de la solicitud. Comprueba el dominio y la configuración del proxy.</p> : status === "almacenamiento" ? <p>No se pudo crear la sesión privada.</p> : null}
       </div>
     : <InstallerForm domain={hostname}/>}
   </div>
