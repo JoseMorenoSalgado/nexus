@@ -6,6 +6,7 @@ import {automaticInstallerEnabled, validInstallerSession, INSTALLER_SESSION_COOK
 import {normalizeSiteHost} from "@/lib/preview";
 import InstallerForm from "@/components/installer-form";
 import {APP_RELEASE} from "@/lib/release";
+import {STEP_COOKIE,validStepProof} from "@/lib/installer-step";
 
 export const dynamic = "force-dynamic";
 export default async function InstallPage({searchParams}:{searchParams:Promise<{estado?:string;paso?:string}>}){
@@ -13,7 +14,7 @@ export default async function InstallPage({searchParams}:{searchParams:Promise<{
  const hostname = normalizeSiteHost((await headers()).get("host") || "");
  const params = await searchParams;
  const status = params.estado;
- const activationStep = params.paso === "activar";
+ const activationStep = params.paso === "activar" && validStepProof((await cookies()).get(STEP_COOKIE)?.value);
  const enabled = automaticInstallerEnabled();
  const authorized = enabled && validInstallerSession((await cookies()).get(INSTALLER_SESSION_COOKIE)?.value);
 
