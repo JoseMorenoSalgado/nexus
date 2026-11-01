@@ -14,7 +14,11 @@
     "db:seed": "tsx prisma/seed.ts",
     "predev": "npm run db:generate",
     "check:enhance": "node scripts/check-enhance-ready.mjs",
-    "check:legacy-hosting": "node scripts/check-no-plesk.mjs"
+    "check:legacy-hosting": "node scripts/check-no-plesk.mjs",
+    "setup:enhance": "node scripts/enhance-private-env.mjs init",
+    "installer:enable": "node scripts/enhance-private-env.mjs enable",
+    "installer:disable": "node scripts/enhance-private-env.mjs disable",
+    "start:enhance": "node scripts/enhance-private-env.mjs start"
   },
   "dependencies": {
     "@prisma/client": "^6.3.0",
