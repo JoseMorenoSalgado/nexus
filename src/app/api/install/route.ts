@@ -102,7 +102,30 @@ export async function POST(req:NextRequest){
     env:{...process.env,DATABASE_URL:data.url},
     timeout:120000,maxBuffer:512000
    });
-  }catch{return response("No se pudieron crear las tablas. Comprueba los permisos SQL CREATE y ALTER.",422);}
+  }catch(error){
+   const details=error instanceof Error?error.message:String(error);
+   const stderr=typeof error==="object"&&error!==null&&"stderr" in error?String(error.stderr):"";
+   const diagnostic=(stderr+"\\n"+details).slice(0,12000);
+   const codes=[...diagnostic.matchAll(/\\b(?:P10\\d{2}|P20\\d{2}|ERROR:\\s*permission denied|permission denied for schema public|must be owner of|relation .* already exists|database .* does not exist|password authentication failed|ECONNREFUSED|ETIMEDOUT)\\b/gi)].map(x=>x[0]).slice(0,5);
+   console.error("[installer] Prisma db push failed",{
+    engine:data.engine,
+    errorCode:typeof error==="object"&&error!==null&&"code" in error?String(error.code):undefined,
+    signal:typeof error==="object"&&error!==null&&"signal" in error?String(error.signal):undefined,
+    indicators:codes,
+    // Never log Prisma stderr or connection strings: they may contain credentials.
+   });
+   if(/permission denied for schema public|permission denied|must be owner of/i.test(diagnostic))
+    return response("El usuario PostgreSQL no tiene permisos para crear o modificar tablas en el esquema public. Revisa permisos CREATE/USAGE y propiedad del esquema.",422);
+   if(/already exists|P1014|P3005/i.test(diagnostic))
+    return response("Se detectaron objetos o un esquema incompatible. Comprueba que la base de datos esté completamente vacía.",422);
+   if(/P1000|password authentication failed/i.test(diagnostic))
+    return response("PostgreSQL rechazó las credenciales del usuario de la base de datos.",422);
+   if(/P1001|ECONNREFUSED|ETIMEDOUT/i.test(diagnostic))
+    return response("Prisma no puede conectar con PostgreSQL. Verifica el servidor, puerto y acceso de red.",422);
+   if(/P1003|database .* does not exist/i.test(diagnostic))
+    return response("La base de datos indicada no existe en PostgreSQL.",422);
+   return response("Prisma no pudo crear las tablas. Consulta los registros de Node.js en Enhance: [installer] Prisma db push failed.",422);
+  }
   const db=prismaFor(data.url);
   try{
    await db.$transaction(async tx=>{
