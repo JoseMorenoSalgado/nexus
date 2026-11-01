@@ -44,7 +44,8 @@ export function installerToken(){
  if(!/^[a-f0-9]{64}$/.test(token))throw new Error("Token privado del instalador inválido");
  return token;
 }
-export function installerAvailable(){return !hasDatabaseConfig();}
+export function manualInstallerEnabled(){return process.env.INSTALLER_ENABLED === "true" && process.env.INSTALLER_AUTO_SETUP === "true";}
+export function installerAvailable(){return !hasDatabaseConfig() && process.env.INSTALLER_ENABLED !== "false";}
 export function saveInstallation(database:string){
  mkdirSync(configDir(),{recursive:true,mode:0o700});
  const path=configPath();
