@@ -14,7 +14,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "predev": "npm run db:generate",
     "check:enhance": "node scripts/check-enhance-ready.mjs",
-    "check:legacy-hosting": "node scripts/check-no-plesk.mjs"
+    "check:legacy-hosting": "node scripts/check-no-plesk.mjs",
+    "installer:token": "node scripts/installer-token.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.3.0",
