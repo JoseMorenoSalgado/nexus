@@ -1,6 +1,7 @@
 import {NextRequest, NextResponse} from "next/server";
 import {installerAvailable} from "@/lib/server-config";
 import {STEP_COOKIE,validStepProof} from "@/lib/installer-step";
+import {consumeWhmcsActivation,whmcsActivationEnabled} from "@/lib/whmcs-activation";
 import {automaticInstallerEnabled, issueInstallerSession, validInstallerSession, validSetupToken, INSTALLER_SESSION_COOKIE, INSTALLER_SESSION_SECONDS} from "@/lib/installer-session";
 
 export const runtime = "nodejs";
@@ -44,14 +45,20 @@ export async function POST(req: NextRequest) {
     const validOrigin=parsed.protocol==="https:" || parsed.protocol==="http:";
     const sameHost=parsed.host.toLowerCase()===directHost ||
       (internalHost && Boolean(forwardedHost) && parsed.host.toLowerCase()===forwardedHost);
-    if (!validOrigin || !sameHost) return redirectLocal("/instalar?estado=origen");
+    const browserSameOrigin=req.headers.get("sec-fetch-site")==="same-origin" && parsed.protocol==="https:" && process.env.NODE_ENV==="production";
+    if (!validOrigin || (!sameHost && !browserSameOrigin)) return redirectLocal("/instalar?paso=activar&estado=origen");
   } catch { return redirectLocal("/instalar?estado=origen"); }
   if (Number(req.headers.get("content-length") || "0") > 4096) return redirectLocal("/instalar?paso=activar&estado=invalido");
   let token="";
   try { const form=await req.formData(); token=String(form.get("token") || ""); }
   catch { return redirectLocal("/instalar?estado=invalido"); }
-  try { if (!validSetupToken(token)) return redirectLocal("/instalar?estado=invalido"); }
-  catch { return redirectLocal("/instalar?paso=activar&estado=almacenamiento"); }
+  try {
+    const domain=new URL(origin).hostname.toLowerCase();
+    const allowed=whmcsActivationEnabled()
+      ? await consumeWhmcsActivation(token,domain)
+      : validSetupToken(token);
+    if(!allowed)return redirectLocal("/instalar?paso=activar&estado=invalido");
+  } catch { return redirectLocal("/instalar?paso=activar&estado=almacenamiento"); }
   let session: string | null;
   try { session=issueInstallerSession(); }
   catch { return redirectLocal("/instalar?estado=almacenamiento"); }

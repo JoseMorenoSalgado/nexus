@@ -7,6 +7,7 @@ import {normalizeSiteHost} from "@/lib/preview";
 import InstallerForm from "@/components/installer-form";
 import {APP_RELEASE} from "@/lib/release";
 import {STEP_COOKIE,validStepProof} from "@/lib/installer-step";
+import {whmcsActivationEnabled} from "@/lib/whmcs-activation";
 
 export const dynamic = "force-dynamic";
 export default async function InstallPage({searchParams}:{searchParams:Promise<{estado?:string;paso?:string}>}){
@@ -16,6 +17,7 @@ export default async function InstallPage({searchParams}:{searchParams:Promise<{
  const status = params.estado;
  const activationStep = params.paso === "activar" && validStepProof((await cookies()).get(STEP_COOKIE)?.value);
  const enabled = automaticInstallerEnabled();
+ const whmcsEnabled = whmcsActivationEnabled();
  const authorized = enabled && validInstallerSession((await cookies()).get(INSTALLER_SESSION_COOKIE)?.value);
 
  return <main className="install-screen"><div className="install-wrap">
@@ -33,10 +35,10 @@ export default async function InstallPage({searchParams}:{searchParams:Promise<{
            <button type="submit">Continuar</button>
          </form>
        </> : <>
-         <p>Introduce el código privado de activación proporcionado por Elearning Cloud. No lo compartas.</p>
+         <p>{whmcsEnabled ? "Introduce el código de activación generado en el área de clientes de Elearning Cloud." : "Introduce el código privado de activación proporcionado por Elearning Cloud. No lo compartas."}</p>
          <form className="installer-access-form" action="/api/install/session" method="post">
            <label htmlFor="setup-token">Código de activación</label>
-           <input id="setup-token" name="token" type="password" autoComplete="off" minLength={64} maxLength={64} required/>
+           <input id="setup-token" name="token" type="password" autoComplete="off" minLength={whmcsEnabled ? 16 : 64} maxLength={whmcsEnabled ? 128 : 64} required/>
            <button type="submit">Activar instalación</button>
          </form>
          <a className="installer-back" href="/instalar">Volver</a>
