@@ -6,12 +6,15 @@ import {automaticInstallerEnabled, validInstallerSession, INSTALLER_SESSION_COOK
 import {normalizeSiteHost} from "@/lib/preview";
 import InstallerForm from "@/components/installer-form";
 import {APP_RELEASE} from "@/lib/release";
+import {STEP_COOKIE,validStepProof} from "@/lib/installer-step";
 
 export const dynamic = "force-dynamic";
-export default async function InstallPage({searchParams}:{searchParams:Promise<{estado?:string}>}){
+export default async function InstallPage({searchParams}:{searchParams:Promise<{estado?:string;paso?:string}>}){
  if (!installerAvailable()) redirect("/admin/acceso");
  const hostname = normalizeSiteHost((await headers()).get("host") || "");
- const status = (await searchParams).estado;
+ const params = await searchParams;
+ const status = params.estado;
+ const activationStep = params.paso === "activar" && validStepProof((await cookies()).get(STEP_COOKIE)?.value);
  const enabled = automaticInstallerEnabled();
  const authorized = enabled && validInstallerSession((await cookies()).get(INSTALLER_SESSION_COOKIE)?.value);
 
@@ -20,9 +23,25 @@ export default async function InstallPage({searchParams}:{searchParams:Promise<{
   <div className="install-card">
    <div className="install-head"><span className="install-kicker">CONFIGURACIÓN INICIAL</span><h1>Bienvenido a tu plataforma</h1><p>Configura la base de datos, registra tu inmobiliaria y crea el usuario que administrará tu sitio web.</p></div>
    {!authorized
-    ? <div className="wizard-error installer-access"><strong>Instalación protegida.</strong> Introduce el token privado de instalación que se encuentra en <code>~/nexus-runtime/installer-token</code>. No lo compartas ni lo publiques. El asistente quedará bloqueado automáticamente al terminar.
-       <form className="installer-access-form" action="/api/install/session" method="post"><label htmlFor="math-answer">Verificación: ¿cuánto es 7 × 8?</label><input id="math-answer" name="mathAnswer" type="number" min={0} max={999} required/><label htmlFor="setup-token">Token de instalación</label><input id="setup-token" name="token" type="password" autoComplete="off" minLength={64} maxLength={64} required /><button type="submit">Autorizar instalación</button></form>
-       {status === "calculo" ? <p>Resultado de la multiplicación incorrecto.</p> : status === "ocupado" ? <p>Otra sesión de instalación está activa.</p> : status === "invalido" ? <p>Token inválido. Comprueba que lo copiaste completo.</p> : status === "origen" ? <p>No se pudo validar el origen de la solicitud. Comprueba el dominio y la configuración del proxy.</p> : status === "almacenamiento" ? <p>No se pudo crear la sesión privada.</p> : null}
+    ? <div className="wizard-error installer-access">
+       <strong>Instalación protegida.</strong>
+       {!activationStep ? <>
+         <p>Resuelve la verificación para continuar con la activación.</p>
+         <form className="installer-access-form" action="/api/install/step" method="post">
+           <label htmlFor="math-answer">¿Cuánto es 7 × 8?</label>
+           <input id="math-answer" name="mathAnswer" type="number" min={0} max={999} required/>
+           <button type="submit">Continuar</button>
+         </form>
+       </> : <>
+         <p>Introduce el código privado de activación proporcionado por Elearning Cloud. No lo compartas.</p>
+         <form className="installer-access-form" action="/api/install/session" method="post">
+           <label htmlFor="setup-token">Código de activación</label>
+           <input id="setup-token" name="token" type="password" autoComplete="off" minLength={64} maxLength={64} required/>
+           <button type="submit">Activar instalación</button>
+         </form>
+         <a className="installer-back" href="/instalar">Volver</a>
+       </>}
+       {status === "calculo" ? <p role="alert">Resultado incorrecto. Inténtalo nuevamente.</p> : status === "ocupado" ? <p role="alert">Otra sesión de instalación está activa.</p> : status === "invalido" ? <p role="alert">Código de activación inválido.</p> : status === "origen" ? <p role="alert">No se pudo validar el origen de la solicitud.</p> : status === "almacenamiento" ? <p role="alert">No se pudo crear la sesión privada.</p> : null}
       </div>
     : <InstallerForm domain={hostname}/>}
   </div>
