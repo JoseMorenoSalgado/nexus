@@ -1,5 +1,6 @@
 import {NextRequest, NextResponse} from "next/server";
 import {installerAvailable} from "@/lib/server-config";
+import {STEP_COOKIE,validStepProof} from "@/lib/installer-step";
 import {automaticInstallerEnabled, issueInstallerSession, validInstallerSession, validSetupToken, INSTALLER_SESSION_COOKIE, INSTALLER_SESSION_SECONDS} from "@/lib/installer-session";
 
 export const runtime = "nodejs";
@@ -26,6 +27,7 @@ function shouldUseSecureCookie(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   if (!installerAvailable()) return redirectLocal("/admin/acceso");
+  if (!validStepProof(req.cookies.get(STEP_COOKIE)?.value)) return redirectLocal("/instalar?estado=calculo");
   const origin=req.headers.get("origin");
   const host=req.headers.get("host");
   if (!origin || !host) return redirectLocal("/instalar?paso=activar&estado=origen");
@@ -56,6 +58,7 @@ export async function POST(req: NextRequest) {
   if (!session) return redirectLocal("/instalar?paso=activar&estado=ocupado");
   const res=new NextResponse(null,{status:303,headers:{Location:"/instalar","Cache-Control":"no-store"}});
   res.cookies.set(INSTALLER_SESSION_COOKIE,session,{httpOnly:true,secure:shouldUseSecureCookie(req),sameSite:"strict",path:"/",maxAge:INSTALLER_SESSION_SECONDS});
+  res.cookies.set(STEP_COOKIE,"",{path:"/",maxAge:0});
   return res;
 }
 
