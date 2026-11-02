@@ -5,7 +5,7 @@ import {join} from "node:path";
 import {configDir, installerAvailable, installerToken} from "@/lib/server-config";
 
 export const INSTALLER_SESSION_COOKIE = "wec_setup_session";
-export const INSTALLER_SESSION_SECONDS = 5 * 60;
+export const INSTALLER_SESSION_SECONDS = 24 * 60 * 60;
 type Claim = {version: 1; tokenHash: string; expiresAt: number};
 
 function claimPath(){return join(configDir(), "installer-session.json");}
@@ -42,14 +42,14 @@ export function issueInstallerSession(): string | null {
   // a lock older than the five-minute session lifetime plus a one-minute safety margin.
   try{
    const age=Date.now()-statSync(lockPath).mtimeMs;
-   if(age < (INSTALLER_SESSION_SECONDS+60)*1000)return null;
+   if(age < 6*60*1000)return null;
    unlinkSync(lockPath);
    fd=openSync(lockPath,"wx",0o600);
   }catch{return null;}
  }
  try {
   const previous=readClaim();
-  if (previous && previous.expiresAt > Date.now()) return null;
+  // A new authorized browser can replace the prior claim.
   const path=claimPath();
   if (existsSync(path)) unlinkSync(path);
   const token=randomBytes(32).toString("hex");
