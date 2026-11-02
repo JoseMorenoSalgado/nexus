@@ -1,6 +1,6 @@
 import "server-only";
 import {createHash, randomBytes, timingSafeEqual} from "node:crypto";
-import {closeSync, existsSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync} from "node:fs";
+import {closeSync, existsSync, mkdirSync, openSync, readFileSync, statSync, unlinkSync, writeFileSync} from "node:fs";
 import {join} from "node:path";
 import {configDir, installerAvailable, installerToken} from "@/lib/server-config";
 
@@ -37,8 +37,15 @@ export function issueInstallerSession(): string | null {
  let fd:number;
  try {fd=openSync(lockPath, "wx", 0o600);}
  catch(error){
-  if (error instanceof Error && "code" in error && error.code === "EEXIST") return null;
-  throw error;
+  if (!(error instanceof Error && "code" in error && error.code === "EEXIST")) throw error;
+  // A crashed process may leave a lock behind indefinitely. Only remove
+  // a lock older than the maximum session lifetime plus a safety margin.
+  try{
+   const age=Date.now()-statSync(lockPath).mtimeMs;
+   if(age < (INSTALLER_SESSION_SECONDS+300)*1000)return null;
+   unlinkSync(lockPath);
+   fd=openSync(lockPath,"wx",0o600);
+  }catch{return null;}
  }
  try {
   const previous=readClaim();
