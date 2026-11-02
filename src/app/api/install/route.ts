@@ -51,6 +51,8 @@ function databaseError(error:unknown){
  if(code==="P1001")return "No se pudo conectar al servidor SQL. Comprueba host, puerto y acceso a la base de datos desde Enhance.";
  if(code==="P1003")return "La base de datos no existe. Créala primero desde el panel de bases de datos de Enhance.";
  if(code==="P1017")return "La conexión a la base de datos se cerró inesperadamente.";
+ if(code==="P1014")return "Prisma no encuentra una tabla o relación esperada.";
+ if(code==="P2010")return "La consulta SQL de verificación fue rechazada por la base de datos. Revisa los registros de Node.js en Enhance.";
  return "No fue posible preparar la base de datos. Verifica permisos CREATE/ALTER y que esté vacía.";
 }
 export async function POST(req:NextRequest){
@@ -94,7 +96,13 @@ export async function POST(req:NextRequest){
     ? await probe.$queryRaw<Array<{n:bigint}>>`SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`
     : await probe.$queryRaw<Array<{n:bigint}>>`SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE'`;
    if(Number(tables[0]?.n||0)!==0)return response("Utiliza una base de datos vacía y exclusiva para esta instalación.",409);
-  }catch(error){return response(databaseError(error),422);}
+  }catch(error){
+   const code=typeof error==="object"&&error!==null&&"code" in error?String(error.code):"unknown";
+   const meta=typeof error==="object"&&error!==null&&"meta" in error?error.meta:null;
+   const sqlState=meta&&typeof meta==="object"&&"code" in meta?String(meta.code):undefined;
+   console.error("[installer] Database preflight failed",{engine:data.engine,code,sqlState});
+   return response(databaseError(error),422);
+  }
   finally{await probe.$disconnect();}
   try{
    await execute(process.execPath,[join(process.cwd(),"node_modules","prisma","build","index.js"),"db","push","--skip-generate","--schema="+prismaSchemaFor(data.engine)],{
