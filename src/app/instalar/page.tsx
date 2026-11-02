@@ -3,6 +3,7 @@ import {cookies, headers} from "next/headers";
 import {redirect} from "next/navigation";
 import {installerAvailable} from "@/lib/server-config";
 import {validInstallerSession, INSTALLER_SESSION_COOKIE} from "@/lib/installer-session";
+import {validStepProof, STEP_COOKIE} from "@/lib/installer-step";
 import {normalizeSiteHost} from "@/lib/preview";
 import InstallerForm from "@/components/installer-form";
 import {APP_RELEASE} from "@/lib/release";
@@ -15,8 +16,10 @@ export default async function InstallPage({searchParams}:{searchParams:Promise<{
  const hostname = normalizeSiteHost((await headers()).get("host") || "");
  const params = await searchParams;
  const status = params.estado;
- const authorized = validInstallerSession((await cookies()).get(INSTALLER_SESSION_COOKIE)?.value);
- if (!authorized && status !== "ocupado" && status !== "almacenamiento") redirect("/api/install/direct");
+ const cookieStore = await cookies();
+ const authorized = validInstallerSession(cookieStore.get(INSTALLER_SESSION_COOKIE)?.value);
+ const activationReady = validStepProof(cookieStore.get(STEP_COOKIE)?.value);
+ if (!authorized && !activationReady && status !== "ocupado" && status !== "almacenamiento") redirect("/api/install/direct");
 
  return <main className="install-screen"><div className="install-wrap">
   <header className="install-header"><div className="install-logo">N</div><div><strong>NEXUS Inmobiliaria</strong><span>Asistente de instalación inicial</span></div></header>
