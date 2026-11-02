@@ -1,11 +1,11 @@
 import "server-only";
 import {createHash, randomBytes, timingSafeEqual} from "node:crypto";
-import {closeSync, existsSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync} from "node:fs";
+import {closeSync, existsSync, mkdirSync, openSync, readFileSync, statSync, unlinkSync, writeFileSync} from "node:fs";
 import {join} from "node:path";
 import {configDir, installerAvailable, installerToken} from "@/lib/server-config";
 
 export const INSTALLER_SESSION_COOKIE = "wec_setup_session";
-export const INSTALLER_SESSION_SECONDS = 60 * 60;
+export const INSTALLER_SESSION_SECONDS = 5 * 60;
 type Claim = {version: 1; tokenHash: string; expiresAt: number};
 
 function claimPath(){return join(configDir(), "installer-session.json");}
@@ -37,8 +37,15 @@ export function issueInstallerSession(): string | null {
  let fd:number;
  try {fd=openSync(lockPath, "wx", 0o600);}
  catch(error){
-  if (error instanceof Error && "code" in error && error.code === "EEXIST") return null;
-  throw error;
+  if (!(error instanceof Error && "code" in error && error.code === "EEXIST")) throw error;
+  // A crashed process may leave a lock behind indefinitely. Only remove
+  // a lock older than the five-minute session lifetime plus a one-minute safety margin.
+  try{
+   const age=Date.now()-statSync(lockPath).mtimeMs;
+   if(age < (INSTALLER_SESSION_SECONDS+60)*1000)return null;
+   unlinkSync(lockPath);
+   fd=openSync(lockPath,"wx",0o600);
+  }catch{return null;}
  }
  try {
   const previous=readClaim();
