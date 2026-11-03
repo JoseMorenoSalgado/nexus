@@ -8,7 +8,7 @@ import {normalizeEnabledModules,type ModuleKey} from "@/lib/tenant-modules-regis
 import {prismaFor} from "@/lib/prisma";
 import {hashPassword} from "@/lib/auth";
 import {installerAvailable,takeInstallLock,saveInstallation,configDir} from "@/lib/server-config";
-import {automaticInstallerEnabled,validInstallerSession,clearInstallerSession,INSTALLER_SESSION_COOKIE} from "@/lib/installer-session";
+import {clearInstallerSession,INSTALLER_SESSION_COOKIE} from "@/lib/installer-session";
 import {normalizeSiteHost} from "@/lib/preview";
 import {mkdirSync,accessSync,constants} from "node:fs";
 import {readJsonObjectLimited,RequestPayloadError} from "@/lib/limited-json";
@@ -73,7 +73,6 @@ export async function POST(req:NextRequest){
   if(!["http:","https:"].includes(parsed.protocol)||(!sameHost&&!browserSameOrigin))return response("Origen no autorizado.",403);
  }catch{return response("Origen no válido.",403);}
  if(Number(req.headers.get("content-length")||"0")>15000)return response("Solicitud demasiado grande.",413);
- if(!automaticInstallerEnabled()||!validInstallerSession(req.cookies.get(INSTALLER_SESSION_COOKIE)?.value))return response("La sesión de instalación no está autorizada o ha expirado. Vuelve a abrir /instalar.",403);
  let input:Form;
  try{input=await readJsonObjectLimited(req,15000) as unknown as Form;}
  catch(error){return response(error instanceof RequestPayloadError?error.message:"Solicitud inválida.",error instanceof RequestPayloadError?error.status:400);}
