@@ -45,15 +45,17 @@ function validate(input:Form){
  return {institution,institutionEmail,adminName,adminEmail,adminPassword,url,engine,templateKey,modules};
 }
 function slugify(s:string){return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,72)||"institucion";}
-function databaseError(error:unknown){
+function databaseError(error:unknown,engine:DatabaseEngine){
  const code=typeof error==="object"&&error&&"code" in error?String(error.code):"";
  if(code==="P1000")return "Usuario o contraseña incorrectos.";
  if(code==="P1001")return "No se pudo conectar al servidor SQL. Comprueba host, puerto y acceso a la base de datos desde Enhance.";
  if(code==="P1003")return "La base de datos no existe. Créala primero desde el panel de bases de datos de Enhance.";
  if(code==="P1017")return "La conexión a la base de datos se cerró inesperadamente.";
  if(code==="P1014")return "Prisma no encuentra una tabla o relación esperada.";
- if(code==="P2010")return "La consulta SQL de verificación fue rechazada por la base de datos. Revisa los registros de Node.js en Enhance.";
- return "No fue posible preparar la base de datos. Verifica permisos CREATE/ALTER y que esté vacía.";
+ if(code==="P2010")return "PostgreSQL rechazó la consulta de comprobación. Revisa el código SQLSTATE en los logs de Enhance.";
+ if(code==="P1010")return "El usuario de PostgreSQL no tiene acceso a la base de datos o al esquema public.";
+ if(code==="P1002")return "Se agotó el tiempo de conexión a PostgreSQL. Comprueba host y puerto.";
+ return `Falló la comprobación de ${engine==="postgresql"?"PostgreSQL":"MySQL/MariaDB"}${/^P\d{4}$/.test(code)?` (${code})`:""}. Consulta [installer] Database preflight failed en los logs de Enhance.`;
 }
 export async function POST(req:NextRequest){
  if(!installerAvailable())return response("Esta instalación ya está configurada.",409);
@@ -95,12 +97,20 @@ export async function POST(req:NextRequest){
     ? await probe.$queryRaw<Array<{n:bigint}>>`SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`
     : await probe.$queryRaw<Array<{n:bigint}>>`SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE'`;
    if(Number(tables[0]?.n||0)!==0)return response("Utiliza una base de datos vacía y exclusiva para esta instalación.",409);
+   if(data.engine==="postgresql"){
+    const privileges=await probe.$queryRaw<Array<{can_connect:boolean;can_create:boolean;can_use:boolean}>>`SELECT has_database_privilege(current_user,current_database(),'CONNECT') AS can_connect, has_schema_privilege(current_user,'public','CREATE') AS can_create, has_schema_privilege(current_user,'public','USAGE') AS can_use`;
+    const rights=privileges[0];
+    if(!rights?.can_connect||!rights.can_create||!rights.can_use){
+     console.error("[installer] PostgreSQL schema permissions insufficient",{canConnect:rights?.can_connect,canCreate:rights?.can_create,canUse:rights?.can_use});
+     return response("El usuario PostgreSQL no tiene permisos USAGE y CREATE sobre el esquema public de esta base. Solicita al administrador de PostgreSQL que los conceda.",422);
+    }
+   }
   }catch(error){
    const code=typeof error==="object"&&error!==null&&"code" in error?String(error.code):"unknown";
    const meta=typeof error==="object"&&error!==null&&"meta" in error?error.meta:null;
    const sqlState=meta&&typeof meta==="object"&&"code" in meta?String(meta.code):undefined;
    console.error("[installer] Database preflight failed",{engine:data.engine,code,sqlState});
-   return response(databaseError(error),422);
+   return response(databaseError(error,data.engine),422);
   }
   finally{await probe.$disconnect();}
   try{
