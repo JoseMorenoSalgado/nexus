@@ -2,14 +2,12 @@ import "server-only";
 import {NextRequest,NextResponse} from "next/server";
 import {requireAdmin} from "@/lib/auth";
 import {canEditProperties,canManageUsers} from "@/lib/roles";
+import {validPublicMutationOrigin} from "@/lib/public-request-origin";
 export function propertyRedirect(path:string){
  return new NextResponse(null,{status:303,headers:{"Location":path,"Cache-Control":"no-store"}});
 }
 export function validMutationOrigin(req:NextRequest){
- const origin=req.headers.get("origin"),host=req.headers.get("host");
- if(!origin||!host)return false;
- try{return new URL(origin).host.toLowerCase()===host.toLowerCase();}
- catch{return false;}
+ return validPublicMutationOrigin(req.headers);
 }
 export function propertyErrorPath(code:string,id?:string){
  const root=id?"/admin/propiedades/"+encodeURIComponent(id)+"/editar":"/admin/propiedades/nueva";

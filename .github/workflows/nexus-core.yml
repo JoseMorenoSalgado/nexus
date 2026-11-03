@@ -52,6 +52,8 @@ jobs:
           npm run db:generate
           npx prisma db push
           npm run db:seed
+      - name: Test public admin origin and proxy boundaries
+        run: node --import tsx --test tests/public-request-origin.test.ts
       - name: Typecheck
         run: npx tsc --noEmit
       - name: Build Next.js for HTTP integration checks
@@ -72,6 +74,8 @@ jobs:
           done
           cat /tmp/nexus-core-next.log
           exit 1
+      - name: Verify real admin login, sessions and HTTPS proxy-independent protection
+        run: node scripts/check-admin-access.mjs
       - name: Verify property references, agent roles, lead sources and PDFs
         run: node scripts/check-nexus-functional.mjs
       - name: Verify agent permissions

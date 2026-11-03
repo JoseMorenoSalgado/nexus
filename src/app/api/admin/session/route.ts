@@ -5,6 +5,7 @@ import {prisma} from "@/lib/prisma";
 import {hasDatabaseConfig} from "@/lib/server-config";
 import {normalizeSiteHost} from "@/lib/preview";
 import {verifyLoginCaptcha} from "@/lib/recaptcha";
+import {validPublicMutationOrigin,publicRequestHostname} from "@/lib/public-request-origin";
 
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
@@ -18,11 +19,7 @@ function go(_req:NextRequest,path:string){
 }
 function fail(req:NextRequest,code:string){return go(req,"/admin/acceso?error="+encodeURIComponent(code));}
 function sameOrigin(req:NextRequest){
- const origin=req.headers.get("origin");
- const host=req.headers.get("host");
- if(!origin||!host)return false;
- try{return new URL(origin).host.toLowerCase()===host.toLowerCase();}
- catch{return false;}
+ return validPublicMutationOrigin(req.headers);
 }
 function logIssue(stage:string,error:unknown){
  console.error("[admin-login]",stage,error instanceof Error?error.name:"unknown");
@@ -43,7 +40,7 @@ export async function POST(req:NextRequest){
  if(email.length<3||email.length>180||password.length<8||password.length>256)return fail(req,"credenciales");
 
  try{
-  const hostname=normalizeSiteHost(req.headers.get("host")||"");
+  const hostname=normalizeSiteHost(publicRequestHostname(req.headers)||"");
   const domain=await prisma.domain.findUnique({where:{hostname},select:{tenantId:true}});
   if(!domain)return fail(req,"dominio");
 

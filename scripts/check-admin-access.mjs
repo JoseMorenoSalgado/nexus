@@ -52,4 +52,57 @@ assert.ok(cleared&&/max-age=0/i.test(cleared),'Logout must expire the session co
 const afterLogout=await fetch(origin+'/admin',{headers:{Cookie:cookieHeader},redirect:'manual'});
 assert.equal(afterLogout.status,307,'Logout must revoke the server-side session token');
 assert.equal(new URL(afterLogout.headers.get('location'),origin).pathname,'/admin/acceso');
+// Reproduce Enhance's HTTPS proxy behavior against a disposable CI tenant
+// domain, not a customer database. Never create proxy aliases outside GitHub CI.
+if(process.env.CI==="true"&&process.env.GITHUB_ACTIONS==="true"){
+ const {PrismaClient}=await import("@prisma/client");
+ const prisma=new PrismaClient();
+ try{
+  const linked=await prisma.domain.findUnique({where:{hostname:"localhost"},select:{tenantId:true}});
+  assert.ok(linked,"Disposable CI domain not found");
+  await prisma.domain.upsert({
+   where:{hostname:"proxy.nexus.test"},
+   create:{hostname:"proxy.nexus.test",tenantId:linked.tenantId},
+   update:{tenantId:linked.tenantId}
+  });
+ }finally{await prisma.$disconnect();}
+ const proxyHeaders={
+  Host:"127.0.0.1:3000",
+  "X-Forwarded-Host":"proxy.nexus.test",
+  "X-Forwarded-Proto":"https"
+ };
+ const proxyForm=new FormData();
+ proxyForm.set("email",process.env.ADMIN_EMAIL);
+ proxyForm.set("password",process.env.ADMIN_PASSWORD);
+ const forged=await fetch(origin+"/api/admin/session",{
+  method:"POST",
+  headers:{...proxyHeaders,Origin:"https://attacker.invalid"},
+  body:proxyForm,redirect:"manual"
+ });
+ assert.equal(forged.status,303);
+ assert.equal(new URL(forged.headers.get("location"),origin).searchParams.get("error"),"origen",
+  "Cross-origin proxy login must be denied");
+ const proxied=await fetch(origin+"/api/admin/session",{
+  method:"POST",
+  headers:{...proxyHeaders,Origin:"https://proxy.nexus.test"},
+  body:proxyForm,redirect:"manual"
+ });
+ assert.equal(proxied.status,303);
+ assert.equal(new URL(proxied.headers.get("location"),origin).pathname,"/api/admin/session",
+  "Trusted HTTPS proxy login should be accepted");
+ const proxiedCookie=proxied.headers.getSetCookie().find(c=>c.startsWith("webappecloud_session="));
+ assert.ok(proxiedCookie,"Secure proxy login cookie missing");
+ const proxiedCheck=await fetch(origin+"/api/admin/session",{
+  headers:{...proxyHeaders,Cookie:proxiedCookie.split(";")[0]},redirect:"manual"
+ });
+ assert.equal(proxiedCheck.status,303);
+ assert.equal(new URL(proxiedCheck.headers.get("location"),origin).pathname,"/admin",
+  "Session must remain associated with public tenant host");
+ const proxiedLogout=await fetch(origin+"/api/admin/logout",{
+  method:"POST",headers:{...proxyHeaders,Origin:"https://proxy.nexus.test",Cookie:proxiedCookie.split(";")[0]},
+  redirect:"manual"
+ });
+ assert.equal(proxiedLogout.status,303,"Proxy logout must preserve CSRF validation");
+ console.log("Trusted Enhance HTTPS proxy login, tenant resolution, cookie and logout passed; forged origin rejected.");
+}
 console.log('Stable login and logout, cookie revocation, CSRF defense and protected integrations passed.');
