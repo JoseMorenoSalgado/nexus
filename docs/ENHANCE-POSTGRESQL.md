@@ -23,7 +23,7 @@ Cuando `pg_isready -h /var/run/postgresql -p 5432` responde y `pg_isready -h 127
 
 `pg_isready` demuestra disponibilidad del servidor, **no** autenticación ni permisos. Antes de repetir la instalación, valida que el usuario pueda autenticarse por socket y tenga acceso a una base vacía. El instalador sigue soportando TCP para bases remotas y MySQL/MariaDB sin cambios.
 
-La instalación en Enhance real sigue pendiente de comprobar; los tests de CI solo cubren la construcción de la URL y el flujo TCP ya existente.
+La instalación en Enhance real sigue pendiente de comprobar. CI verifica la construcción de URL y la conexión Prisma real por socket con PostgreSQL 16 efímero, además de preservar las pruebas TCP existentes. Esto no demuestra permisos ni autenticación en el servidor de un cliente.
  El usuario de instalación necesita permisos `CONNECT` en la base y `USAGE, CREATE` sobre el esquema `public` de **esa base**. En PostgreSQL 15+, el permiso `CREATE` sobre `public` no debe darse por supuesto.
 
 Si el usuario no dispone de permisos, un administrador autorizado puede conectarse a la base correspondiente y ejecutar:
