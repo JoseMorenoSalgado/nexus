@@ -54,8 +54,8 @@ export default function InstallerForm({domain}:{domain:string}){
       <option value="mariadb">MariaDB</option><option value="mysql">MySQL</option><option value="postgresql">PostgreSQL</option>
      </select>
     </label>
-    <p>Utiliza una base de datos <strong>vacía</strong> que hayas creado previamente en cPanel o Dockploy. Sus credenciales no se guardan en GitHub.</p>
-    <div className="wizard-grid">{input("dbHost","Servidor de base de datos",{hint:"En Plesk con SQL local normalmente es 127.0.0.1; en Docker usa el nombre del servicio (db o postgres)."})}{input("dbPort","Puerto",{hint:"3306 para MySQL/MariaDB; 5432 para PostgreSQL."})}</div>
+    <p>Utiliza una base de datos <strong>vacía</strong> creada previamente en Enhance. Sus credenciales no se guardan en GitHub.</p>
+    <div className="wizard-grid">{input("dbHost","Servidor de base de datos",{hint:values.dbType==="postgresql"?"Enhance en el mismo servidor: /var/run/postgresql (socket local). Para conexión TCP escribe el servidor o IP.":"Escribe el nombre de servidor o IP asignado por Enhance."})}{input("dbPort","Puerto",{hint:"3306 para MySQL/MariaDB; 5432 para PostgreSQL."})}</div>
     {input("dbName","Nombre de la base de datos")}
     {input("dbUser","Usuario de la base de datos")}
     {input("dbPassword","Contraseña de la base de datos",{type:"password",autoComplete:"new-password"})}

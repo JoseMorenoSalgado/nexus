@@ -33,6 +33,8 @@ jobs:
         run: npm run check:legacy-hosting
       - name: Test safe installation recovery
         run: npm run test:recovery
+      - name: Verify PostgreSQL socket and TCP installer URLs
+        run: node --import tsx --test tests/installer-db-url.test.ts
       - name: Build Next.js for Enhance
         run: npm run build
       - name: Validate Enhance deployment structure
