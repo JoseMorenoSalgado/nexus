@@ -34,7 +34,7 @@ test("TCP MySQL / MariaDB remains unchanged", () => {
 
 test("rejects arbitrary Unix sockets, path traversal, injection and socket for MySQL", () => {
   for (const host of ["/tmp/postgresql", "/var/run/postgresql/../private", "/run/mysql", "db.example.test?host=/tmp", "a..b", "../../etc/passwd", ""]) {
-    assert.throws(() => build({...base,host}), undefined, `host must be rejected: ${host}`);
+    assert.throws(() => build({...base,host}), /Servidor o puerto|Socket PostgreSQL/, `host must be rejected: ${host}`);
   }
   assert.throws(() => build({...base,engine:"mysql"}), /Socket PostgreSQL no autorizado/);
 });
