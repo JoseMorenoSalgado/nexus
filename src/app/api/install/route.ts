@@ -45,7 +45,7 @@ function validate(input:Form){
  return {institution,institutionEmail,adminName,adminEmail,adminPassword,url,engine,templateKey,modules};
 }
 function slugify(s:string){return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,72)||"institucion";}
-function databaseError(error:unknown){
+function databaseError(error:unknown,engine:DatabaseEngine){
  const code=typeof error==="object"&&error&&"code" in error?String(error.code):"";
  if(code==="P1000")return "Usuario o contraseña incorrectos.";
  if(code==="P1001")return "No se pudo conectar al servidor SQL. Comprueba host, puerto y acceso a la base de datos desde Enhance.";
@@ -55,7 +55,7 @@ function databaseError(error:unknown){
  if(code==="P2010")return "PostgreSQL rechazó la consulta de comprobación. Revisa el código SQLSTATE en los logs de Enhance.";
  if(code==="P1010")return "El usuario de PostgreSQL no tiene acceso a la base de datos o al esquema public.";
  if(code==="P1002")return "Se agotó el tiempo de conexión a PostgreSQL. Comprueba host y puerto.";
- return `Falló la comprobación de PostgreSQL${/^P\d{4}$/.test(code)?` (${code})`:""}. Consulta [installer] Database preflight failed en los logs de Enhance.`;
+ return `Falló la comprobación de ${engine==="postgresql"?"PostgreSQL":"MySQL/MariaDB"}${/^P\d{4}$/.test(code)?` (${code})`:""}. Consulta [installer] Database preflight failed en los logs de Enhance.`;
 }
 export async function POST(req:NextRequest){
  if(!installerAvailable())return response("Esta instalación ya está configurada.",409);
@@ -110,7 +110,7 @@ export async function POST(req:NextRequest){
    const meta=typeof error==="object"&&error!==null&&"meta" in error?error.meta:null;
    const sqlState=meta&&typeof meta==="object"&&"code" in meta?String(meta.code):undefined;
    console.error("[installer] Database preflight failed",{engine:data.engine,code,sqlState});
-   return response(databaseError(error),422);
+   return response(databaseError(error,data.engine),422);
   }
   finally{await probe.$disconnect();}
   try{
