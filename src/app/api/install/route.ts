@@ -55,7 +55,7 @@ function databaseError(error:unknown){
  if(code==="P2010")return "PostgreSQL rechazó la consulta de comprobación. Revisa el código SQLSTATE en los logs de Enhance.";
  if(code==="P1010")return "El usuario de PostgreSQL no tiene acceso a la base de datos o al esquema public.";
  if(code==="P1002")return "Se agotó el tiempo de conexión a PostgreSQL. Comprueba host y puerto.";
- return `Falló la comprobación de PostgreSQL${/^P\\d{4}$/.test(code)?` (${code})`:""}. Consulta [installer] Database preflight failed en los logs de Enhance.`;
+ return `Falló la comprobación de PostgreSQL${/^P\d{4}$/.test(code)?` (${code})`:""}. Consulta [installer] Database preflight failed en los logs de Enhance.`;
 }
 export async function POST(req:NextRequest){
  if(!installerAvailable())return response("Esta instalación ya está configurada.",409);
