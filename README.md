@@ -20,7 +20,7 @@ El motor mantiene el aislamiento de empresas en base de datos por seguridad, per
 
 ## Despliegue en Enhance
 
-Consulta también [la guía PostgreSQL y separación de configuraciones heredadas](docs/ENHANCE-POSTGRESQL.md). Docker Compose y Passenger/Plesk no forman parte del despliegue nativo actual.
+Consulta también [la guía PostgreSQL y separación de configuraciones heredadas](docs/ENHANCE-POSTGRESQL.md). Los mecanismos de contenedores y de alojamiento heredado no forman parte del despliegue nativo actual.
 
 1. Configurar la aplicación Node.js 22 y el repositorio GitHub. Usar el directorio de trabajo `deploys/current` y el proxy HTTP al puerto de la aplicación.
 2. Ejecutar `npm install --include=dev`, luego `npm run build` y `npm run check:enhance`. Comando de inicio: `npm start`.
