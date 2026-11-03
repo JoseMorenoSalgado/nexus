@@ -17,6 +17,7 @@ const databaseUrl = buildInstallerDatabaseUrl({
   dbUser: "nexus_socket_ci",
   dbPassword: "ci_socket_only_password"
 });
+async function main(){
 const db = new PrismaClient({datasources:{db:{url:databaseUrl}}});
 try {
   const rows=await db.$queryRaw<Array<{
@@ -40,3 +41,9 @@ try {
 }finally{
   await db.$disconnect();
 }
+}
+main().catch(error=>{
+  const code=error && typeof error === 'object' && 'code' in error ? String(error.code) : 'unknown';
+  console.error('PostgreSQL socket integration failed:', {code,errorType:error instanceof Error ? error.name : 'unknown'});
+  process.exitCode=1;
+});
