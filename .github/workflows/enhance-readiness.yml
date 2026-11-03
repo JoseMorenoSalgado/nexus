@@ -35,6 +35,8 @@ jobs:
         run: npm run test:recovery
       - name: Verify PostgreSQL socket and TCP installer URLs
         run: node --import tsx --test tests/installer-db-url.test.ts
+      - name: Verify Enhance admin public-origin and CSRF isolation
+        run: node --import tsx --test tests/public-request-origin.test.ts
       - name: Build Next.js for Enhance
         run: npm run build
       - name: Verify PostgreSQL via a real Unix socket (disposable CI database)
