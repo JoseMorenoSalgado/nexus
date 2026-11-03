@@ -33,7 +33,29 @@ jobs:
         run: npm run check:legacy-hosting
       - name: Test safe installation recovery
         run: npm run test:recovery
+      - name: Verify PostgreSQL socket and TCP installer URLs
+        run: node --import tsx --test tests/installer-db-url.test.ts
       - name: Build Next.js for Enhance
         run: npm run build
+      - name: Verify PostgreSQL via a real Unix socket (disposable CI database)
+        run: |
+          set -euo pipefail
+          sudo mkdir -p /var/run/postgresql
+          sudo chmod 0777 /var/run/postgresql
+          docker run --rm -d --name nexus-installer-socket-ci \
+            -e POSTGRES_USER=nexus_socket_ci \
+            -e POSTGRES_PASSWORD=ci_socket_only_password \
+            -e POSTGRES_DB=nexus_socket_ci \
+            -v /var/run/postgresql:/var/run/postgresql \
+            postgres:16 -c "listen_addresses="
+          trap 'docker rm -f nexus-installer-socket-ci >/dev/null 2>&1 || true' EXIT
+          for i in $(seq 1 45); do
+            if test -S /var/run/postgresql/.s.PGSQL.5432 && docker exec nexus-installer-socket-ci pg_isready -h /var/run/postgresql -U nexus_socket_ci -d nexus_socket_ci >/dev/null 2>&1; then
+              break
+            fi
+            sleep 1
+          done
+          test -S /var/run/postgresql/.s.PGSQL.5432
+          node --import tsx scripts/check-installer-socket-sql.ts
       - name: Validate Enhance deployment structure
         run: npm run check:enhance

@@ -6,6 +6,7 @@ import {prismaSchemaFor,type DatabaseEngine} from "@/lib/db-provider";
 import {isTemplateKey,type SiteTemplateKey} from "@/lib/site-template-registry";
 import {normalizeEnabledModules,type ModuleKey} from "@/lib/tenant-modules-registry";
 import {prismaFor} from "@/lib/prisma";
+import {buildInstallerDatabaseUrl} from "@/lib/installer-db-url";
 import {hashPassword} from "@/lib/auth";
 import {installerAvailable,takeInstallLock,saveInstallation,configDir} from "@/lib/server-config";
 import {clearInstallerSession,INSTALLER_SESSION_COOKIE} from "@/lib/installer-session";
@@ -34,14 +35,13 @@ function validate(input:Form){
  const templateKey=input.templateKey===undefined?"real-estate":input.templateKey;
  if(!isTemplateKey(templateKey))throw Error("Selecciona una plantilla válida.");
  const modules=normalizeEnabledModules(templateKey,input.modules,true);
- if(!/^[a-z0-9][a-z0-9.-]*$/.test(dbHost)||dbHost.length>250||!Number.isInteger(dbPort)||dbPort<1||dbPort>65535)throw Error("Servidor o puerto de base de datos inválido.");
+ if(!Number.isInteger(dbPort)||dbPort<1||dbPort>65535)throw Error("Servidor o puerto de base de datos inválido.");
  if(!/^[a-zA-Z0-9_-]{1,64}$/.test(dbName))throw Error("Nombre de base de datos inválido. Se admiten letras, números, guiones (-) y guiones bajos (_).");
  if(!/^[a-zA-Z0-9_@.-]{1,80}$/.test(dbUser)||!dbPassword||dbPassword.length>256)throw Error("Revisa el usuario y contraseña de la base de datos.");
  if(institution.length<3||adminName.length<2||adminPassword.length<14||adminPassword.length>256)throw Error("Introduce la institución, administrador y una contraseña de al menos 14 caracteres.");
  if(!/^\S+@\S+\.\S+$/.test(institutionEmail)||!/^\S+@\S+\.\S+$/.test(adminEmail))throw Error("Los correos electrónicos no son válidos.");
  const engine:DatabaseEngine=dbType==="postgresql"?"postgresql":"mysql";
- const scheme=engine==="postgresql"?"postgresql":"mysql";
- const url=`${scheme}://${encodeURIComponent(dbUser)}:${encodeURIComponent(dbPassword)}@${dbHost}:${dbPort}/${dbName}`;
+ const url=buildInstallerDatabaseUrl({engine,host:dbHost,port:dbPort,dbName,dbUser,dbPassword});
  return {institution,institutionEmail,adminName,adminEmail,adminPassword,url,engine,templateKey,modules};
 }
 function slugify(s:string){return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,72)||"institucion";}
@@ -109,7 +109,13 @@ export async function POST(req:NextRequest){
    const code=typeof error==="object"&&error!==null&&"code" in error?String(error.code):"unknown";
    const meta=typeof error==="object"&&error!==null&&"meta" in error?error.meta:null;
    const sqlState=meta&&typeof meta==="object"&&"code" in meta?String(meta.code):undefined;
-   console.error("[installer] Database preflight failed",{engine:data.engine,code,sqlState});
+   console.error("[installer] Database preflight failed",{
+    engine:data.engine,
+    transport:data.url.includes("?host=")?"unix-socket":"tcp",
+    code:/^P\d{4}$/.test(code)?code:"unknown",
+    sqlState:/^[A-Z0-9]{5}$/.test(sqlState||"")?sqlState:undefined,
+    errorType:error instanceof Error&&/^[A-Za-z]+$/.test(error.name)?error.name:"unknown"
+   });
    return response(databaseError(error,data.engine),422);
   }
   finally{await probe.$disconnect();}

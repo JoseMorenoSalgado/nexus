@@ -15,7 +15,16 @@ Este despliegue **no utiliza** Docker, Docker Compose, Passenger ni Plesk. Los a
 
 ## PostgreSQL
 
-La base debe existir, estar vacía y ser accesible desde el proceso Node.js. El usuario de instalación necesita permisos `CONNECT` en la base y `USAGE, CREATE` sobre el esquema `public` de **esa base**. En PostgreSQL 15+, el permiso `CREATE` sobre `public` no debe darse por supuesto.
+La base debe existir, estar vacía y ser accesible desde el proceso Node.js.
+
+### Conexión por socket en Enhance
+
+Cuando `pg_isready -h /var/run/postgresql -p 5432` responde y `pg_isready -h 127.0.0.1 -p 5432` no responde, introduce `/var/run/postgresql` en el campo **Servidor de base de datos** del instalador, con el puerto `5432` y las credenciales de la base creada. No actives TCP ni expongas 5432 solo para instalar. Prisma v6 usa `?host=/var/run/postgresql` en su URL interna para sockets Unix; la aplicación guarda la configuración en la ruta privada habitual.
+
+`pg_isready` demuestra disponibilidad del servidor, **no** autenticación ni permisos. Antes de repetir la instalación, valida que el usuario pueda autenticarse por socket y tenga acceso a una base vacía. El instalador sigue soportando TCP para bases remotas y MySQL/MariaDB sin cambios.
+
+La instalación en Enhance real sigue pendiente de comprobar. CI verifica la construcción de URL y la conexión Prisma real por socket con PostgreSQL 16 efímero, además de preservar las pruebas TCP existentes. Esto no demuestra permisos ni autenticación en el servidor de un cliente.
+ El usuario de instalación necesita permisos `CONNECT` en la base y `USAGE, CREATE` sobre el esquema `public` de **esa base**. En PostgreSQL 15+, el permiso `CREATE` sobre `public` no debe darse por supuesto.
 
 Si el usuario no dispone de permisos, un administrador autorizado puede conectarse a la base correspondiente y ejecutar:
 
