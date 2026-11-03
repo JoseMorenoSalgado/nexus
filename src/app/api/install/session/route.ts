@@ -1,5 +1,5 @@
 import {NextRequest, NextResponse} from "next/server";
-import {installerAvailable,manualInstallerEnabled} from "@/lib/server-config";
+import {installerAvailable} from "@/lib/server-config";
 import {STEP_COOKIE,validStepProof} from "@/lib/installer-step";
 import {installerOriginAllowed} from "@/lib/installer-origin";
 import {consumeWhmcsActivation,whmcsActivationEnabled} from "@/lib/whmcs-activation";
@@ -38,9 +38,7 @@ export async function POST(req: NextRequest) {
   catch { return redirectLocal("/instalar?estado=invalido"); }
   try {
     const domain=new URL(origin).hostname.toLowerCase();
-    const allowed=manualInstallerEnabled()
-      ? true
-      : whmcsActivationEnabled()
+    const allowed=whmcsActivationEnabled()
         ? await consumeWhmcsActivation(token,domain)
         : validSetupToken(token);
     if(!allowed)return redirectLocal("/instalar?paso=activar&estado=invalido");
