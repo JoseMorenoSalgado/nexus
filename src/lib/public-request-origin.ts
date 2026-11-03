@@ -5,7 +5,7 @@
  * This module is pure so security edge cases can be tested without a database.
  */
 type RequestHeaders = Pick<Headers,"get">;
-type PublicEnv = Partial<Record<"SITE_URL"|"APP_URL"|"NEXT_PUBLIC_SITE_URL",string|undefined>>;
+type PublicEnv = {[key:string]:string|undefined};
 
 function parseHost(raw:string|null,protocol:"http:"|"https:"="https:"):URL|null{
  if(!raw||raw.length>260||/[\\/\s@?#,]/.test(raw))return null;
