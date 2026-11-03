@@ -40,3 +40,19 @@ No conceder SUPERUSER ni ejecutar SQL contra una base diferente. Si el instalado
 En los logs de Node.js, buscar `[installer] Database preflight failed`, `[installer] PostgreSQL schema permissions insufficient` o `[installer] Prisma db push failed`. Compartir solo código Prisma/SQLSTATE, nunca `DATABASE_URL` ni contraseñas.
 
 La comprobación automática de GitHub no demuestra conectividad con la base de datos real de Enhance. Se requiere una prueba de instalación en el servidor.
+
+## Inicio de sesión administrativo detrás del proxy HTTPS de Enhance
+
+Si el formulario de acceso redirige con `error=origen`, la petición HTTPS pudo llegar a Node.js con un encabezado `Host` privado del proxy. El código valida que el `Origin` sea el dominio público autorizado y resuelve ese dominio antes de consultar la institución y sus permisos.
+
+Se recomienda fijar el dominio oficial en las variables de entorno **privadas** del proceso Node.js de cada sitio:
+
+```env
+SITE_URL=https://tu-dominio-oficial.example
+```
+
+Sustituye el ejemplo por el HTTPS real y reinicia el proceso Node.js. Este valor **no** es la URL de PostgreSQL. Nunca se debe desactivar la validación CSRF ni permitir cualquier `Origin`. El servidor admite también `X-Forwarded-Host` cuando el proxy presenta un `Host` privado y anuncia `X-Forwarded-Proto: https`, pero no confía en esos encabezados si `Host` ya es público.
+
+Antes de corregir un dominio asociado a la institución, **solo consultar** la tabla `Domain` de la instalación actual y verificar cuál es el host registrado. No modificar filas de empresas o dominios sin respaldo, comprobación de identidad y autorización.
+
+Esta corrección requiere repetir el login y la sesión en el Enhance real, además de superar las pruebas automáticas de CI.
