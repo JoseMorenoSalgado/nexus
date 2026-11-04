@@ -76,7 +76,20 @@ export function validPublicMutationOrigin(headers:RequestHeaders,env:PublicEnv=p
  // For an explicitly configured canonical HTTPS origin, validate the browser
  // Origin directly. Enhance may use an internal Host when proxying to Node.
  // Do not trust forwarded headers to decide whether a cross-site Origin is valid.
- if(canonical)return origin.origin===canonical.origin;
+ if(canonical){
+  if(origin.origin!==canonical.origin)return false;
+  // Private upstreams are trusted only when forwarding does not contradict
+  // the canonical public host. Public/non-private upstream Host may be an
+  // Enhance internal name, so it must not decide browser Origin validity.
+  const direct=parseHost(headers.get("host"));
+  if(!direct)return false;
+  if(privateHost(direct.hostname)){
+   const forwardedRaw=headers.get("x-forwarded-host");
+   const forwarded=parseHost(forwardedRaw);
+   if(forwardedRaw&&(!forwarded||forwarded.host.toLowerCase()!==canonical.host.toLowerCase()))return false;
+  }
+  return true;
+ }
  const host=trustedSiteHost(headers,env);
  if(!host)return false;
  if(origin.host.toLowerCase()!==host.toLowerCase())return false;
