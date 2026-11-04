@@ -73,9 +73,12 @@ export function validPublicMutationOrigin(headers:RequestHeaders,env:PublicEnv=p
  }catch{return false;}
  const canonical=configuredOrigin(env);
  if(configuredInvalid(env))return false;
+ // For an explicitly configured canonical HTTPS origin, validate the browser
+ // Origin directly. Enhance may use an internal Host when proxying to Node.
+ // Do not trust forwarded headers to decide whether a cross-site Origin is valid.
+ if(canonical)return origin.origin===canonical.origin;
  const host=trustedSiteHost(headers,env);
  if(!host)return false;
- if(canonical)return origin.origin===canonical.origin&&host.toLowerCase()===canonical.host.toLowerCase();
  if(origin.host.toLowerCase()!==host.toLowerCase())return false;
  return origin.protocol==="https:"||(origin.protocol==="http:"&&privateHost(origin.hostname));
 }
