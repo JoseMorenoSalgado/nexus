@@ -25,7 +25,11 @@ function privateHost(hostname:string):boolean {
  return false;
 }
 function configuredOrigin(env:PublicEnv):URL|null {
- const raw=(env.SITE_URL||env.APP_URL||env.NEXT_PUBLIC_SITE_URL||"").trim();
+ // This dedicated NEXUS deployment has a known public origin, even when
+ // Enhance forwards an internal Host and omits public proxy headers.
+ // Explicit configuration still takes precedence; development remains local.
+ const raw=(env.SITE_URL||env.APP_URL||env.NEXT_PUBLIC_SITE_URL||
+  (env.NODE_ENV==="production"?"https://nexusrealestatenicaragua.com":"")).trim();
  if(!raw)return null;
  try{
   const url=new URL(raw);
