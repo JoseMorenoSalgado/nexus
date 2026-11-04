@@ -107,8 +107,11 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // The origin has already been validated against the pinned SITE_URL.
+    // Resolve the tenant from that canonical URL rather than Enhance upstream Host.
+    const canonicalSiteUrl = process.env.SITE_URL || process.env.APP_URL || process.env.NEXT_PUBLIC_SITE_URL;
     const hostname = normalizeSiteHost(
-      publicRequestHostname(req.headers) || ""
+      canonicalSiteUrl ? new URL(canonicalSiteUrl).hostname : (publicRequestHostname(req.headers) || "")
     );
 
     const domain = await prisma.domain.findUnique({

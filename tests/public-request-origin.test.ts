@@ -61,3 +61,11 @@ test("public www and bare domains never become interchangeable",()=>{
  const h=headers({Host:"www.nexus.example",Origin:"https://nexus.example"});
  assert.equal(validPublicMutationOrigin(h,env),false);
 });
+
+test("pinned HTTPS origin is accepted behind Enhance non-private upstream Host",()=>{
+ const pinned={...env,SITE_URL:"https://nexus.example"};
+ const h=headers({Host:"enhance-upstream.internal:3000",Origin:"https://nexus.example",
+  "X-Forwarded-Host":"nexus.example","X-Forwarded-Proto":"https"});
+ assert.equal(validPublicMutationOrigin(h,pinned),true);
+ assert.equal(validPublicMutationOrigin(headers({Host:"enhance-upstream.internal:3000",Origin:"https://attacker.invalid"}),pinned),false);
+});
