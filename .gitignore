@@ -1,5 +1,7 @@
 node_modules
 .next
+.ec-env-build.json
+.ec-env-build.json.*
 .env
 .env.*
 !.env.example
