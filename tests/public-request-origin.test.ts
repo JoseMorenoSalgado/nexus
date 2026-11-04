@@ -61,3 +61,28 @@ test("public www and bare domains never become interchangeable",()=>{
  const h=headers({Host:"www.nexus.example",Origin:"https://nexus.example"});
  assert.equal(validPublicMutationOrigin(h,env),false);
 });
+
+const production={...env,NODE_ENV:"production"};
+const official="https://nexusrealestatenicaragua.com";
+test("production Enhance login needs no origin environment variables",()=>{
+ for(const Host of ["127.0.0.1:3000","10.0.0.5:3000","nexusrealestatenicaragua.com"]){
+  const h=headers({Host,Origin:official});
+  assert.equal(validPublicMutationOrigin(h,production),true);
+  assert.equal(publicRequestHostname(h,production),"nexusrealestatenicaragua.com");
+ }
+ assert.equal(publicRequestHostname(headers({Host:"127.0.0.1:3000"}),production),"nexusrealestatenicaragua.com");
+});
+test("production default rejects foreign, insecure, missing and contradictory origins",()=>{
+ for(const Origin of ["https://evil.example","http://nexusrealestatenicaragua.com","https://www.nexusrealestatenicaragua.com","null"]){
+  assert.equal(validPublicMutationOrigin(headers({Host:"127.0.0.1:3000",Origin}),production),false);
+ }
+ assert.equal(validPublicMutationOrigin(headers({Host:"127.0.0.1:3000"}),production),false);
+ assert.equal(validPublicMutationOrigin(headers({Host:"evil.example",Origin:official}),production),false);
+ assert.equal(validPublicMutationOrigin(headers({Host:"127.0.0.1:3000",Origin:official,"X-Forwarded-Host":"evil.example"}),production),false);
+});
+test("explicit production configuration takes precedence and invalid configuration fails closed",()=>{
+ const h=headers({Host:"127.0.0.1:3000",Origin:"https://custom.example"});
+ assert.equal(validPublicMutationOrigin(h,{...production,SITE_URL:"https://custom.example"}),true);
+ assert.equal(validPublicMutationOrigin(headers({Host:"127.0.0.1:3000",Origin:official}),{...production,SITE_URL:"https://custom.example"}),false);
+ assert.equal(validPublicMutationOrigin(h,{...production,SITE_URL:"http://custom.example"}),false);
+});
