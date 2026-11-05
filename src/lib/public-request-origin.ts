@@ -63,35 +63,29 @@ export function publicRequestHostname(headers:RequestHeaders,env:PublicEnv=proce
  const host=trustedSiteHost(headers,env);
  return host?parseHost(host)?.hostname.toLowerCase()||null:null;
 }
+/**
+ * Browser Origin is authoritative for form submissions. Referer is used only
+ * when a browser omits Origin; neither proxy Host nor X-Forwarded-* is trusted.
+ * The configured HTTPS SITE_URL remains the canonical allowlist.
+ */
 export function validPublicMutationOrigin(headers:RequestHeaders,env:PublicEnv=process.env):boolean{
- const raw=headers.get("origin");
- if(!raw)return false;
- let origin:URL;
- try{
-  origin=new URL(raw);
-  if(origin.origin!==raw||origin.username||origin.password||origin.pathname!=="/"||origin.search||origin.hash)return false;
- }catch{return false;}
- const canonical=configuredOrigin(env);
  if(configuredInvalid(env))return false;
- // For an explicitly configured canonical HTTPS origin, validate the browser
- // Origin directly. Enhance may use an internal Host when proxying to Node.
- // Do not trust forwarded headers to decide whether a cross-site Origin is valid.
- if(canonical){
-  if(origin.origin!==canonical.origin)return false;
-  // Private upstreams are trusted only when forwarding does not contradict
-  // the canonical public host. Public/non-private upstream Host may be an
-  // Enhance internal name, so it must not decide browser Origin validity.
-  const direct=parseHost(headers.get("host"));
-  if(!direct)return false;
-  if(privateHost(direct.hostname)){
-   const forwardedRaw=headers.get("x-forwarded-host");
-   const forwarded=parseHost(forwardedRaw);
-   if(forwardedRaw&&(!forwarded||forwarded.host.toLowerCase()!==canonical.host.toLowerCase()))return false;
-  }
-  return true;
- }
+ const canonical=configuredOrigin(env);
+ const originHeader=headers.get("origin");
+ const refererHeader=headers.get("referer");
+ let actual:URL;
+ try{
+  if(originHeader){
+   actual=new URL(originHeader);
+   if(actual.origin!==originHeader||actual.pathname!=="/"||actual.search||actual.hash)return false;
+  }else if(refererHeader){
+   const referer=new URL(refererHeader);
+   if(referer.username||referer.password||referer.pathname!=="/admin/acceso")return false;
+   actual=new URL(referer.origin);
+  }else return false;
+ }catch{return false;}
+ if(canonical)return actual.origin===canonical.origin;
  const host=trustedSiteHost(headers,env);
- if(!host)return false;
- if(origin.host.toLowerCase()!==host.toLowerCase())return false;
- return origin.protocol==="https:"||(origin.protocol==="http:"&&privateHost(origin.hostname));
+ if(!host||actual.host.toLowerCase()!==host.toLowerCase())return false;
+ return actual.protocol==="https:"||(actual.protocol==="http:"&&privateHost(actual.hostname));
 }
