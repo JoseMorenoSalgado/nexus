@@ -11,7 +11,11 @@ const properties=[
  {refCode:"NX-301",slug:"casa-las-colinas",title:"Casa familiar en Las Colinas",city:"Managua",neighborhood:"Las Colinas",type:"Casa",operation:"venta",price:180000,bedrooms:3,bathrooms:2,areaM2:250,description:"Propiedad de demostración; fotografías, precio y características ilustrativos.",url:"https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=1100"}
 ];
 async function main(){
- const t=await prisma.tenant.upsert({where:{slug:"nexus"},update:{},create:{name:"Nexus Real Estate",slug:"nexus",tagline:"Pensando en tu futuro",primaryColor:"#cf202b"}});
+ const tenants=await prisma.tenant.findMany({take:2,select:{id:true}});
+ if(tenants.length>1)throw Error("Standalone installation requires exactly one organization; seed aborted.");
+ const t=tenants.length===1
+  ? await prisma.tenant.findUniqueOrThrow({where:{id:tenants[0].id}})
+  : await prisma.tenant.create({data:{name:"Nexus Real Estate",slug:"nexus",tagline:"Pensando en tu futuro",primaryColor:"#cf202b"}});
  const host=(process.env.SEED_DOMAIN||"localhost").toLowerCase();
  await prisma.domain.upsert({where:{hostname:host},update:{tenantId:t.id},create:{hostname:host,tenantId:t.id}});
  for(const p of properties){
