@@ -1,9 +1,6 @@
 import Link from "next/link";
 import Script from "next/script";
 import {captchaForHost} from "@/lib/recaptcha";
-import {headers} from "next/headers";
-import {normalizeSiteHost} from "@/lib/preview";
-import {publicRequestHostname} from "@/lib/public-request-origin";
 import {redirect} from "next/navigation";
 import {hasDatabaseConfig} from "@/lib/server-config";
 import type {Metadata} from "next";
@@ -48,7 +45,7 @@ const errors:Record<string,string>={
  credenciales:"Correo o contraseña incorrectos. Comprueba los datos del administrador.",
  bloqueado:"Se alcanzó el límite de intentos. Inténtalo nuevamente después de 15 minutos.",
  sesion:"Se verificaron los datos, pero el navegador no conservó la sesión. Comprueba que aceptas cookies y utiliza el mismo dominio HTTPS.",
- dominio:"Este dominio no está vinculado a la organización. Comprueba el dominio público configurado en Enhance.",
+ instalacion:"La instalación debe contener exactamente una empresa configurada. Revisa la base de datos antes de continuar.",
  origen:"No se pudo validar el formulario seguro. Actualiza la página e inténtalo nuevamente.",
  servidor:"No fue posible completar el acceso por un error del servidor. Revisa los registros de Node.js en Enhance.",
  solicitud:"El formulario no pudo procesarse. Actualiza la página e inténtalo de nuevo.",
@@ -60,7 +57,9 @@ export default async function Access({searchParams}:{searchParams:Promise<{error
  if(await currentAdmin())redirect("/admin");
  const q=await searchParams;
  const notice=q.error?errors[q.error]||errors.servidor:null;
- const loginCaptcha=await captchaForHost(normalizeSiteHost(publicRequestHostname(await headers())||""));
+ const siteUrl=process.env.SITE_URL||process.env.APP_URL||process.env.NEXT_PUBLIC_SITE_URL;
+ const hostname=siteUrl?new URL(siteUrl).hostname:"localhost";
+ const loginCaptcha=await captchaForHost(hostname);
  const captcha=loginCaptcha.enabled,siteKey=loginCaptcha.siteKey;
  return <main className="login-page"><style data-nexus-login-critical="1">{criticalLoginCss}</style><form method="post" action="/api/admin/session" className="login-card">
   <div className="brand"><span className="brand-icon"><img src="/brand/nexus-icon.webp" alt=""/></span><span><strong>NEXUS</strong><small>REAL ESTATE</small></span></div>

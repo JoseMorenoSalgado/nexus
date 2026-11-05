@@ -1,20 +1,31 @@
 import {headers} from "next/headers";
+import {publicRequestHostname} from "@/lib/public-request-origin";
 import {notFound,redirect} from "next/navigation";
 import {hasDatabaseConfig} from "@/lib/server-config";
 import {isPreviewHost,normalizeSiteHost} from "@/lib/preview";
 import {prisma} from "@/lib/prisma";
+import {singleInstallationTenantId} from "@/lib/single-installation";
 import {demoTenant,demoProperties,type PublicTenant,type PublicProperty} from "@/lib/demo";
 import {getSiteSettings,DEFAULT_SITE_SETTINGS,type SiteSettings} from "@/lib/site-settings";
 import {hasSiteAsset} from "@/lib/site-assets";
 export const canonicalHost = normalizeSiteHost;
+/** Legacy API name retained for callers; hostname no longer selects an organization.
+ * Each isolated database must contain exactly one active organization.
+ */
 export async function tenantFromHost(hostname:string){
  if(!hasDatabaseConfig())return null;
- const d=await prisma.domain.findUnique({where:{hostname:canonicalHost(hostname)},select:{tenantId:true,tenant:{select:{id:true,name:true,tagline:true,whatsapp:true,logoUrl:true,contactEmail:true,primaryColor:true,active:true}}}});
- return d?.tenant.active?d:null;
+ // Domain is an origin allowlist, never an organization selector.
+ const configured=process.env.SITE_URL||process.env.APP_URL||process.env.NEXT_PUBLIC_SITE_URL;
+ const allowedHost=configured?canonicalHost(new URL(configured).hostname):"localhost";
+ if(canonicalHost(hostname)!==allowedHost)return null;
+ const tenantId=await singleInstallationTenantId();
+ if(!tenantId)return null;
+ const tenant=await prisma.tenant.findUnique({where:{id:tenantId},select:{id:true,name:true,tagline:true,whatsapp:true,logoUrl:true,contactEmail:true,primaryColor:true,active:true}});
+ return tenant?.active?{tenantId,tenant}:null;
 }
 export async function getPublicContext(options:{loadProperties?:boolean}={}):Promise<{tenant:PublicTenant;properties:PublicProperty[];demo:boolean;settings:SiteSettings;heroImage:boolean}>{
  const h=await headers();
- const hostname=h.get("host")||"";
+ const hostname=publicRequestHostname(h)||"";
  const preview=isPreviewHost(hostname);
  const demoContext={tenant:demoTenant,properties:demoProperties,demo:true,settings:DEFAULT_SITE_SETTINGS,heroImage:false} as const;
  if(!hasDatabaseConfig()){
