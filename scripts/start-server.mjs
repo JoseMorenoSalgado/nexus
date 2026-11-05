@@ -1,5 +1,5 @@
 /** Portable Next.js production startup for Enhance and local hosts. */
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -16,6 +16,26 @@ const nextCli = resolve('node_modules/next/dist/bin/next');
 if (!existsSync(nextCli)) {
   console.error('Next.js is not installed in this deployment. Run npm install.');
   process.exit(1);
+}
+// Explicit, opt-in, idempotent repair for a misregistered Enhance proxy domain.
+// Never run a database mutation merely because a new deployment started.
+if (process.env.NEXUS_REPAIR_PUBLIC_DOMAIN === 'true') {
+  if (!process.env.SITE_URL || !process.env.ADMIN_EMAIL) {
+    console.error('Domain repair requires SITE_URL and ADMIN_EMAIL.');
+    process.exit(1);
+  }
+  const tsx = resolve('node_modules/tsx/dist/cli.mjs');
+  if (!existsSync(tsx)) {
+    console.error('Domain repair requires tsx. Install deployment dependencies first.');
+    process.exit(1);
+  }
+  const repair = spawnSync(process.execPath, [tsx, 'scripts/repair-public-domain.ts'], {
+    stdio: 'inherit', env: process.env, timeout: 30000
+  });
+  if (repair.error || repair.status !== 0) {
+    console.error('Domain repair failed; refusing to start with an unverified tenant association.');
+    process.exit(1);
+  }
 }
 console.log(`Starting Nexus on 0.0.0.0:${port}`);
 const child = spawn(process.execPath, [nextCli, 'start', '-H', '0.0.0.0', '-p', String(port)], { stdio: 'inherit', env: process.env });
