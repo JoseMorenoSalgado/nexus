@@ -30,7 +30,7 @@ async function main(){
  if(!/^[a-z0-9][a-z0-9.-]*$/.test(hostname))throw Error("Hostname inválido.");
  const url=databaseUrl();
  const db=/^postgres(ql)?:/i.test(url)
-  ? new PostgresClient({datasources:{db:{url}}})
+  ? new PostgresClient({datasources:{db:{url}}}) as unknown as MysqlClient
   : /^mysql:/i.test(url)
    ? new MysqlClient({datasources:{db:{url}}})
    : null;
