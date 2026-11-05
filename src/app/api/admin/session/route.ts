@@ -4,12 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { currentAdmin, verifyPassword } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { hasDatabaseConfig } from "@/lib/server-config";
-import { normalizeSiteHost } from "@/lib/preview";
+import { singleInstallationTenantId } from "@/lib/single-installation";
 import { verifyLoginCaptcha } from "@/lib/recaptcha";
-import {
-  validPublicMutationOrigin,
-  publicRequestHostname,
-} from "@/lib/public-request-origin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -84,24 +80,13 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // The origin has already been validated against the pinned SITE_URL.
-    // Resolve the tenant from that canonical URL rather than Enhance upstream Host.
-    const canonicalSiteUrl = process.env.SITE_URL || process.env.APP_URL || process.env.NEXT_PUBLIC_SITE_URL;
-    const hostname = normalizeSiteHost(
-      canonicalSiteUrl ? new URL(canonicalSiteUrl).hostname : (publicRequestHostname(req.headers) || "")
-    );
-
-    const domain = await prisma.domain.findUnique({
-      where: { hostname },
-      select: { tenantId: true },
-    });
-
-    if (!domain) {
-      return fail(req, "dominio");
-    }
+    // Each deployment owns exactly one organization; do not trust proxy Host for tenant routing.
+    const tenantId = await singleInstallationTenantId();
+    if (!tenantId) return fail(req, "instalacion");
+    const hostname = new URL(process.env.SITE_URL || process.env.APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost").hostname;
 
     const key = createHash("sha256")
-      .update(domain.tenantId + ":" + email)
+      .update(tenantId + ":" + email)
       .digest("hex");
 
     const now = new Date();
@@ -126,7 +111,7 @@ export async function POST(req: NextRequest) {
     const user = await prisma.adminUser.findUnique({
       where: {
         tenantId_email: {
-          tenantId: domain.tenantId,
+          tenantId: tenantId,
           email,
         },
       },
