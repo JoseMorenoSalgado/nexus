@@ -22,7 +22,7 @@ test("explicit SITE_URL allows HTTPS through private upstream without forwarded 
  assert.equal(validPublicMutationOrigin(h,pinned),true);
  assert.equal(publicRequestHostname(h,pinned),"nexus.example");
 });
-test("configured SITE_URL forbids spoofed or contradictory forwarded host",()=>{
+test("configured SITE_URL ignores proxy forwarded host when browser Origin matches",()=>{
  const h=headers({Host:"127.0.0.1:3000",Origin:"https://nexus.example",
   "X-Forwarded-Host":"attacker.invalid","X-Forwarded-Proto":"https"});
  const pinned={...env,SITE_URL:"https://nexus.example"};
@@ -68,4 +68,12 @@ test("pinned HTTPS origin is accepted behind Enhance non-private upstream Host",
   "X-Forwarded-Host":"nexus.example","X-Forwarded-Proto":"https"});
  assert.equal(validPublicMutationOrigin(h,pinned),true);
  assert.equal(validPublicMutationOrigin(headers({Host:"enhance-upstream.internal:3000",Origin:"https://attacker.invalid"}),pinned),false);
+});
+
+test("login referer fallback is same-origin and limited to access page",()=>{
+ const pinned={...env,SITE_URL:"https://nexus.example"};
+ assert.equal(validPublicMutationOrigin(headers({Host:"internal",Referer:"https://nexus.example/admin/acceso?error=origen"}),pinned),true);
+ assert.equal(validPublicMutationOrigin(headers({Host:"internal",Referer:"https://evil.example/admin/acceso"}),pinned),false);
+ assert.equal(validPublicMutationOrigin(headers({Host:"internal",Referer:"https://nexus.example/evil"}),pinned),false);
+ assert.equal(validPublicMutationOrigin(headers({Host:"internal"}),pinned),false);
 });
