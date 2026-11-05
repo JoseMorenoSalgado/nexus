@@ -80,7 +80,22 @@ export async function POST(req:NextRequest){
  catch(error){return response(error instanceof RequestPayloadError?error.message:"Solicitud inválida.",error instanceof RequestPayloadError?error.status:400);}
  let data:ReturnType<typeof validate>;
  try{data=validate(input);}catch(e){return response(e instanceof Error?e.message:"Datos incompletos.");}
- const domain=normalizeSiteHost(host);
+ // Pin the tenant domain to the public HTTPS URL, not Enhance's upstream Host.
+ // A proxy may forward an internal hostname even when the browser uses the real site.
+ let domain:string;
+ try {
+  const configured=(process.env.SITE_URL||process.env.APP_URL||process.env.NEXT_PUBLIC_SITE_URL||"").trim();
+  if(configured){
+   const url=new URL(configured);
+   if(url.protocol!=="https:"||url.username||url.password||url.pathname!=="/"||url.search||url.hash)
+    return response("SITE_URL debe ser la URL pública HTTPS sin ruta.",400);
+   domain=normalizeSiteHost(url.hostname);
+   if(new URL(origin).hostname.toLowerCase()!==domain)
+    return response("El dominio de instalación no coincide con SITE_URL.",403);
+  }else{
+   domain=normalizeSiteHost(new URL(origin).hostname);
+  }
+ }catch{return response("Dominio de instalación inválido.",400);}
  if(!/^[a-z0-9][a-z0-9.-]*$/.test(domain))return response("Dominio de instalación inválido.",400);
  let release:undefined|(()=>void);
  try{
