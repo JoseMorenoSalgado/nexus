@@ -46,14 +46,15 @@ function trustedSiteHost(headers:RequestHeaders,env:PublicEnv):string|null{
  const forwarded=parseHost(forwardedRaw);
  const forwardedProto=(headers.get("x-forwarded-proto")||"").split(",")[0].trim().toLowerCase();
  if(canonical){
-  if(direct.host.toLowerCase()===canonical.host.toLowerCase())return canonical.host;
   // www and apex are two public entrypoints for the same standalone site.
   // Do not accept arbitrary subdomains or forwarded hosts from public clients.
   const alias=canonical.hostname.startsWith("www.")?canonical.hostname.slice(4):"www."+canonical.hostname;
-  if(direct.hostname.toLowerCase()===alias.toLowerCase()&&direct.port===canonical.port)return canonical.host;
+  const matchesCanonical=(value:URL)=>value.port===canonical.port&&
+   (value.hostname.toLowerCase()===canonical.hostname.toLowerCase()||value.hostname.toLowerCase()===alias.toLowerCase());
+  if(matchesCanonical(direct))return canonical.host;
   if(!upstream)return null;
   // When the proxy sends X-Forwarded-Host it must agree with SITE_URL.
-  if(forwardedRaw&&(!forwarded||forwarded.host.toLowerCase()!==canonical.host.toLowerCase()))return null;
+  if(forwardedRaw&&(!forwarded||!matchesCanonical(forwarded)))return null;
   // SITE_URL is an explicit server-side allowlist for upstreams that omit Host forwarding.
   return canonical.host;
  }

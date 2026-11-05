@@ -6,3 +6,15 @@
 .public-site .nexus-services-preview .nexus-service-top{margin-bottom:3px}
 .public-site .nexus-section-heading{margin-bottom:26px}
 @media(max-width:720px){.public-site .nexus-hero-layout-simple{min-height:420px;padding-block:62px 82px}.public-site .nexus-services-preview .nexus-service-card{min-height:0}}
+
+/* The outer hero must follow its content, not retain the legacy 635px floor. */
+.public-site main[data-nexus-home-motion]>.nexus-hero{min-height:0}
+.public-site .nexus-section-heading>div{min-width:0}
+.public-site .nexus-featured-grid .property-card{display:flex;flex-direction:column;min-width:0}
+.public-site .nexus-featured-grid .property-content{flex:1}
+.public-site .nexus-search-wrap{padding-inline:20px}
+@media(min-width:821px){
+ .public-site .nexus-search-form{grid-template-columns:repeat(3,minmax(0,1fr)) auto}
+}
+
+.public-site .nexus-brand .brand-icon{flex-shrink:0}

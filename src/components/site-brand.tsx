@@ -1,3 +1,4 @@
+import {BrandImage} from "@/components/brand-image";
 import Link from "next/link";
 import {Layers3} from "lucide-react";
 import {type PublicTenant} from "@/lib/demo";
@@ -9,8 +10,8 @@ export function SiteBrand({tenant,templateKey="real-estate"}:{tenant:PublicTenan
  const brand=sitePresentation(tenant,templateKey);
  return <Link className="brand nexus-brand" href="/" aria-label={"Inicio · "+tenant.name}>
   <span className="brand-icon">{tenant.logoUrl?
-   <img src={tenant.logoUrl} alt=""/>:
-   brand.fallbackLogo?<img src={brand.fallbackLogo} alt=""/>:<Layers3 size={28} aria-hidden="true"/>}</span>
+   <BrandImage key={tenant.logoUrl} src={tenant.logoUrl} fallback={brand.fallbackLogo}/>:
+   brand.fallbackLogo?<BrandImage src={brand.fallbackLogo}/>:<Layers3 size={28} aria-hidden="true"/>}</span>
   <span><strong>{brand.name}</strong><small>{brand.subtitle}</small></span>
  </Link>;
 }

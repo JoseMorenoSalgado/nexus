@@ -77,3 +77,22 @@ test("login referer fallback is same-origin and limited to access page",()=>{
  assert.equal(validPublicMutationOrigin(headers({Host:"internal",Referer:"https://nexus.example/evil"}),pinned),false);
  assert.equal(validPublicMutationOrigin(headers({Host:"internal"}),pinned),false);
 });
+
+for(const canonical of ["nexus.example","www.nexus.example"]){
+ test(`canonical host and www alias resolve consistently for pages and media: ${canonical}`,()=>{
+  const pinned={...env,SITE_URL:`https://${canonical}`};
+  for(const publicHost of ["nexus.example","www.nexus.example"]){
+   assert.equal(publicRequestHostname(headers({Host:publicHost}),pinned),canonical);
+   assert.equal(publicRequestHostname(headers({Host:"127.0.0.1:3000","X-Forwarded-Host":publicHost,"X-Forwarded-Proto":"https"}),pinned),canonical);
+  }
+ });
+}
+test("aliases cannot bypass port, subdomain, or forwarded-host boundaries",()=>{
+ const pinned={...env,SITE_URL:"https://nexus.example"};
+ for(const host of ["www.nexus.example:444","other.nexus.example","nexus.example.attacker.invalid","nexus.example,evil.invalid"]){
+  assert.equal(publicRequestHostname(headers({Host:host}),pinned),null);
+  assert.equal(publicRequestHostname(headers({Host:"10.0.0.2:3000","X-Forwarded-Host":host}),pinned),null);
+ }
+ assert.equal(publicRequestHostname(headers({Host:"evil.invalid","X-Forwarded-Host":"www.nexus.example"}),pinned),null);
+ assert.equal(validPublicMutationOrigin(headers({Host:"www.nexus.example",Origin:"https://www.nexus.example"}),pinned),false,"Read-only hostname aliases do not relax mutation origin checks");
+});

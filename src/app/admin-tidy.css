@@ -321,3 +321,23 @@
   font-weight:800;
  }
 }
+
+/* Long names and form controls must not widen their grid tracks. */
+.admin-shell .admin-sidebar .brand-icon{flex-shrink:0}
+.admin-shell .admin-sidebar .brand>span:last-child{min-width:0}
+.admin-shell .admin-sidebar .brand strong{overflow-wrap:anywhere}
+.admin-shell .admin-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.admin-shell .admin-form-grid>*,
+.admin-shell .admin-form :is(input,select,textarea){min-width:0;max-width:100%}
+.admin-shell .admin-heading{flex-wrap:wrap}
+.admin-shell .admin-heading>.btn{flex-shrink:0}
+.admin-shell :is(a,button,input,select,textarea,summary):focus-visible{outline:3px solid #1d65a5;outline-offset:3px}
+@media(max-width:720px){
+ .admin-shell .admin-form-grid{grid-template-columns:minmax(0,1fr)}
+ .admin-shell .admin-form{width:100%;padding:18px}
+ .admin-shell .admin-form :is(input,select,textarea){font-size:16px}
+ .admin-shell .admin-sidebar{padding-top:12px}
+ .admin-shell .admin-sidebar .brand{flex:1}
+ .admin-shell .admin-sidebar .brand strong{max-width:100%}
+ .admin-shell .admin-mobile-trigger{min-height:44px;min-width:44px}
+}
