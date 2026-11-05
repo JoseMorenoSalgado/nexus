@@ -6,7 +6,6 @@ import { prisma } from "@/lib/prisma";
 import { hasDatabaseConfig } from "@/lib/server-config";
 import { normalizeSiteHost } from "@/lib/preview";
 import { verifyLoginCaptcha } from "@/lib/recaptcha";
-import {csrfCookieName,validCsrfToken} from "@/lib/admin-login-csrf";
 import {
   validPublicMutationOrigin,
   publicRequestHostname,
@@ -61,7 +60,6 @@ export async function POST(req: NextRequest) {
 
   try {
     const form = await req.formData();
-    if(!validCsrfToken(String(form.get("csrf_token")||""),req.cookies.get(csrfCookieName)?.value))return fail(req,"origen");
 
     email = String(form.get("email") || "")
       .trim()
