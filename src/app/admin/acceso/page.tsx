@@ -49,7 +49,7 @@ const errors:Record<string,string>={
  bloqueado:"Se alcanzó el límite de intentos. Inténtalo nuevamente después de 15 minutos.",
  sesion:"Se verificaron los datos, pero el navegador no conservó la sesión. Comprueba que aceptas cookies y utiliza el mismo dominio HTTPS.",
  dominio:"Este dominio no está vinculado a la organización. Comprueba el dominio público configurado en Enhance.",
- origen:"No se pudo validar el origen del formulario. Abre el panel desde su dirección HTTPS oficial.",
+ origen:"No se pudo validar el formulario seguro. Actualiza la página e inténtalo nuevamente.",
  servidor:"No fue posible completar el acceso por un error del servidor. Revisa los registros de Node.js en Enhance.",
  solicitud:"El formulario no pudo procesarse. Actualiza la página e inténtalo de nuevo.",
  captcha:"No se pudo verificar reCAPTCHA. Completa el desafío y vuelve a intentar.",
