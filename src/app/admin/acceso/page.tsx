@@ -1,3 +1,4 @@
+import AdminLoginCsrf from "@/components/admin-login-csrf";
 import Link from "next/link";
 import Script from "next/script";
 import {captchaForHost} from "@/lib/recaptcha";
@@ -49,7 +50,7 @@ const errors:Record<string,string>={
  bloqueado:"Se alcanzó el límite de intentos. Inténtalo nuevamente después de 15 minutos.",
  sesion:"Se verificaron los datos, pero el navegador no conservó la sesión. Comprueba que aceptas cookies y utiliza el mismo dominio HTTPS.",
  dominio:"Este dominio no está vinculado a la organización. Comprueba el dominio público configurado en Enhance.",
- origen:"No se pudo validar el origen del formulario. Abre el panel desde su dirección HTTPS oficial.",
+ origen:"No se pudo validar el formulario seguro. Actualiza la página e inténtalo nuevamente.",
  servidor:"No fue posible completar el acceso por un error del servidor. Revisa los registros de Node.js en Enhance.",
  solicitud:"El formulario no pudo procesarse. Actualiza la página e inténtalo de nuevo.",
  captcha:"No se pudo verificar reCAPTCHA. Completa el desafío y vuelve a intentar.",
@@ -66,6 +67,7 @@ export default async function Access({searchParams}:{searchParams:Promise<{error
   <div className="brand"><span className="brand-icon"><img src="/brand/nexus-icon.webp" alt=""/></span><span><strong>NEXUS</strong><small>REAL ESTATE</small></span></div>
   <h1>Acceso administrativo</h1><p>Ingresa tus credenciales para gestionar tu sitio web.</p>
   {notice&&<div className="admin-error" role="alert">{notice}</div>}
+  <AdminLoginCsrf/>
   <label>Correo electrónico<input name="email" type="email" autoComplete="username" maxLength={180} required/></label>
   <label>Contraseña<input name="password" type="password" autoComplete="current-password" required/></label>
   {captcha&&siteKey&&<><div className="g-recaptcha" data-sitekey={siteKey} aria-label="Verificación de seguridad reCAPTCHA"/><Script src="https://www.google.com/recaptcha/api.js" strategy="afterInteractive"/></>}
