@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { hasDatabaseConfig } from "@/lib/server-config";
 import { normalizeSiteHost } from "@/lib/preview";
 import { verifyLoginCaptcha } from "@/lib/recaptcha";
+import {csrfCookieName,validCsrfToken} from "@/lib/admin-login-csrf";
 import {
   validPublicMutationOrigin,
   publicRequestHostname,
@@ -36,24 +37,6 @@ function fail(req: NextRequest, code: string) {
   );
 }
 
-// Validación CSRF con diagnóstico para Enhance.
-// No se desactiva ninguna comprobación de seguridad.
-function sameOrigin(req: NextRequest): boolean {
-  const valid = validPublicMutationOrigin(req.headers);
-
-  if (!valid) {
-    console.error("[admin-login] CSRF origin rejected", {
-      origin: req.headers.get("origin"),
-      host: req.headers.get("host"),
-      forwardedHost: req.headers.get("x-forwarded-host"),
-      forwardedProto: req.headers.get("x-forwarded-proto"),
-      siteUrlConfigured: Boolean(process.env.SITE_URL),
-    });
-  }
-
-  return valid;
-}
-
 function logIssue(stage: string, error: unknown) {
   console.error(
     "[admin-login]",
@@ -68,11 +51,6 @@ export async function POST(req: NextRequest) {
     return go(req, "/instalar");
   }
 
-  // Protección contra solicitudes de otros orígenes.
-  if (!sameOrigin(req)) {
-    return fail(req, "origen");
-  }
-
   if (Number(req.headers.get("content-length") || 0) > 8000) {
     return fail(req, "solicitud");
   }
@@ -83,6 +61,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const form = await req.formData();
+    if(!validCsrfToken(String(form.get("csrf_token")||""),req.cookies.get(csrfCookieName)?.value))return fail(req,"origen");
 
     email = String(form.get("email") || "")
       .trim()
