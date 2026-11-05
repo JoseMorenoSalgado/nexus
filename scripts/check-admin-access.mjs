@@ -6,11 +6,24 @@ const page=await fetch(origin+'/admin/acceso');
 assert.equal(page.status,200);
 const html=await page.text();
 assert.match(html,/action="\/api\/admin\/session"/,'Stable HTML login form missing');
+async function csrfFor(headers={}){
+ const response=await fetch(origin+'/api/admin/login-csrf',{headers,redirect:'manual'});
+ assert.equal(response.status,200);
+ const {token}=await response.json();
+ assert.match(token,/^[a-f0-9]{64}$/);
+ const cookie=response.headers.getSetCookie().find(c=>c.startsWith('nexus_admin_login_csrf='));
+ assert.ok(cookie,'CSRF cookie missing');
+ assert.match(cookie,/httponly/i);
+ assert.match(cookie,/samesite=strict/i);
+ return {token,cookie:cookie.split(';')[0]};
+}
+const csrf=await csrfFor();
 const form=new FormData();
+form.set("csrf_token",csrf.token);
 form.set('email',process.env.ADMIN_EMAIL);
 form.set('password',process.env.ADMIN_PASSWORD);
 const login=await fetch(origin+'/api/admin/session',{
- method:'POST',headers:{Origin:origin},body:form,redirect:'manual'
+ method:'POST',headers:{Origin:origin,Cookie:csrf.cookie},body:form,redirect:'manual'
 });
 assert.equal(login.status,303);
 assert.equal(new URL(login.headers.get('location'),origin).pathname,'/api/admin/session');
@@ -71,7 +84,9 @@ if(process.env.CI==="true"&&process.env.GITHUB_ACTIONS==="true"){
   "X-Forwarded-Host":"proxy.nexus.test",
   "X-Forwarded-Proto":"https"
  };
+ const proxyCsrf=await csrfFor(proxyHeaders);
  const proxyForm=new FormData();
+ proxyForm.set("csrf_token",proxyCsrf.token);
  proxyForm.set("email",process.env.ADMIN_EMAIL);
  proxyForm.set("password",process.env.ADMIN_PASSWORD);
  const forged=await fetch(origin+"/api/admin/session",{
@@ -81,10 +96,10 @@ if(process.env.CI==="true"&&process.env.GITHUB_ACTIONS==="true"){
  });
  assert.equal(forged.status,303);
  assert.equal(new URL(forged.headers.get("location"),origin).searchParams.get("error"),"origen",
-  "Cross-origin proxy login must be denied");
+  "Missing CSRF cookie must deny proxy login");
  const proxied=await fetch(origin+"/api/admin/session",{
   method:"POST",
-  headers:{...proxyHeaders,Origin:"https://proxy.nexus.test"},
+  headers:{...proxyHeaders,Origin:"https://proxy.nexus.test",Cookie:proxyCsrf.cookie},
   body:proxyForm,redirect:"manual"
  });
  assert.equal(proxied.status,303);
@@ -103,6 +118,6 @@ if(process.env.CI==="true"&&process.env.GITHUB_ACTIONS==="true"){
   redirect:"manual"
  });
  assert.equal(proxiedLogout.status,303,"Proxy logout must preserve CSRF validation");
- console.log("Trusted Enhance HTTPS proxy login, tenant resolution, cookie and logout passed; forged origin rejected.");
+ console.log("Trusted Enhance HTTPS proxy login, tenant resolution, CSRF cookie and logout passed; missing CSRF cookie rejected.");
 }
 console.log('Stable login and logout, cookie revocation, CSRF defense and protected integrations passed.');
