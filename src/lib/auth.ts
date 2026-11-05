@@ -27,7 +27,8 @@ export async function currentAdmin(){
  const session=await prisma.adminSession.findUnique({where:{tokenHash:tokenHash(cookie)},select:{expiresAt:true,user:{select:{id:true,name:true,email:true,tenantId:true,role:true,active:true,tenant:{select:{name:true,active:true}}}}}});
  if(!session||session.expiresAt<new Date()||!session.user.active||!session.user.tenant.active)return null;
  // La sesión solo puede operar sobre un dominio asignado a su empresa.
- const hostname=normalizeSiteHost(publicRequestHostname(await headers())||"");
+ const canonical=process.env.SITE_URL||process.env.APP_URL||process.env.NEXT_PUBLIC_SITE_URL;
+ const hostname=normalizeSiteHost(canonical?new URL(canonical).hostname:(publicRequestHostname(await headers())||""));
  const assigned=await prisma.domain.findUnique({where:{hostname},select:{tenantId:true}});
  if(!assigned||assigned.tenantId!==session.user.tenantId)return null;
  const roles=parseRoles(session.user.role);
