@@ -1,4 +1,3 @@
-import AdminLoginCsrf from "@/components/admin-login-csrf";
 import Link from "next/link";
 import Script from "next/script";
 import {captchaForHost} from "@/lib/recaptcha";
@@ -67,7 +66,6 @@ export default async function Access({searchParams}:{searchParams:Promise<{error
   <div className="brand"><span className="brand-icon"><img src="/brand/nexus-icon.webp" alt=""/></span><span><strong>NEXUS</strong><small>REAL ESTATE</small></span></div>
   <h1>Acceso administrativo</h1><p>Ingresa tus credenciales para gestionar tu sitio web.</p>
   {notice&&<div className="admin-error" role="alert">{notice}</div>}
-  <AdminLoginCsrf/>
   <label>Correo electrónico<input name="email" type="email" autoComplete="username" maxLength={180} required/></label>
   <label>Contraseña<input name="password" type="password" autoComplete="current-password" required/></label>
   {captcha&&siteKey&&<><div className="g-recaptcha" data-sitekey={siteKey} aria-label="Verificación de seguridad reCAPTCHA"/><Script src="https://www.google.com/recaptcha/api.js" strategy="afterInteractive"/></>}
