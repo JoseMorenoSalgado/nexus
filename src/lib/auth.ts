@@ -1,12 +1,11 @@
 import "server-only";
 import {randomBytes,scryptSync,timingSafeEqual,createHash} from "node:crypto";
-import {cookies,headers} from "next/headers";
+import {cookies} from "next/headers";
 import {redirect} from "next/navigation";
 import {prisma} from "@/lib/prisma";
 import {hasDatabaseConfig} from "@/lib/server-config";
-import {normalizeSiteHost} from "@/lib/preview";
-import {publicRequestHostname} from "@/lib/public-request-origin";
 import {parseRoles,primaryRole} from "@/lib/roles";
+import {singleInstallationTenantId} from "@/lib/single-installation";
 const cookieName="webappecloud_session";
 const sessionHours=24;
 export function hashPassword(password:string){
@@ -26,10 +25,9 @@ export async function currentAdmin(){
  if(!cookie||! /^[a-f0-9]{64}$/.test(cookie))return null;
  const session=await prisma.adminSession.findUnique({where:{tokenHash:tokenHash(cookie)},select:{expiresAt:true,user:{select:{id:true,name:true,email:true,tenantId:true,role:true,active:true,tenant:{select:{name:true,active:true}}}}}});
  if(!session||session.expiresAt<new Date()||!session.user.active||!session.user.tenant.active)return null;
- // La sesión solo puede operar sobre un dominio asignado a su empresa.
- const hostname=normalizeSiteHost(publicRequestHostname(await headers())||"");
- const assigned=await prisma.domain.findUnique({where:{hostname},select:{tenantId:true}});
- if(!assigned||assigned.tenantId!==session.user.tenantId)return null;
+ // Standalone installation: authorize against the sole local organization, not HTTP Host.
+ const installationTenantId=await singleInstallationTenantId();
+ if(!installationTenantId||installationTenantId!==session.user.tenantId)return null;
  const roles=parseRoles(session.user.role);
  return {userId:session.user.id,name:session.user.name,email:session.user.email,tenantId:session.user.tenantId,tenantName:session.user.tenant.name,role:primaryRole(roles),roles};
 }
