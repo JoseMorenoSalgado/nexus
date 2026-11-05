@@ -26,7 +26,7 @@ test("configured SITE_URL ignores proxy forwarded host when browser Origin match
  const h=headers({Host:"127.0.0.1:3000",Origin:"https://nexus.example",
   "X-Forwarded-Host":"attacker.invalid","X-Forwarded-Proto":"https"});
  const pinned={...env,SITE_URL:"https://nexus.example"};
- assert.equal(validPublicMutationOrigin(h,pinned),false);
+ assert.equal(validPublicMutationOrigin(h,pinned),true);
  assert.equal(publicRequestHostname(h,pinned),null);
 });
 test("reject cross-site Origin even with trusted proxy forwarding",()=>{
