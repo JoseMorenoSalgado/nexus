@@ -104,7 +104,7 @@
 }
 @media(max-width:820px){
  .public-site:not(.public-site-organization) .nexus-hero-layout.nexus-hero-layout-simple{
-  min-height:550px;
+  min-height:470px;
  }
  .public-site:not(.public-site-organization) .nexus-search-form{
   gap:13px;
@@ -112,8 +112,8 @@
 }
 @media(max-width:610px){
  .public-site:not(.public-site-organization) .nexus-hero-layout.nexus-hero-layout-simple{
-  min-height:545px;
-  padding-block:60px 79px;
+  min-height:0;
+  padding-block:48px 64px;
  }
  .public-site:not(.public-site-organization) .nexus-hero h1{
   font-size:clamp(37px,10vw,53px);

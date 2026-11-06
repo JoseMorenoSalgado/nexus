@@ -1,4 +1,5 @@
 import type {Metadata,Viewport} from "next";
+import {publicRequestHostname} from "@/lib/public-request-origin";
 import {headers} from "next/headers";
 import {hasDatabaseConfig} from "@/lib/server-config";
 import {tenantFromHost} from "@/lib/tenant";
@@ -23,7 +24,7 @@ export const viewport:Viewport={width:"device-width",initialScale:1,viewportFit:
 export async function generateMetadata():Promise<Metadata>{
  const fallback:Metadata={title:{default:"NEXUS Inmobiliaria",template:"%s | NEXUS"},description:"Catálogo inmobiliario, propiedades en venta y alquiler."};
  if(!hasDatabaseConfig())return fallback;
- const host=(await headers()).get("host")||"";
+ const host=publicRequestHostname(await headers())||"";
  const match=await tenantFromHost(host);
  if(!match)return fallback;
  const name=match.tenant.name;

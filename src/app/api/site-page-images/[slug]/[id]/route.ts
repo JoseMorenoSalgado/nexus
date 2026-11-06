@@ -1,4 +1,5 @@
 import {NextRequest,NextResponse} from "next/server";
+import {publicRequestHostname} from "@/lib/public-request-origin";
 import {tenantFromHost} from "@/lib/tenant";
 import {getCustomPage} from "@/lib/site-pages";
 import {isBuiltinPageSlug,builtinPagePublic,readExtraSections} from "@/lib/page-extras";
@@ -10,7 +11,7 @@ export const dynamic="force-dynamic";
 export async function GET(req:NextRequest,{params}:{params:Promise<{slug:string;id:string}>}){
  const {slug,id}=await params;
  if(!validCustomSlug(slug)||!pageImageId.test(id))return new NextResponse(null,{status:404});
- const tenant=await tenantFromHost(req.headers.get("host")||"");
+ const tenant=await tenantFromHost(publicRequestHostname(req.headers)||"");
  if(!tenant)return new NextResponse(null,{status:404});
  let sections;
  if(isBuiltinPageSlug(slug)){
