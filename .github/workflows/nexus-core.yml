@@ -54,6 +54,8 @@ jobs:
           npm run db:seed
       - name: Test public admin origin and proxy boundaries
         run: node --import tsx --test tests/public-request-origin.test.ts
+      - name: Test standalone installation invariants
+        run: node --import tsx --test scripts/standalone-installation.test.mjs
       - name: Typecheck
         run: npx tsc --noEmit
       - name: Build Next.js for HTTP integration checks

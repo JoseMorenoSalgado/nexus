@@ -1,0 +1,55 @@
+name: Nexus PostgreSQL standalone validation
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: nexus_ci
+          POSTGRES_USER: ciuser
+          POSTGRES_PASSWORD: ci_password_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U ciuser -d nexus_ci"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://ciuser:ci_password_only@127.0.0.1:5432/nexus_ci
+      SITE_URL: https://nexus-ci.example
+      SEED_DOMAIN: nexus-ci.example
+      ADMIN_EMAIL: admin@ci.invalid
+      ADMIN_PASSWORD: CI-PASSWORD-NOT-PRODUCTION-2345
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --include=dev --no-audit --no-fund
+      - run: npm run db:generate
+      - run: npx prisma db push --schema prisma/schema.postgres.prisma
+      - run: npm run db:seed
+      - run: node --import tsx --test scripts/standalone-installation.test.mjs
+      - run: node --import tsx scripts/check-standalone-postgres.ts
+      - run: npx tsc --noEmit
+      - run: npm run build
+      - name: Public HTTP smoke test
+        run: |
+          (npm start > /tmp/nexus-postgres.log 2>&1 &)
+          for i in $(seq 1 60); do
+            if curl --fail --silent --max-time 3 -H 'Host: nexus-ci.example' http://127.0.0.1:3000/ -o /tmp/nexus-home.html; then
+              echo 'Home HTTP 200'
+              exit 0
+            fi
+            sleep 2
+          done
+          tail -n 100 /tmp/nexus-postgres.log
+          exit 1

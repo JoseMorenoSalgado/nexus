@@ -1,4 +1,5 @@
 import {NextRequest,NextResponse} from "next/server";
+import {validateStandaloneSnapshot} from "@/lib/standalone-installation";
 import {execFile} from "node:child_process";
 import {promisify} from "node:util";
 import {join} from "node:path";
@@ -177,6 +178,30 @@ export async function POST(req:NextRequest){
    });
   }catch{return response("La base fue creada, pero no fue posible guardar la institución. No repitas la instalación sin revisar el registro.",500);}
   finally{await db.$disconnect();}
+  // Verify the newly provisioned standalone organization before persisting the
+  // connection. Otherwise the installer may report success while Home returns 404.
+  const verify=prismaFor(data.url);
+  try {
+   const [activeOrganizations,matchingDomain,admin]=await Promise.all([
+    verify.tenant.findMany({where:{active:true},select:{id:true},take:2}),
+    verify.domain.findUnique({where:{hostname:domain},select:{tenantId:true,tenant:{select:{active:true}}}}),
+    verify.adminUser.findFirst({where:{email:data.adminEmail,active:true,tenant:{active:true}},select:{tenantId:true}})
+   ]);
+   const validOrganizationId=validateStandaloneSnapshot({
+    activeOrganizationIds:activeOrganizations.map(t=>t.id),
+    domainOrganizationId:matchingDomain?.tenantId??null,
+    domainOrganizationActive:matchingDomain?.tenant.active??false,
+    adminOrganizationId:admin?.tenantId??null
+   });
+   if(!validOrganizationId){
+    console.error("[installer] Standalone post-install verification failed",{
+     activeOrganizations:activeOrganizations.length,domainRegistered:Boolean(matchingDomain),adminRegistered:Boolean(admin)
+    });
+    return response("La instalación no pasó la verificación de organización, dominio y administrador. Revisa los registros antes de continuar.",500);
+   }
+  }catch{
+   return response("No fue posible verificar la instalación PostgreSQL. Revisa la conectividad y los registros antes de continuar.",500);
+  }finally{await verify.$disconnect();}
   try{saveInstallation(data.url);}
   catch{return response("La base fue preparada, pero no pudo guardarse la configuración. Revisa el volumen persistente antes de continuar.",500);}
   clearInstallerSession();
