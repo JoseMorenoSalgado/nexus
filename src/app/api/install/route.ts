@@ -177,6 +177,24 @@ export async function POST(req:NextRequest){
    });
   }catch{return response("La base fue creada, pero no fue posible guardar la institución. No repitas la instalación sin revisar el registro.",500);}
   finally{await db.$disconnect();}
+  // Verify the newly provisioned standalone organization before persisting the
+  // connection. Otherwise the installer may report success while Home returns 404.
+  const verify=prismaFor(data.url);
+  try {
+   const [active,matchingDomain,admin]=await Promise.all([
+    verify.tenant.count({where:{active:true}}),
+    verify.domain.findUnique({where:{hostname:domain},select:{tenantId:true,tenant:{select:{active:true}}}}),
+    verify.adminUser.findFirst({where:{email:data.adminEmail,active:true,tenant:{active:true}},select:{tenantId:true}})
+   ]);
+   if(active!==1||!matchingDomain?.tenant.active||admin?.tenantId!==matchingDomain.tenantId){
+    console.error("[installer] Standalone post-install verification failed",{
+     activeOrganizations:active,domainRegistered:Boolean(matchingDomain),adminRegistered:Boolean(admin)
+    });
+    return response("La instalación no pasó la verificación de organización, dominio y administrador. Revisa los registros antes de continuar.",500);
+   }
+  }catch{
+   return response("No fue posible verificar la instalación PostgreSQL. Revisa la conectividad y los registros antes de continuar.",500);
+  }finally{await verify.$disconnect();}
   try{saveInstallation(data.url);}
   catch{return response("La base fue preparada, pero no pudo guardarse la configuración. Revisa el volumen persistente antes de continuar.",500);}
   clearInstallerSession();
