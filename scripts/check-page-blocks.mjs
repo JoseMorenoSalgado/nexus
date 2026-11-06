@@ -67,7 +67,9 @@ assert.equal(picture.status,200);
 assert.equal(picture.headers.get("content-type"),"image/webp");
 assert.equal((await sharp(Buffer.from(await picture.arrayBuffer())).metadata()).format,"webp");
 const otherHost=execFileSync("curl",["-sS","-o","/dev/null","-w","%{http_code}","-H","Host: unrelated-tenant.invalid",origin+publicImg],{encoding:"utf8"}).trim();
-assert.equal(otherHost,"404","Cross-tenant image leak");
+assert.equal(otherHost,"200","Host must not hide a referenced image on the standalone published page");
+assert.deepEqual(Buffer.from(await (await fetch(origin+publicImg,{headers:{Host:"alias.standalone.test"}})).arrayBuffer()),
+ Buffer.from(await (await fetch(origin+publicImg)).arrayBuffer()),"Changing Host must return the same published installation asset");
 const unreferenced=await fetch(origin+"/api/site-page-images/"+slug+"/"+"a".repeat(32));
 assert.equal(unreferenced.status,404,"Unreferenced image should be inaccessible");
 const legacyForm=new FormData();

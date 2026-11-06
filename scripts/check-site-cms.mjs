@@ -88,7 +88,7 @@ assert.equal((await fetch(origin+"/nosotros")).status,200);
 await toggle(slug,false);
 assert.equal((await fetch(origin+"/pagina/"+slug)).status,404);
 const foreign=execFileSync("curl",["-sS","-o","/dev/null","-w","%{http_code}","-H","Host: unknown-company.invalid",origin+"/pagina/"+slug],{encoding:"utf8"}).trim();
-assert.equal(foreign,"404","Cross-tenant custom page leak");
+assert.equal(foreign,"404","A draft page must stay private even when Host changes");
 
 const hero=await sharp({create:{width:2400,height:1320,channels:3,background:"#bbbdc1"}}).png().toBuffer();
 const transparent=await sharp({create:{width:1200,height:800,channels:4,background:{r:180,g:33,b:45,alpha:0.4}}}).png().toBuffer();

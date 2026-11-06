@@ -62,7 +62,9 @@ assert.equal(response.headers.get("content-type"),"image/webp");
 const about=(await (await fetch(origin+"/nosotros")).text());
 assert.ok(about.includes("Imagen reutilizada"),"Reusable image not displayed on builtin page");
 const cross=execFileSync("curl",["-sS","-o","/dev/null","-w","%{http_code}","-H","Host: unauthorized-tenant.invalid",origin+publicPic],{encoding:"utf8"}).trim();
-assert.equal(cross,"404","Media accessible to unauthorized host");
+assert.equal(cross,"200","Referenced public media belongs to the sole installation, independently of Host");
+assert.deepEqual(Buffer.from(await (await fetch(origin+publicPic,{headers:{Host:"alias.standalone.test"}})).arrayBuffer()),
+ Buffer.from(await (await fetch(origin+publicPic)).arrayBuffer()),"Changing Host must return the same published installation asset");
 const status=new FormData();status.set("intent","status");
 await post("/api/admin/site-pages/nosotros",status);
 assert.equal((await fetch(origin+publicPic)).status,404,"Draft media must be private");
