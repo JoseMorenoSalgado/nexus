@@ -73,12 +73,12 @@ export function publicPageHostname(headers:RequestHeaders,env:PublicEnv=process.
  if(trusted)return trusted;
  const canonical=configuredOrigin(env);
  if(!canonical||configuredInvalid(env))return null;
- const forwarded=parseHost(headers.get("x-forwarded-host"));
+ const raw=(headers.get("x-forwarded-host")||"").trim().toLowerCase();
  const proto=(headers.get("x-forwarded-proto")||"").split(",")[0].trim().toLowerCase();
- if(proto!=="https:"||!forwarded)return null;
- const normalize=(hostname:string)=>hostname.toLowerCase().replace(/^www\\./,"");
- if(normalize(forwarded.hostname)!==normalize(canonical.hostname)||forwarded.port!==canonical.port)return null;
- return canonical.hostname.toLowerCase();
+ // No IP, port, comma-separated chains, URL or userinfo in the public host.
+ if(proto!=="https"||raw.length>253||!/^[a-z0-9.-]+$/.test(raw))return null;
+ const normalize=(hostname:string)=>hostname.toLowerCase().replace(/^www\./,"").replace(/\.$/,"");
+ return normalize(raw)===normalize(canonical.hostname)?canonical.hostname.toLowerCase():null;
 }
 export function publicRequestHostname(headers:RequestHeaders,env:PublicEnv=process.env):string|null{
  const host=trustedSiteHost(headers,env);
