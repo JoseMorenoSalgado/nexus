@@ -63,6 +63,23 @@ function trustedSiteHost(headers:RequestHeaders,env:PublicEnv):string|null{
  if(["localhost","127.0.0.1","::1","[::1]"].includes(direct.hostname))return direct.host;
  return null;
 }
+/**
+ * Public read-only page recovery for HTTPS reverse proxies that replace Host
+ * with an upstream service hostname. Do not use for mutations or authorization.
+ * A canonical SITE_URL must explicitly match the forwarded HTTPS hostname.
+ */
+export function publicPageHostname(headers:RequestHeaders,env:PublicEnv=process.env):string|null{
+ const trusted=publicRequestHostname(headers,env);
+ if(trusted)return trusted;
+ const canonical=configuredOrigin(env);
+ if(!canonical||configuredInvalid(env))return null;
+ const raw=(headers.get("x-forwarded-host")||"").trim().toLowerCase();
+ const proto=(headers.get("x-forwarded-proto")||"").split(",")[0].trim().toLowerCase();
+ // No IP, port, comma-separated chains, URL or userinfo in the public host.
+ if(proto!=="https"||raw.length>253||!/^[a-z0-9.-]+$/.test(raw))return null;
+ const normalize=(hostname:string)=>hostname.toLowerCase().replace(/^www\./,"").replace(/\.$/,"");
+ return normalize(raw)===normalize(canonical.hostname)?canonical.hostname.toLowerCase():null;
+}
 export function publicRequestHostname(headers:RequestHeaders,env:PublicEnv=process.env):string|null{
  const host=trustedSiteHost(headers,env);
  return host?parseHost(host)?.hostname.toLowerCase()||null:null;

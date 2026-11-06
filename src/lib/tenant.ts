@@ -1,6 +1,6 @@
 import {headers} from "next/headers";
 import {isAllowedPublicHost} from "@/lib/public-site/host-match";
-import {publicRequestHostname} from "@/lib/public-request-origin";
+import {publicPageHostname} from "@/lib/public-request-origin";
 import {notFound,redirect} from "next/navigation";
 import {hasDatabaseConfig} from "@/lib/server-config";
 import {isPreviewHost,normalizeSiteHost} from "@/lib/preview";
@@ -28,7 +28,7 @@ export async function tenantFromHost(hostname:string){
 }
 export async function getPublicContext(options:{loadProperties?:boolean}={}):Promise<{tenant:PublicTenant;properties:PublicProperty[];demo:boolean;settings:SiteSettings;heroImage:boolean}>{
  const h=await headers();
- const hostname=publicRequestHostname(h)||"";
+ const hostname=publicPageHostname(h)||"";
  const preview=isPreviewHost(hostname);
  const demoContext={tenant:demoTenant,properties:demoProperties,demo:true,settings:DEFAULT_SITE_SETTINGS,heroImage:false} as const;
  if(!hasDatabaseConfig()){
