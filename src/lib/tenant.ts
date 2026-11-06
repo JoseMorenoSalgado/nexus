@@ -17,7 +17,10 @@ export async function tenantFromHost(hostname:string){
  // Domain is an origin allowlist, never an organization selector.
  const configured=process.env.SITE_URL||process.env.APP_URL||process.env.NEXT_PUBLIC_SITE_URL;
  const allowedHost=configured?canonicalHost(new URL(configured).hostname):"localhost";
- if(canonicalHost(hostname)!==allowedHost)return null;
+ const requestedHost=canonicalHost(hostname);
+ const expectedHost=canonicalHost(allowedHost);
+ const apex=(host:string)=>host.startsWith("www.")?host.slice(4):host;
+ if(apex(requestedHost)!==apex(expectedHost))return null;
  const tenantId=await singleInstallationTenantId();
  if(!tenantId)return null;
  const tenant=await prisma.tenant.findUnique({where:{id:tenantId},select:{id:true,name:true,tagline:true,whatsapp:true,logoUrl:true,contactEmail:true,primaryColor:true,active:true}});
@@ -42,6 +45,7 @@ export async function getPublicContext(options:{loadProperties?:boolean}={}):Pro
  }
  if(!d){
    if(preview)return demoContext;
+   console.error("[public-site] Site unavailable: verify SITE_URL, canonical hostname, and exactly one active standalone organization. No tenant data was exposed.");
    notFound();
  }
  const [props,settings,heroImage,customLogo]=await Promise.all([
