@@ -3,22 +3,48 @@ import { spawn, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { loadEnvFile } from 'node:process';
 import { homedir } from 'node:os';
-import { resolve } from 'node:path';
+import { resolve, join } from 'node:path';
 
-// Enhance replaces deploys/current on release. Load the private persistent
-// environment file without overriding variables explicitly set by the host.
-// APP_CONFIG_DIR also contains installation.json and is never served publicly.
-const runtimeDir = process.env.APP_CONFIG_DIR?.trim() || resolve(homedir(), 'nexus-runtime');
-const runtimeEnv = resolve(runtimeDir, '.env');
-if (existsSync(runtimeEnv)) {
+// Enhance may place .env in the deployment root or a private persistent
+// directory. Discover it at startup, before Next.js is spawned. Never
+// override variables supplied by the hosting environment.
+const initialEnv = { ...process.env };
+const home = homedir();
+const explicitDir = initialEnv.APP_CONFIG_DIR?.trim();
+const candidates = [
+  ...(explicitDir ? [resolve(explicitDir, '.env')] : []),
+  resolve('.env.production'),
+  resolve('.env'),
+  join(home, 'nexus-runtime-new', '.env'),
+  join(home, 'nexus-runtime', '.env'),
+];
+let loadedFrom = null;
+for (const candidate of candidates) {
+  if (!existsSync(candidate)) continue;
   try {
-    loadEnvFile(runtimeEnv);
-    console.log('Loaded persistent Nexus runtime environment.');
+    // Keep the first matching file as the single source of application settings.
+    loadEnvFile(candidate);
+    for (const [key, value] of Object.entries(initialEnv)) process.env[key] = value;
+    loadedFrom = candidate;
+    if (!initialEnv.APP_CONFIG_DIR && candidate === join(home, 'nexus-runtime-new', '.env')) {
+      process.env.APP_CONFIG_DIR = join(home, 'nexus-runtime-new');
+    }
+    break;
   } catch (error) {
-    console.error('Unable to load persistent Nexus environment:', error.message);
+    console.error('Cannot load Nexus environment file:', error.message);
     process.exit(1);
   }
 }
+const siteUrl = process.env.SITE_URL?.trim() || '';
+let canonicalValid = false;
+try {
+  const url = new URL(siteUrl);
+  canonicalValid = url.protocol === 'https:' && !url.username && !url.password &&
+    url.pathname === '/' && !url.search && !url.hash && !url.port;
+} catch {}
+console.log('Nexus runtime environment:', loadedFrom ? 'file loaded' : 'no .env file discovered');
+console.log('Nexus canonical SITE_URL:', canonicalValid ? new URL(siteUrl).hostname : 'MISSING OR INVALID');
+if (!canonicalValid) console.warn('Public pages may return 404 until SITE_URL is set to the canonical HTTPS domain.');
 
 const port = Number(process.env.PORT || 3000);
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
