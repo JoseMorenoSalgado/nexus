@@ -1,7 +1,24 @@
 /** Portable Next.js production startup for Enhance and local hosts. */
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { loadEnvFile } from 'node:process';
+import { homedir } from 'node:os';
 import { resolve } from 'node:path';
+
+// Enhance replaces deploys/current on release. Load the private persistent
+// environment file without overriding variables explicitly set by the host.
+// APP_CONFIG_DIR also contains installation.json and is never served publicly.
+const runtimeDir = process.env.APP_CONFIG_DIR?.trim() || resolve(homedir(), 'nexus-runtime');
+const runtimeEnv = resolve(runtimeDir, '.env');
+if (existsSync(runtimeEnv)) {
+  try {
+    loadEnvFile(runtimeEnv);
+    console.log('Loaded persistent Nexus runtime environment.');
+  } catch (error) {
+    console.error('Unable to load persistent Nexus environment:', error.message);
+    process.exit(1);
+  }
+}
 
 const port = Number(process.env.PORT || 3000);
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
