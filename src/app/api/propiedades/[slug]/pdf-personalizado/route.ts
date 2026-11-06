@@ -1,5 +1,5 @@
 import {NextRequest,NextResponse} from "next/server";
-import {tenantFromHost} from "@/lib/tenant";
+import {publicInstallationTenant} from "@/lib/public-installation";
 import {prisma} from "@/lib/prisma";
 import {getSiteTemplate} from "@/lib/site-template-store";
 import {tenantModuleEnabled} from "@/lib/tenant-modules";
@@ -10,7 +10,7 @@ export const dynamic="force-dynamic";
 
 export async function GET(req:NextRequest,{params}:{params:Promise<{slug:string}>}){
  const {slug}=await params;
- const tenant=await tenantFromHost(req.headers.get("host")||"");
+ const tenant=await publicInstallationTenant();
  if(!tenant)return new NextResponse(null,{status:404});
  if((await getSiteTemplate(tenant.tenantId)).key!=="real-estate"||!await tenantModuleEnabled(tenant.tenantId,"properties"))return new NextResponse(null,{status:404});
  const property=await prisma.property.findFirst({

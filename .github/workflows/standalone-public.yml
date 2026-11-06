@@ -1,0 +1,66 @@
+name: Standalone public site regression
+on:
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+permissions:
+  contents: read
+concurrency:
+  group: standalone-public-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  public-site:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: nexus_test
+          POSTGRES_PASSWORD: disposable_only
+          POSTGRES_DB: nexus_standalone_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd="pg_isready -U nexus_test -d nexus_standalone_test"
+          --health-interval=5s --health-timeout=5s --health-retries=15
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: disposable_root_only
+          MARIADB_DATABASE: nexus_standalone_test
+          MARIADB_USER: nexus_test
+          MARIADB_PASSWORD: disposable_only
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=15
+    env:
+      NEXUS_STANDALONE_TEST_DB: 'true'
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --include=dev --no-audit --no-fund
+      - run: node --import tsx --test tests/public-request-origin.test.ts
+      - run: npm run build
+      - name: PostgreSQL standalone public and dashboard integration
+        env:
+          DATABASE_URL: postgresql://nexus_test:disposable_only@127.0.0.1:5432/nexus_standalone_test
+        run: |
+          npx prisma db push --schema prisma/schema.postgres.prisma --skip-generate
+          node scripts/check-standalone-public.mjs
+      - name: MariaDB standalone public and dashboard integration
+        env:
+          DATABASE_URL: mysql://nexus_test:disposable_only@127.0.0.1:3306/nexus_standalone_test
+        run: |
+          npx prisma db push --schema prisma/schema.prisma --skip-generate
+          node scripts/check-standalone-public.mjs

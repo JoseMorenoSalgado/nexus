@@ -2,15 +2,15 @@ import {hasDatabaseConfig} from "@/lib/server-config";
 import {NextResponse,type NextRequest} from "next/server";
 import {prisma} from "@/lib/prisma";
 import {parseRoles} from "@/lib/roles";
-import {tenantFromHost} from "@/lib/tenant";
+import {validPublicMutationOrigin} from "@/lib/public-request-origin";
+import {publicInstallationTenant} from "@/lib/public-installation";
 import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {readJsonObjectLimited,RequestPayloadError} from "@/lib/limited-json";
 const missingColumn=(error:unknown)=>!!(error&&typeof error==="object"&&"code" in error&&error.code==="P2022");
 export async function POST(req:NextRequest){
  if(!hasDatabaseConfig())return NextResponse.json({error:"Formulario disponible cuando se configure la base de datos."},{status:503});
  if(req.headers.get("sec-fetch-site")==="cross-site")return NextResponse.json({error:"Origen no autorizado"},{status:403});
- const origin=req.headers.get("origin");
- if(origin){try{if(new URL(origin).host!==req.headers.get("host"))return NextResponse.json({error:"Origen no autorizado"},{status:403});}catch{return NextResponse.json({error:"Origen inválido"},{status:403});}}
+ if(!validPublicMutationOrigin(req.headers))return NextResponse.json({error:"Origen no autorizado"},{status:403});
  let b:Record<string,unknown>;
  try{b=await readJsonObjectLimited(req,8192);}
  catch(error){return NextResponse.json({error:error instanceof RequestPayloadError?error.message:"Datos inválidos"},{status:error instanceof RequestPayloadError?error.status:400});}
@@ -18,7 +18,7 @@ export async function POST(req:NextRequest){
  const name=String(b.name||"").trim().slice(0,120),phone=String(b.phone||"").trim().slice(0,30),email=String(b.email||"").trim().slice(0,180),message=String(b.message||"").trim().slice(0,2000);
  if(name.length<2||!/^[+\d() -]{7,30}$/.test(phone)||b.consent!=="yes"||(email&&!/^\S+@\S+\.\S+$/.test(email)))return NextResponse.json({error:"Revisa tus datos y acepta el consentimiento de contacto."},{status:400});
  try{
-  const tenant=await tenantFromHost(req.headers.get("host")||"");
+  const tenant=await publicInstallationTenant();
   if(!tenant)return NextResponse.json({error:"Sitio no encontrado"},{status:404});
   if(!await tenantModuleEnabled(tenant.tenantId,"inquiries"))return NextResponse.json({error:"Formulario desactivado."},{status:403});
   let propertyId:string|undefined;

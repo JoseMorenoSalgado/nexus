@@ -2,45 +2,12 @@ import {headers} from "next/headers";
 import {publicRequestHostname} from "@/lib/public-request-origin";
 import {notFound,redirect} from "next/navigation";
 import {hasDatabaseConfig} from "@/lib/server-config";
-import {isPreviewHost,normalizeSiteHost} from "@/lib/preview";
+import {isPreviewHost} from "@/lib/preview";
 import {prisma} from "@/lib/prisma";
-import {singleInstallationTenantId} from "@/lib/single-installation";
+import {publicInstallationTenant} from "@/lib/public-installation";
 import {demoTenant,demoProperties,type PublicTenant,type PublicProperty} from "@/lib/demo";
 import {getSiteSettings,DEFAULT_SITE_SETTINGS,type SiteSettings} from "@/lib/site-settings";
 import {hasSiteAsset} from "@/lib/site-assets";
-export const canonicalHost = normalizeSiteHost;
-/** Legacy API name retained for callers; hostname no longer selects an organization.
- * Each isolated database must contain exactly one active organization.
- */
-export async function tenantFromHost(hostname:string){
- if(!hasDatabaseConfig())return null;
- // Domain is an origin allowlist, never an organization selector.
- const configured=(process.env.SITE_URL||process.env.APP_URL||process.env.NEXT_PUBLIC_SITE_URL||"").trim();
- const requestedHost=canonicalHost(hostname);
- const apex=(host:string)=>host.startsWith("www.")?host.slice(4):host;
- if(!requestedHost)return null;
- let allowedHost:string|null=null;
- if(configured){
-  try{
-   const url=new URL(configured);
-   if(url.protocol!=="https:"||url.pathname!=="/"||url.search||url.hash||url.username||url.password)return null;
-   allowedHost=canonicalHost(url.hostname);
-  }catch{return null;}
- }
- const tenantId=await singleInstallationTenantId();
- if(!tenantId)return null;
- if(allowedHost){
-  if(apex(requestedHost)!==apex(allowedHost))return null;
- }else{
-  // Recovery for existing installations without SITE_URL: use only the
-  // explicitly registered domain belonging to the sole active organization.
-  // Never infer tenant identity from an arbitrary Host header.
-  const domains=await prisma.domain.findMany({where:{tenantId},select:{hostname:true},take:100});
-  if(!domains.some(d=>apex(canonicalHost(d.hostname))===apex(requestedHost)))return null;
- }
- const tenant=await prisma.tenant.findUnique({where:{id:tenantId},select:{id:true,name:true,tagline:true,whatsapp:true,logoUrl:true,contactEmail:true,primaryColor:true,active:true}});
- return tenant?.active?{tenantId,tenant}:null;
-}
 export async function getPublicContext(options:{loadProperties?:boolean}={}):Promise<{tenant:PublicTenant;properties:PublicProperty[];demo:boolean;settings:SiteSettings;heroImage:boolean}>{
  const h=await headers();
  const hostname=publicRequestHostname(h)||"";
@@ -51,8 +18,8 @@ export async function getPublicContext(options:{loadProperties?:boolean}={}):Pro
    if(process.env.NODE_ENV!=="production")return demoContext;
    redirect("/instalar");
  }
- let d:Awaited<ReturnType<typeof tenantFromHost>>;
- try{d=await tenantFromHost(hostname);}
+ let d:Awaited<ReturnType<typeof publicInstallationTenant>>;
+ try{d=await publicInstallationTenant();}
  catch(error){
    if(!preview)throw error;
    console.warn("Preview mode: database not ready");
@@ -60,7 +27,7 @@ export async function getPublicContext(options:{loadProperties?:boolean}={}):Pro
  }
  if(!d){
    if(preview)return demoContext;
-   console.error("[public-site] Site unavailable: verify SITE_URL, canonical hostname, and exactly one active standalone organization. No tenant data was exposed.");
+   console.error("[public-site] Site unavailable: verify exactly one active standalone organization and its database connection. No tenant data was exposed.");
    notFound();
  }
  const [props,settings,heroImage,customLogo]=await Promise.all([

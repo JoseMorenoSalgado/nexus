@@ -1,7 +1,8 @@
 import {hasDatabaseConfig} from "@/lib/server-config";
 import {NextResponse,type NextRequest} from "next/server";
 import {prisma} from "@/lib/prisma";
-import {tenantFromHost} from "@/lib/tenant";
+import {publicInstallationTenant} from "@/lib/public-installation";
+import {publicRequestHostname,publicRequestOrigin} from "@/lib/public-request-origin";
 import {getSiteTemplate} from "@/lib/site-template-store";
 import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {isPreviewHost} from "@/lib/preview";
@@ -10,7 +11,7 @@ import {buildPropertyPdf,type PropertyPdfInput} from "@/lib/property-pdf";
 export const runtime="nodejs";
 export async function GET(req:NextRequest,{params}:{params:Promise<{slug:string}>}){
  const {slug}=await params;
- const hostname=req.headers.get("host")||"";
+ const hostname=publicRequestHostname(req.headers)||"";
  const preview=isPreviewHost(hostname);
  const mode=req.nextUrl.searchParams.get("formato")==="resumida"?"resumida":"ampliada";
  const selected=req.nextUrl.searchParams.getAll("fotos").filter(x=>x.length<=100).slice(0,5);
@@ -25,8 +26,8 @@ export async function GET(req:NextRequest,{params}:{params:Promise<{slug:string}
     areaM2:demo.areaM2,photos:[]};
   }
  }else{
-  let tenant:Awaited<ReturnType<typeof tenantFromHost>>=null;
-  try{tenant=await tenantFromHost(hostname);}catch(error){if(!preview)throw error;}
+  let tenant:Awaited<ReturnType<typeof publicInstallationTenant>>=null;
+  try{tenant=await publicInstallationTenant();}catch(error){if(!preview)throw error;}
   if(tenant){
    if((await getSiteTemplate(tenant.tenantId)).key!=="real-estate"||!await tenantModuleEnabled(tenant.tenantId,"properties"))
     return NextResponse.json({error:"Propiedad no encontrada"},{status:404});
@@ -48,9 +49,8 @@ export async function GET(req:NextRequest,{params}:{params:Promise<{slug:string}
   }
  }
  if(!property)return NextResponse.json({error:"Propiedad no encontrada"},{status:404});
- const scheme=req.headers.get("x-forwarded-proto")==="https"?"https":
-  req.headers.get("x-forwarded-proto")==="http"?"http":req.nextUrl.protocol.replace(":","");
- const publicUrl=new URL("/propiedades/"+encodeURIComponent(property.slug),scheme+"://"+hostname).toString();
+ const origin=publicRequestOrigin(req.headers);
+ const publicUrl=origin?new URL("/propiedades/"+encodeURIComponent(property.slug),origin).toString():"";
  const {bytes}=await buildPropertyPdf(property,{mode,photoIds:selected,tenantName,primaryColor,publicUrl});
  const filename="nexus-"+property.refCode.replace(/[^A-Za-z0-9-]/g,"")+
   (mode==="resumida"?"-resumida":"-ampliada")+".pdf";

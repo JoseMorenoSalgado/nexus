@@ -36,6 +36,10 @@ function configuredOrigin(env:PublicEnv):URL|null {
 function configuredInvalid(env:PublicEnv):boolean{
  return Boolean((env.SITE_URL||env.APP_URL||env.NEXT_PUBLIC_SITE_URL||"").trim()&&!configuredOrigin(env));
 }
+function sameSiteHost(candidate:URL,canonical:URL):boolean{
+ const bare=(hostname:string)=>hostname.toLowerCase().replace(/^www\./,"");
+ return bare(candidate.hostname)===bare(canonical.hostname)&&candidate.port===canonical.port;
+}
 function trustedSiteHost(headers:RequestHeaders,env:PublicEnv):string|null{
  const canonical=configuredOrigin(env);
  if(configuredInvalid(env))return null;
@@ -53,7 +57,7 @@ function trustedSiteHost(headers:RequestHeaders,env:PublicEnv):string|null{
   if(direct.hostname.toLowerCase()===alias.toLowerCase()&&direct.port===canonical.port)return canonical.host;
   if(!upstream)return null;
   // When the proxy sends X-Forwarded-Host it must agree with SITE_URL.
-  if(forwardedRaw&&(!forwarded||forwarded.host.toLowerCase()!==canonical.host.toLowerCase()))return null;
+  if(forwardedRaw&&(!forwarded||!sameSiteHost(forwarded,canonical)))return null;
   // SITE_URL is an explicit server-side allowlist for upstreams that omit Host forwarding.
   return canonical.host;
  }
@@ -66,6 +70,16 @@ function trustedSiteHost(headers:RequestHeaders,env:PublicEnv):string|null{
 export function publicRequestHostname(headers:RequestHeaders,env:PublicEnv=process.env):string|null{
  const host=trustedSiteHost(headers,env);
  return host?parseHost(host)?.hostname.toLowerCase()||null:null;
+}
+/** Absolute public links (e.g. PDF QR codes), never an organization selector. */
+export function publicRequestOrigin(headers:RequestHeaders,env:PublicEnv=process.env):string|null{
+ if(configuredInvalid(env))return null;
+ const canonical=configuredOrigin(env);
+ if(canonical)return canonical.origin;
+ const host=trustedSiteHost(headers,env);
+ if(!host)return null;
+ const parsed=parseHost(host);
+ return parsed?(privateHost(parsed.hostname)?"http://":"https://")+host:null;
 }
 /**
  * Browser Origin is authoritative for form submissions. Referer is used only
@@ -88,7 +102,7 @@ export function validPublicMutationOrigin(headers:RequestHeaders,env:PublicEnv=p
    actual=new URL(referer.origin);
   }else return false;
  }catch{return false;}
- if(canonical)return actual.origin===canonical.origin;
+ if(canonical)return actual.protocol===canonical.protocol&&sameSiteHost(actual,canonical);
  const host=trustedSiteHost(headers,env);
  if(!host||actual.host.toLowerCase()!==host.toLowerCase())return false;
  return actual.protocol==="https:"||(actual.protocol==="http:"&&privateHost(actual.hostname));
