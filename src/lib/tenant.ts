@@ -15,14 +15,29 @@ export const canonicalHost = normalizeSiteHost;
 export async function tenantFromHost(hostname:string){
  if(!hasDatabaseConfig())return null;
  // Domain is an origin allowlist, never an organization selector.
- const configured=process.env.SITE_URL||process.env.APP_URL||process.env.NEXT_PUBLIC_SITE_URL;
- const allowedHost=configured?canonicalHost(new URL(configured).hostname):"localhost";
+ const configured=(process.env.SITE_URL||process.env.APP_URL||process.env.NEXT_PUBLIC_SITE_URL||"").trim();
  const requestedHost=canonicalHost(hostname);
- const expectedHost=canonicalHost(allowedHost);
  const apex=(host:string)=>host.startsWith("www.")?host.slice(4):host;
- if(apex(requestedHost)!==apex(expectedHost))return null;
+ if(!requestedHost)return null;
+ let allowedHost:string|null=null;
+ if(configured){
+  try{
+   const url=new URL(configured);
+   if(url.protocol!=="https:"||url.pathname!=="/"||url.search||url.hash||url.username||url.password)return null;
+   allowedHost=canonicalHost(url.hostname);
+  }catch{return null;}
+ }
  const tenantId=await singleInstallationTenantId();
  if(!tenantId)return null;
+ if(allowedHost){
+  if(apex(requestedHost)!==apex(allowedHost))return null;
+ }else{
+  // Recovery for existing installations without SITE_URL: use only the
+  // explicitly registered domain belonging to the sole active organization.
+  // Never infer tenant identity from an arbitrary Host header.
+  const domains=await prisma.domain.findMany({where:{tenantId},select:{hostname:true},take:100});
+  if(!domains.some(d=>apex(canonicalHost(d.hostname))===apex(requestedHost)))return null;
+ }
  const tenant=await prisma.tenant.findUnique({where:{id:tenantId},select:{id:true,name:true,tagline:true,whatsapp:true,logoUrl:true,contactEmail:true,primaryColor:true,active:true}});
  return tenant?.active?{tenantId,tenant}:null;
 }
