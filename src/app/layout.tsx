@@ -1,7 +1,6 @@
 import type {Metadata,Viewport} from "next";
-import {headers} from "next/headers";
 import {hasDatabaseConfig} from "@/lib/server-config";
-import {tenantFromHost} from "@/lib/tenant";
+import {publicInstallationTenant} from "@/lib/public-installation";
 import "./globals.css";
 import "./styles/legacy/admin-shell.css";
 import "./styles/templates/nexus-public.css";
@@ -19,12 +18,11 @@ import "./styles/templates/nexus-advisory.css";
 
 export const viewport:Viewport={width:"device-width",initialScale:1,viewportFit:"cover",themeColor:"#ffffff"};
 
-/** Metadata is always resolved by the current site host, never from NEXUS constants. */
+/** Metadata and public pages share the dashboard's standalone organization. */
 export async function generateMetadata():Promise<Metadata>{
  const fallback:Metadata={title:{default:"NEXUS Inmobiliaria",template:"%s | NEXUS"},description:"Catálogo inmobiliario, propiedades en venta y alquiler."};
  if(!hasDatabaseConfig())return fallback;
- const host=(await headers()).get("host")||"";
- const match=await tenantFromHost(host);
+ const match=await publicInstallationTenant();
  if(!match)return fallback;
  const name=match.tenant.name;
  return {

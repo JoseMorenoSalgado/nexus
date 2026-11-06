@@ -1,6 +1,6 @@
 import {test} from "node:test";
 import {strict as assert} from "node:assert";
-import {publicRequestHostname,validPublicMutationOrigin} from "../src/lib/public-request-origin";
+import {publicRequestHostname,publicRequestOrigin,validPublicMutationOrigin} from "../src/lib/public-request-origin";
 
 const headers=(values:Record<string,string>)=>new Headers(values);
 const env={SITE_URL:undefined,APP_URL:undefined,NEXT_PUBLIC_SITE_URL:undefined};
@@ -76,4 +76,23 @@ test("login referer fallback is same-origin and limited to access page",()=>{
  assert.equal(validPublicMutationOrigin(headers({Host:"internal",Referer:"https://evil.example/admin/acceso"}),pinned),false);
  assert.equal(validPublicMutationOrigin(headers({Host:"internal",Referer:"https://nexus.example/evil"}),pinned),false);
  assert.equal(validPublicMutationOrigin(headers({Host:"internal"}),pinned),false);
+});
+
+test("canonical www alias works through the private Enhance upstream",()=>{
+ const pinned={...env,SITE_URL:"https://nexus.example"};
+ const h=headers({Host:"127.0.0.1:3000",Origin:"https://www.nexus.example",
+  "X-Forwarded-Host":"www.nexus.example","X-Forwarded-Proto":"https"});
+ assert.equal(publicRequestHostname(h,pinned),"nexus.example");
+ assert.equal(validPublicMutationOrigin(h,pinned),true);
+ for(const origin of ["http://www.nexus.example","https://www.nexus.example:444","https://evil.nexus.example","https://nexus.example.evil.test"]){
+  assert.equal(validPublicMutationOrigin(headers({Host:"127.0.0.1:3000",Origin:origin}),pinned),false);
+ }
+});
+
+test("absolute PDF links use public origin instead of internal proxy hostname",()=>{
+ const h=headers({Host:"127.0.0.1:3000","X-Forwarded-Host":"nexus.example","X-Forwarded-Proto":"https"});
+ assert.equal(publicRequestOrigin(h,env),"https://nexus.example");
+ assert.equal(publicRequestOrigin(headers({Host:"enhance.internal:3000"}),{...env,SITE_URL:"https://nexus.example"}),"https://nexus.example");
+ assert.equal(publicRequestOrigin(headers({Host:"localhost:3000"}),env),"http://localhost:3000");
+ assert.equal(publicRequestOrigin(headers({Host:"127.0.0.1:3000"}),{...env,SITE_URL:"invalid"}),null);
 });

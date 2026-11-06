@@ -68,7 +68,9 @@ const foreignStatus=execFileSync("curl",[
  "-sS","-o","/dev/null","-w","%{http_code}","-H","Host: other-tenant.test",
  "-H","X-Forwarded-Host: other-tenant.test",publicDoc
 ],{encoding:"utf8"}).trim();
-assert.equal(foreignStatus,"404","Foreign domains must not access the PDF.");
+assert.equal(foreignStatus,"200","Host must not hide the published PDF of the standalone installation.");
+assert.deepEqual(Buffer.from(await (await fetch(publicDoc,{headers:{Host:"alias.standalone.test"}})).arrayBuffer()),
+ Buffer.from(await (await fetch(publicDoc)).arrayBuffer()),"Changing Host must return the same published installation asset");
 const auto=await fetch(origin+"/api/propiedades/"+record.slug+"/pdf");
 assert.equal(auto.status,200,"Automatic PDF must stay available.");
 for(const [format,maxPages] of [["resumida",1],["ampliada",2]]){
@@ -83,4 +85,4 @@ const deleted=await fetch(adminDoc,{method:"DELETE",headers:authHeaders});
 assert.equal(deleted.status,200);
 assert.equal((await fetch(publicDoc)).status,404,"Removed personalized PDFs must not remain public.");
 assert.equal((await fetch(origin+"/api/propiedades/"+record.slug+"/pdf")).status,200,"Automatic PDF remains available.");
-console.log("Custom PDF: upload, sanitization, private drafts, publication, tenant isolation, deletion and automatic brochure passed.");
+console.log("Custom PDF: upload, sanitization, private drafts, publication, standalone routing, deletion and automatic brochure passed.");

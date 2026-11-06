@@ -87,9 +87,11 @@ for(const kind of ["hero","logo"]){
  assert.equal(available.status,200);
  assert.equal(available.headers.get("content-type"),"image/webp");
  const foreign=execFileSync("curl",["-sS","-o","/dev/null","-w","%{http_code}","-H","Host: foreign-tenant.invalid",origin+"/api/site-media/"+kind],{encoding:"utf8"}).trim();
- assert.equal(foreign,"404","Another host must not retrieve corporate images.");
+ assert.equal(foreign,"200","Standalone corporate images do not depend on Host.");
+assert.deepEqual(Buffer.from(await (await fetch(origin+"/api/site-media/"+kind,{headers:{Host:"alias.standalone.test"}})).arrayBuffer()),
+ Buffer.from(await (await fetch(origin+"/api/site-media/"+kind)).arrayBuffer()),"Changing Host must return the same published installation asset");
  const cleared=await fetch(origin+"/api/admin/site-media/"+kind,{method:"DELETE",headers:auth});
  assert.equal(cleared.status,200,"Could not remove corporate photo.");
  assert.equal((await fetch(origin+"/api/site-media/"+kind)).status,404);
 }
-console.log("Site customization: auth, CSRF, text, WhatsApp, corporate color, featured listings, safe images, tenant isolation passed.");
+console.log("Site customization: auth, CSRF, text, WhatsApp, corporate color, featured listings, safe images, standalone routing passed.");

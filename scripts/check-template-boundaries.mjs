@@ -14,6 +14,6 @@ assert.ok(footer.includes("presentation.footerTitle")&&footer.includes("presenta
 assert.ok(!footer.includes('> Nicaragua</span>'),"Region must not be forced for all clients");
 const layout=read("src/app/layout.tsx");
 assert.match(layout,/export async function generateMetadata/);
-assert.ok(layout.includes("tenantFromHost"),"SEO metadata should resolve host-bound organization");
+assert.ok(layout.includes("publicInstallationTenant"),"SEO metadata should resolve the same standalone organization as public pages");
 assert.ok(!layout.includes("Nexus Real Estate"),"Generic metadata must not hardcode first customer's brand");
-console.log("Template boundaries, tenant branding and host-bound metadata checked.");
+console.log("Template boundaries, organization branding and standalone metadata checked.");

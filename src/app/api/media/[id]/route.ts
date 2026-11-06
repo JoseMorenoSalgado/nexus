@@ -2,7 +2,7 @@ import {readFile} from "node:fs/promises";
 import {NextRequest,NextResponse} from "next/server";
 import {prisma} from "@/lib/prisma";
 import {currentAdmin} from "@/lib/auth";
-import {tenantFromHost} from "@/lib/tenant";
+import {publicInstallationTenant} from "@/lib/public-installation";
 import {getSiteTemplate} from "@/lib/site-template-store";
 import {mediaFilePath,mediaVariantPath,isPhotoId,type MediaVariant} from "@/lib/property-media";
 export const runtime="nodejs";
@@ -10,7 +10,7 @@ export const dynamic="force-dynamic";
 export async function GET(req:NextRequest,{params}:{params:Promise<{id:string}>}){
  const {id}=await params;
  if(!isPhotoId(id))return new NextResponse(null,{status:404});
- const tenant=await tenantFromHost(req.headers.get("host")||"");
+ const tenant=await publicInstallationTenant();
  if(!tenant)return new NextResponse(null,{status:404});
  if((await getSiteTemplate(tenant.tenantId)).key!=="real-estate"){
   const admin=await currentAdmin();

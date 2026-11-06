@@ -36,5 +36,5 @@ assert.equal((await get("/contacto")).status,200);
 const advisor=await get("/admin/personalizar/paginas/asesoria-empresarial",true);
 assert.equal(advisor.status,200,"Business advisory editor remains available");
 const unknown=execFileSync("curl",["-sS","-o","/dev/null","-w","%{http_code}","-H","Host: other-tenant.invalid",origin+"/"],{encoding:"utf8"}).trim();
-assert.equal(unknown,"404","Tenant host isolation");
+assert.equal(unknown,"200","The standalone home must not depend on a legacy domain binding");
 console.log("NEXUS: sector locked to real estate, property routes and advisory editor available.");
