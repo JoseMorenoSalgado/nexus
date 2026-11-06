@@ -1,6 +1,6 @@
 import {test} from "node:test";
 import {strict as assert} from "node:assert";
-import {publicRequestHostname,validPublicMutationOrigin} from "../src/lib/public-request-origin";
+import {publicPageHostname,publicRequestHostname,validPublicMutationOrigin} from "../src/lib/public-request-origin";
 
 const headers=(values:Record<string,string>)=>new Headers(values);
 const env={SITE_URL:undefined,APP_URL:undefined,NEXT_PUBLIC_SITE_URL:undefined};
@@ -76,4 +76,16 @@ test("login referer fallback is same-origin and limited to access page",()=>{
  assert.equal(validPublicMutationOrigin(headers({Host:"internal",Referer:"https://evil.example/admin/acceso"}),pinned),false);
  assert.equal(validPublicMutationOrigin(headers({Host:"internal",Referer:"https://nexus.example/evil"}),pinned),false);
  assert.equal(validPublicMutationOrigin(headers({Host:"internal"}),pinned),false);
+});
+
+test("public pages recover canonical domain from Enhance service host",()=>{
+ const pinned={...env,SITE_URL:"https://nexus.example"};
+ const h=headers({Host:"enhance-upstream.internal:3000","X-Forwarded-Host":"nexus.example","X-Forwarded-Proto":"https"});
+ assert.equal(publicPageHostname(h,pinned),"nexus.example");
+ assert.equal(publicRequestHostname(h,pinned),null);
+});
+test("public recovery rejects mismatched or insecure forwarded hosts",()=>{
+ const pinned={...env,SITE_URL:"https://nexus.example"};
+ assert.equal(publicPageHostname(headers({Host:"upstream.internal","X-Forwarded-Host":"attacker.invalid","X-Forwarded-Proto":"https"}),pinned),null);
+ assert.equal(publicPageHostname(headers({Host:"upstream.internal","X-Forwarded-Host":"nexus.example","X-Forwarded-Proto":"http"}),pinned),null);
 });
