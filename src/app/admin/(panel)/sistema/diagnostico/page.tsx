@@ -19,7 +19,7 @@ export default async function Diagnostico(){
   if(url.protocol!=="https:"||url.pathname!=="/"||url.search||url.hash||url.username||url.password)throw new Error("invalid");
   configuredHost=url.hostname.toLowerCase();
   add("URL pública","correcto","Dominio configurado: "+configuredHost);
- }catch{add("URL pública","error","SITE_URL debe contener la dirección HTTPS oficial, sin rutas ni parámetros.");}
+ }catch{add("URL pública","advertencia","No hay una URL HTTPS válida configurada. Configura SITE_URL; sin ella solo se admiten dominios registrados en esta instalación.");}
  const requestHost=publicRequestHostname(await headers());
  const bare=(s:string)=>s.replace(/^www\./,"");
  if(configuredHost&&requestHost&&bare(configuredHost)===bare(requestHost))add("Dominio de acceso","correcto","El dominio recibido coincide con la configuración pública.");
@@ -30,6 +30,10 @@ export default async function Diagnostico(){
    const rows=await prisma.tenant.findMany({select:{id:true,active:true},take:3});
    const tenantId=await singleInstallationTenantId();
    add("Organización de la instalación",tenantId?"correcto":"error",tenantId?"Se encontró exactamente una organización.":"Se encontraron "+(rows.length===3?"3 o más":rows.length)+" organizaciones; el sitio público requiere exactamente una en esta instalación.");
+   if(tenantId){
+    const domains=await prisma.domain.findMany({where:{tenantId},select:{hostname:true},take:25});
+    add("Dominios registrados",domains.length?"correcto":"error",domains.length?"Dominios asociados: "+domains.map(d=>d.hostname).join(", "):"No hay dominios registrados para la organización. Configura SITE_URL y verifica el dominio en la instalación.");
+   }
    if(tenantId)add("Organización activa",rows[0]?.active?"correcto":"error",rows[0]?.active?"La organización está activa.":"La organización está desactivada y el sitio público no se mostrará.");
    await prisma.sitePage.findFirst({select:{slug:true}});
    add("Lectura de páginas","correcto","La consulta de contenido público responde.");
