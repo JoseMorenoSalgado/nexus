@@ -21,6 +21,7 @@ export default async function SystemStatus({searchParams}:{searchParams:Promise<
    <h1>Estado de la base de datos</h1>
    <p>Comprueba la compatibilidad entre la instalación actual y las funciones comerciales del dashboard.</p>
   </div></div>
+  <div className="admin-panel"><h2>Diagnóstico de la página pública</h2><p>Comprueba dominio, organización activa y lectura de contenido sin modificar datos.</p><Link className="btn btn-red" href="/admin/sistema/diagnostico">Abrir diagnóstico</Link></div>
   {q.status==="repaired"&&<p className="property-success" role="status">Se completaron las comprobaciones y actualizaciones del esquema comercial.</p>}
   {q.status==="failed"&&<p className="admin-error" role="alert">La actualización no pudo finalizar. Consulta los registros de Plesk/Passenger o del servidor Node.js y revisa los permisos SQL antes de intentarlo nuevamente. No repitas migraciones manuales a ciegas.</p>}
   {failed?<div className="admin-panel"><AlertTriangle size={23}/><h2>No fue posible comprobar el esquema</h2><p>Verifica la conexión con MariaDB/PostgreSQL y los registros de Node.js en Plesk. Ningún cambio fue aplicado.</p></div>:
