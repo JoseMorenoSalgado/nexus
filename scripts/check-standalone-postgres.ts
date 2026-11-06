@@ -6,6 +6,7 @@
 import { prisma } from "../src/lib/prisma";
 import { databaseUrl } from "../src/lib/server-config";
 import { engineFromUrl } from "../src/lib/db-provider";
+import { validateStandaloneSnapshot } from "../src/lib/standalone-installation";
 
 async function main() {
   const url = databaseUrl();
@@ -14,21 +15,31 @@ async function main() {
     throw new Error("This rebuild requires a PostgreSQL connection.");
   }
   await prisma.$queryRawUnsafe("SELECT 1");
-  const [active, total, domains] = await Promise.all([
-    prisma.tenant.count({ where: { active: true } }),
+  const [activeOrganizations, total, domains, admin] = await Promise.all([
+    prisma.tenant.findMany({ where: { active: true }, select: { id: true }, take: 2 }),
     prisma.tenant.count(),
-    prisma.domain.findMany({ select: { hostname: true }, take: 100 }),
+    prisma.domain.findMany({ select: { hostname: true, tenantId: true, tenant: { select: { active: true } } }, take: 100 }),
+    prisma.adminUser.findMany({ where: { active: true, role: "admin", tenant: { active: true } }, select: { tenantId: true }, take: 2 }),
   ]);
+  const canonical = process.env.SITE_URL?.trim();
+  const host = canonical ? new URL(canonical).hostname.toLowerCase().replace(/^www\\./, "") : null;
+  const domain = host ? domains.find(d => d.hostname.toLowerCase().replace(/^www\\./, "") === host) : null;
+  const installationId = validateStandaloneSnapshot({
+    activeOrganizationIds: activeOrganizations.map(t => t.id),
+    domainOrganizationId: domain?.tenantId ?? null,
+    domainOrganizationActive: domain?.tenant.active ?? false,
+    adminOrganizationId: admin.length === 1 ? admin[0].tenantId : null,
+  });
   console.log(JSON.stringify({
     database: "postgresql",
     connectivity: "ok",
     organizations: total,
-    activeOrganizations: active,
+    activeOrganizations: activeOrganizations.length,
     registeredDomains: domains.map(d => d.hostname),
-    installationReady: active === 1,
+    installationReady: Boolean(installationId),
   }, null, 2));
-  if (active !== 1) {
-    throw new Error("Standalone installation needs exactly one active organization; finish the installer before opening public pages.");
+  if (!installationId) {
+    throw new Error("Standalone installation requires one active organization, canonical SITE_URL domain and one active administrator.");
   }
 }
 main().catch(error => {
