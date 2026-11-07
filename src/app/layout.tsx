@@ -2,6 +2,7 @@ import type {Metadata,Viewport} from "next";
 import {headers} from "next/headers";
 import {hasDatabaseConfig} from "@/lib/server-config";
 import {tenantFromHost} from "@/lib/tenant";
+import {getStandaloneSiteConfig} from "@/lib/standalone/repositories";
 import "./globals.css";
 import "./styles/legacy/admin-shell.css";
 import "./styles/templates/nexus-public.css";
@@ -22,6 +23,17 @@ export const viewport:Viewport={width:"device-width",initialScale:1,viewportFit:
 /** Metadata is always resolved by the current site host, never from NEXUS constants. */
 export async function generateMetadata():Promise<Metadata>{
  const fallback:Metadata={title:{default:"NEXUS Inmobiliaria",template:"%s | NEXUS"},description:"Catálogo inmobiliario, propiedades en venta y alquiler."};
+ if(process.env.NEXUS_STANDALONE_MODE==="true"){
+  try{
+   const site=await getStandaloneSiteConfig();
+   if(!site)return fallback;
+   const name=site.name||"NEXUS Inmobiliaria";
+   return {title:{default:name,template:"%s | "+name},description:site.tagline||fallback.description};
+  }catch(error){
+   console.error("Standalone metadata unavailable",error);
+   return fallback;
+  }
+ }
  if(!hasDatabaseConfig())return fallback;
  const host=(await headers()).get("host")||"";
  const match=await tenantFromHost(host);
