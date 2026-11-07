@@ -1,3 +1,4 @@
+import {redirect} from "next/navigation";
 import Link from "next/link";
 import {House,Users,Eye,MessageCircle,ArrowUpRight,Plus} from "lucide-react";
 import {requireAdmin} from "@/lib/auth";
@@ -11,6 +12,7 @@ import {getTenantModules} from "@/lib/tenant-modules";
 export const dynamic="force-dynamic";
 const days=14;
 export default async function Dashboard(){
+ if(process.env.NEXUS_STANDALONE_MODE==="true")redirect("/standalone/admin");
  const admin=await requireAdmin(),tenantId=admin.tenantId;
  const modules=await getTenantModules(tenantId);
  if(!modules.includes("properties"))return <section className="admin-panel">
