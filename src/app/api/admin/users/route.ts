@@ -1,5 +1,6 @@
 import {NextRequest,NextResponse} from "next/server";
 import {prisma} from "@/lib/prisma";
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {currentAdmin,hashPassword} from "@/lib/auth";
 import {isUserRole,parseRoles,serializeRoles} from "@/lib/roles";
 import {validMutationOrigin} from "@/lib/admin-property-request";
@@ -14,6 +15,43 @@ export async function POST(req:NextRequest){
  let form:FormData;
  try{form=await req.formData();}catch{return redirect(req,"datos");}
  const intent=String(form.get("intent")||"");
+ if(process.env.NEXUS_STANDALONE==="true"){
+  const db=getStandalonePrisma();
+  if(intent==="create"){
+   const name=String(form.get("name")||"").trim().slice(0,120);
+   const email=String(form.get("email")||"").trim().toLowerCase().slice(0,180);
+   const password=String(form.get("password")||"");
+   const roles=form.getAll("roles").map(String);
+   if(name.length<2||!/^\\S+@\\S+\\.\\S+$/.test(email)||password.length<12||password.length>256||password!==String(form.get("confirmPassword")||"")||!/[a-z]/i.test(password)||!/\\d/.test(password)||!roles.length||roles.length!==new Set(roles).size||!roles.every(isUserRole))return redirect(req,"datos");
+   try{await db.adminUser.create({data:{name,email,role:serializeRoles(roles),passwordHash:hashPassword(password),active:true}});}
+   catch{return redirect(req,"duplicado");}
+   return redirect(req,"creado");
+  }
+  const id=String(form.get("id")||"");
+  if(!id||id.length>100)return redirect(req,"datos");
+  const target=await db.adminUser.findUnique({where:{id}});
+  if(!target)return redirect(req,"datos");
+  if(intent==="profile"){
+   const name=String(form.get("name")||"").trim();
+   const email=String(form.get("email")||"").trim().toLowerCase();
+   if(name.length<2||name.length>120||email.length>180||!/^\\S+@\\S+\\.\\S+$/.test(email))return redirect(req,"datos");
+   try{await db.adminUser.update({where:{id},data:{name,email}});await db.adminSession.deleteMany({where:{userId:id}});return redirect(req,"perfil");}
+   catch{return redirect(req,"duplicado");}
+  }
+  if(intent!=="role"&&intent!=="toggle")return redirect(req,"datos");
+  if(target.id===admin.userId)return redirect(req,"propia");
+  const roles=form.getAll("roles").map(String);
+  if(intent==="role"&&(!roles.length||roles.length!==new Set(roles).size||!roles.every(isUserRole)))return redirect(req,"datos");
+  const losingAdmin=parseRoles(target.role).includes("admin")&&(intent==="toggle"?target.active:!roles.includes("admin"));
+  if(losingAdmin&&target.active){
+   const active=await db.adminUser.findMany({where:{active:true},select:{role:true}});
+   if(active.filter(u=>parseRoles(u.role).includes("admin")).length<=1)return redirect(req,"ultimo");
+  }
+  await db.adminUser.update({where:{id},data:intent==="role"?{role:serializeRoles(roles)}:{active:!target.active}});
+  await db.adminSession.deleteMany({where:{userId:id}});
+  return redirect(req,"guardado");
+ }
+
  if(intent==="create"){
   const name=String(form.get("name")||"").trim().slice(0,120);
   const email=String(form.get("email")||"").trim().toLowerCase().slice(0,180);
