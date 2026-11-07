@@ -32,7 +32,7 @@ export default async function DiagnosticsPage(){
   {name:"Consulta PostgreSQL / SQL",ok:!databaseError&&Boolean(activeTenant)},
   {name:"Organización activa única",ok:activeTenant===admin.tenantId},
   {name:"Dominio público identificado",ok:Boolean(host)},
-  {name:"Dominio público autorizado",ok:allowed},
+  {name:"Coincidencia del dominio (informativo; no bloquea páginas)",ok:allowed},
   {name:"Página Home disponible",ok:pages.some(p=>p.id==="home"&&p.published)},
  ];
  return <main style={{maxWidth:850,margin:"40px auto",padding:24,fontFamily:"system-ui"}}>
@@ -42,6 +42,7 @@ export default async function DiagnosticsPage(){
   <p>Origen público identificado: <strong>{host||"No identificado"}</strong></p>
   <p>SITE_URL: <strong>{configured?"Configurada":"No configurada"}</strong></p>
   <p>Dominios registrados: <strong>{domains.length}</strong></p>
+  <p>Modo: instalación independiente. La organización se obtiene de PostgreSQL y no del dominio de acceso.</p>
   <h2>Comprobaciones</h2>
   <ul>{checks.map(c=><li key={c.name} style={{padding:8,color:c.ok?"#176a3a":"#a12626"}}>{c.ok?"✓":"✗"} {c.name}</li>)}</ul>
   <h2>Páginas públicas</h2>
