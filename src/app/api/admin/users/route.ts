@@ -23,7 +23,7 @@ export async function POST(req:NextRequest){
    const password=String(form.get("password")||"");
    const roles=form.getAll("roles").map(String);
    if(name.length<2||!/^\\S+@\\S+\\.\\S+$/.test(email)||password.length<12||password.length>256||password!==String(form.get("confirmPassword")||"")||!/[a-z]/i.test(password)||!/\\d/.test(password)||!roles.length||roles.length!==new Set(roles).size||!roles.every(isUserRole))return redirect(req,"datos");
-   try{await db.adminUser.create({data:{name,email,role:serializeRoles(roles),passwordHash:hashPassword(password),active:true}});}
+   try{await db.adminUser.create({data:{name,email,role:serializeRoles(roles.filter(isUserRole)),passwordHash:hashPassword(password),active:true}});}
    catch{return redirect(req,"duplicado");}
    return redirect(req,"creado");
   }
@@ -47,7 +47,7 @@ export async function POST(req:NextRequest){
    const active=await db.adminUser.findMany({where:{active:true},select:{role:true}});
    if(active.filter(u=>parseRoles(u.role).includes("admin")).length<=1)return redirect(req,"ultimo");
   }
-  await db.adminUser.update({where:{id},data:intent==="role"?{role:serializeRoles(roles)}:{active:!target.active}});
+  await db.adminUser.update({where:{id},data:intent==="role"?{role:serializeRoles(roles.filter(isUserRole))}:{active:!target.active}});
   await db.adminSession.deleteMany({where:{userId:id}});
   return redirect(req,"guardado");
  }
