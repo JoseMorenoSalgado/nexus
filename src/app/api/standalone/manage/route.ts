@@ -21,6 +21,7 @@ export async function POST(request:Request){
  const body:Record<string,unknown>=await request.json().catch(()=>({}));
  const action=text(body.action,40);
  const db=standalonePrisma();
+ const requestId=crypto.randomUUID();
  try{
   if(action==="property.create"||action==="property.update"||action==="property.delete"||action==="property.photo.add"||action==="property.photo.delete"){
    if(!canEditProperties(JSON.stringify(admin.roles)))return fail(403,"Forbidden");
@@ -64,11 +65,14 @@ export async function POST(request:Request){
    }
    const slug=text(body.slug,150).toLowerCase();
    if(!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug))return fail(400,"Invalid slug");
+   const duplicate=await db.property.findUnique({where:{slug},select:{id:true}});
+   if(duplicate)return fail(409,"Ya existe una propiedad con esa URL. Utiliza un slug diferente.");
    const property=await db.$transaction(async tx=>{
     const seq=await tx.propertySequence.update({where:{id:"main"},data:{nextNumber:{increment:1}}});
     return tx.property.create({data:{...data,slug,refCode:seq.prefix+"-"+String(seq.nextNumber).padStart(5,"0")}});
    });
-   return NextResponse.json({item:property},{status:201});
+   console.info("[standalone.property.create] saved",{requestId,propertyId:property.id,published:property.published});
+   return NextResponse.json({ok:true,requestId,property:{id:property.id,slug:property.slug,refCode:property.refCode,published:property.published}},{status:201});
   }
   if(action==="lead.create"||action==="lead.update"){
    if(!canManageLeads(JSON.stringify(admin.roles)))return fail(403,"Forbidden");
@@ -123,7 +127,10 @@ export async function POST(request:Request){
   }
   return fail(400,"Unknown action");
  }catch(error){
-  console.error("Standalone write failure",error instanceof Error?error.name:"unknown");
-  return fail(409,"Operation could not be completed");
+  const code=error&&typeof error==="object"&&"code" in error?String(error.code):"unknown";
+  console.error("[standalone.manage] write failure",{requestId,action,code,error});
+  if(code==="P2002")return NextResponse.json({error:"Ya existe un registro con ese identificador. Verifica la URL de la propiedad.",requestId},{status:409});
+  if(code==="P2025")return NextResponse.json({error:"Falta un registro necesario para completar la operación. Revisa la configuración inicial.",requestId},{status:409});
+  return NextResponse.json({error:"No se pudo completar la operación. Comunica la referencia al soporte.",requestId},{status:500});
  }
 }
