@@ -1,4 +1,5 @@
 import Link from "next/link";
+import {redirect} from "next/navigation";
 import {requireAdmin} from "@/lib/auth";
 import {AdminNav} from "@/components/admin-nav";
 import {Building2} from "lucide-react";
@@ -9,6 +10,7 @@ import {hasSiteAsset} from "@/lib/site-assets";
 import {isNexusBrandName} from "@/lib/site-presentation";
 export const dynamic="force-dynamic";
 export default async function DashboardLayout({children}:{children:React.ReactNode}){
+ if(process.env.NEXUS_STANDALONE_MODE==="true")redirect("/standalone/admin");
  const admin=await requireAdmin();
  const template=await getSiteTemplate(admin.tenantId);
  const modules=await getTenantModules(admin.tenantId,template.key);
