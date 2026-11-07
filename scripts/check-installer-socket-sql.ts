@@ -44,6 +44,8 @@ try {
 }
 main().catch(error=>{
   const code=error && typeof error === 'object' && 'code' in error ? String(error.code) : 'unknown';
-  console.error('PostgreSQL socket integration failed:', {code,errorType:error instanceof Error ? error.name : 'unknown'});
+  const message=error instanceof Error ? error.message : String(error);
+  const safeMessage=message.replace(/postgresql:\/\/[^\s]+/gi,'[database URL redacted]').replace(/ci_socket_only_password/g,'[redacted]');
+  console.error('PostgreSQL socket integration failed:', {code,errorType:error instanceof Error ? error.name : 'unknown',message:safeMessage.slice(0,1200)});
   process.exitCode=1;
 });
