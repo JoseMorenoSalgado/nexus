@@ -1,5 +1,6 @@
 "use client";
 import {useState} from "react";
+import {useRouter} from "next/navigation";
 import Link from "next/link";
 type Property={id:string;title:string;slug:string;city:string;neighborhood:string;type:string;operation:string;price:number;description:string;published:boolean;assignedAgentId:string;bedrooms:number;bathrooms:number;areaM2:number;photos:{id:string;url:string}[]};
 type Lead={id:string;name:string;status:string;assignedAgentId:string};
@@ -23,6 +24,7 @@ const fields:Record<Kind,ReturnType<typeof field>[]> ={
 const kinds:Kind[]=["property.create","property.update","property.delete","property.photo.add","property.photo.delete","lead.create","lead.update","lead.assign","agenda.create","agenda.update","agent.create"];
 const labels=["Crear propiedad","Editar propiedad","Eliminar propiedad","Añadir fotografía","Eliminar fotografía","Crear prospecto","Cambiar estado CRM","Asignar agente al prospecto","Crear cita","Editar cita","Crear agente"];
 export function StandaloneOperations({properties,leads,agents,agenda}:{properties:Property[];leads:Lead[];agents:Agent[];agenda:Agenda[]}){
+ const router=useRouter();
  const [kind,setKind]=useState<Kind>("property.create"),[selected,setSelected]=useState(""),[message,setMessage]=useState(""),[busy,setBusy]=useState(false);
  const property=properties.find(p=>p.id===selected);
  const lead=leads.find(l=>l.id===selected);
@@ -44,7 +46,10 @@ export function StandaloneOperations({properties,leads,agents,agenda}:{propertie
    const response=await fetch("/api/standalone/manage",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
    const result=await response.json();
    setMessage(response.ok?"Operación guardada correctamente.":"Error: "+String(result.error||"No se pudo guardar"));
-   if(response.ok)window.location.reload();
+   if(response.ok){
+    // Refresh server data without a full document navigation or losing client state.
+    router.refresh();
+   }
   }catch{setMessage("No se pudo conectar con el servidor");}finally{setBusy(false);}
  }
  return <section className="mt-8 max-w-3xl">
