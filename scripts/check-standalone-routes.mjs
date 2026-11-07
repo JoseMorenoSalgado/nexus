@@ -23,7 +23,7 @@ const checks=[
  ["Standalone repositories read standalone Prisma",standaloneRepositories.includes("standalonePrisma()")],
  ["Standalone dashboard requires independent auth",standaloneAdmin.includes("requireStandaloneRole(")],
  ["Standalone operations require independent auth",standaloneOperations.includes("requireStandaloneRole(")],
- ["Standalone public and admin modules do not reference tenantId",![publicContext,standaloneRepositories,standaloneAdmin,standaloneOperations].some(source=>/\\btenantId\\b/.test(source))],
+ ["Standalone public and admin modules do not reference tenantId",![publicContext,standaloneRepositories,standaloneAdmin,standaloneOperations].some(source=>/\btenantId\b/.test(source))],
  ["Canonical home renders standalone content",home.includes("<StandaloneHome/>")],
  ["Canonical catalog renders standalone content",catalog.includes("<StandaloneCatalog")],
  ["Canonical property detail renders standalone content",detail.includes("<StandaloneProperty")],
