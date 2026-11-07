@@ -9,3 +9,13 @@ export function engineFromUrl(url:string):DatabaseEngine{
 export function prismaSchemaFor(engine:DatabaseEngine){
  return engine==="postgresql"?"prisma/schema.postgres.prisma":"prisma/schema.prisma";
 }
+
+/**
+ * Schema for a fresh independent installation.
+ * Legacy installations continue to use prismaSchemaFor until their
+ * runtime queries and migrations have been converted.
+ */
+export function standalonePrismaSchemaFor(engine:DatabaseEngine){
+ if(engine!=="postgresql")throw new Error("Nexus independiente requiere PostgreSQL");
+ return "prisma/schema.standalone.postgres.prisma";
+}
