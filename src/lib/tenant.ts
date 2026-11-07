@@ -1,5 +1,6 @@
 import {headers} from "next/headers";
 import {reportPublicDiagnostic} from "@/lib/site-diagnostics";
+import {isAllowedPublicHost} from "@/lib/public-site/host-match";
 import {publicPageHostname} from "@/lib/public-request-origin";
 import {notFound,redirect} from "next/navigation";
 import {hasDatabaseConfig} from "@/lib/server-config";
@@ -18,8 +19,16 @@ export async function standaloneOrganization(){
  const tenant=await prisma.tenant.findUnique({where:{id:tenantId},select:{id:true,name:true,tagline:true,whatsapp:true,logoUrl:true,contactEmail:true,primaryColor:true,active:true}});
  return tenant?.active?{tenantId,tenant}:null;
 }
-/** Compatibility for existing metadata/API callers; hostname does not select a tenant. */
-export async function tenantFromHost(_hostname:string){return standaloneOrganization();}
+/** Host-validated access for documents, API resources and other existing callers. */
+export async function tenantFromHost(hostname:string){
+ const resolved=await standaloneOrganization();
+ if(!resolved)return null;
+ const configured=(process.env.SITE_URL||process.env.APP_URL||process.env.NEXT_PUBLIC_SITE_URL||"").trim();
+ const requested=canonicalHost(hostname);
+ if(!requested)return null;
+ const domains=configured?[]:await prisma.domain.findMany({where:{tenantId:resolved.tenantId},select:{hostname:true},take:100});
+ return isAllowedPublicHost(requested,configured,domains.map(d=>d.hostname))?resolved:null;
+}
 export async function getPublicContext(options:{loadProperties?:boolean}={}):Promise<{tenant:PublicTenant;properties:PublicProperty[];demo:boolean;settings:SiteSettings;heroImage:boolean}>{
  const h=await headers();
  const hostname=publicPageHostname(h)||"";
