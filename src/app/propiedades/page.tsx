@@ -1,3 +1,4 @@
+import {redirect} from "next/navigation";
 import Link from "next/link";
 import type {Metadata} from "next";
 import {ArrowUpRight,Search,SlidersHorizontal,Building2,X} from "lucide-react";
@@ -17,6 +18,7 @@ export const dynamic="force-dynamic";
 export const metadata:Metadata={title:"Propiedades",description:"Explora inmuebles disponibles para compra o alquiler en Nicaragua."};
 type Filters={operacion?:string;tipo?:string;ubicacion?:string;pagina?:string;orden?:string;precioMin?:string;precioMax?:string;ciudad?:string;codigo?:string};
 export default async function Catalog({searchParams}:{searchParams:Promise<Filters>}){
+ if(process.env.NEXUS_STANDALONE_MODE==="true")redirect("/standalone");
  const raw=await searchParams;
  const orden:CatalogSort=raw.orden==="precio-asc"||raw.orden==="precio-desc"?raw.orden:"recientes";
  const parsePrice=(value:unknown)=>typeof value==="string"&&/^\d{1,10}(?:\.\d{1,2})?$/.test(value)&&Number(value)<=9999999999?Number(value):undefined;
