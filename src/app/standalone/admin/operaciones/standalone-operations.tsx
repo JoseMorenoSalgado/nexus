@@ -1,6 +1,7 @@
 "use client";
 import {useState} from "react";
 import Link from "next/link";
+import {useRouter} from "next/navigation";
 type Property={id:string;title:string;slug:string;city:string;neighborhood:string;type:string;operation:string;price:number;description:string;published:boolean;assignedAgentId:string;bedrooms:number;bathrooms:number;areaM2:number;photos:{id:string;url:string}[]};
 type Lead={id:string;name:string;status:string;assignedAgentId:string};
 type Agent={id:string;name:string};
@@ -24,6 +25,7 @@ const fields:Record<Kind,ReturnType<typeof field>[]> ={
 const kinds:Kind[]=["property.create","property.update","property.delete","property.photo.add","property.photo.delete","lead.create","lead.update","lead.assign","agenda.create","agenda.update","agent.create","user.create"];
 const labels=["Crear propiedad","Editar propiedad","Eliminar propiedad","Añadir fotografía","Eliminar fotografía","Crear prospecto","Cambiar estado CRM","Asignar agente al prospecto","Crear cita","Editar cita","Crear agente","Crear usuario"];
 export function StandaloneOperations({properties,leads,agents,agenda}:{properties:Property[];leads:Lead[];agents:Agent[];agenda:Agenda[]}){
+ const router=useRouter();
  const [kind,setKind]=useState<Kind>("property.create"),[selected,setSelected]=useState(""),[message,setMessage]=useState(""),[busy,setBusy]=useState(false);
  const [createdProperty,setCreatedProperty]=useState<{slug:string;refCode:string;published:boolean}|null>(null);
  const property=properties.find(p=>p.id===selected);
@@ -55,8 +57,9 @@ export function StandaloneOperations({properties,leads,agents,agenda}:{propertie
      setMessage(created.published===true?"Propiedad creada y publicada correctamente.":"Propiedad creada correctamente en borrador.");
     }else setMessage("La solicitud se completó, pero no se recibió la confirmación de la propiedad.");
    }else setMessage("Operación guardada correctamente.");
-   // Do not trigger a new React server render as part of the mutation.
-   // A separate explicit refresh lets users keep the successful save confirmation.
+   // Refresh server-provided lists after a successful mutation, without
+   // navigating away from the form or discarding its local confirmation.
+   router.refresh();
   }catch(error){console.error("[NEXUS] Error en formulario de gestión",error);setMessage("No se pudo procesar la respuesta del servidor. Revisa la consola y los logs de Enhance.");}finally{setBusy(false);}
  }
  return <section className="mt-8 max-w-3xl">
