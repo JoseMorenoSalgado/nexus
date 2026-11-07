@@ -6,9 +6,13 @@ const home=read("src/app/page.tsx");
 const catalog=read("src/app/propiedades/page.tsx");
 const detail=read("src/app/propiedades/[slug]/page.tsx");
 const api=read("src/app/api/standalone/manage/route.ts");
+const layout=read("src/app/layout.tsx");
+const adminLayout=read("src/app/admin/(panel)/layout.tsx");
 const auth=read("src/lib/standalone/auth.ts");
 const db=read("src/lib/standalone/db.ts");
 const checks=[
+ ["Standalone metadata reads independent site config",layout.includes("getStandaloneSiteConfig()")],
+ ["Legacy admin layout short circuits tenant lookup",adminLayout.indexOf('redirect("/standalone/admin")')<adminLayout.indexOf("requireAdmin()")],
  ["Canonical home renders standalone content",home.includes("<StandaloneHome/>")],
  ["Canonical catalog renders standalone content",catalog.includes("<StandaloneCatalog")],
  ["Canonical property detail renders standalone content",detail.includes("<StandaloneProperty")],
