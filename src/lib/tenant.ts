@@ -1,4 +1,5 @@
 import {headers} from "next/headers";
+import {reportPublicDiagnostic} from "@/lib/site-diagnostics";
 import {isAllowedPublicHost} from "@/lib/public-site/host-match";
 import {publicPageHostname} from "@/lib/public-request-origin";
 import {notFound,redirect} from "next/navigation";
@@ -34,18 +35,19 @@ export async function getPublicContext(options:{loadProperties?:boolean}={}):Pro
  if(!hasDatabaseConfig()){
    if(preview)return demoContext;
    if(process.env.NODE_ENV!=="production")return demoContext;
+   reportPublicDiagnostic("PUBLIC_DATABASE_MISSING",{path:"public"});
    redirect("/instalar");
  }
  let d:Awaited<ReturnType<typeof tenantFromHost>>;
  try{d=await tenantFromHost(hostname);}
  catch(error){
-   if(!preview)throw error;
+   if(!preview){reportPublicDiagnostic("PUBLIC_CONTEXT_EXCEPTION",{errorType:error instanceof Error?error.name:"unknown"});throw error;}
    console.warn("Preview mode: database not ready");
    return demoContext;
  }
  if(!d){
    if(preview)return demoContext;
-   console.error("[public-site] Site unavailable: verify SITE_URL, canonical hostname, and exactly one active standalone organization. No tenant data was exposed.");
+   reportPublicDiagnostic(hostname?"PUBLIC_TENANT_REJECTED":"PUBLIC_HOST_UNRESOLVED",{siteUrlConfigured:Boolean((process.env.SITE_URL||process.env.APP_URL||process.env.NEXT_PUBLIC_SITE_URL||"").trim()),hostResolved:Boolean(hostname)});
    notFound();
  }
  const [props,settings,heroImage,customLogo]=await Promise.all([
