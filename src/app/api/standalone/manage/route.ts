@@ -63,8 +63,11 @@ export async function POST(request:Request){
     const property=await db.property.update({where:{id},data});
     return NextResponse.json({ok:true,item:{id:property.id,slug:property.slug,refCode:property.refCode,published:property.published}});
    }
-   const slug=text(body.slug,150).toLowerCase();
-   if(!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug))return fail(400,"Invalid slug");
+   // Allow a human-readable title to generate the public slug automatically.
+   // The uniqueness constraint below remains the final concurrency guard.
+   const normalizeSlug=(value:string)=>value.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,150).replace(/-+$/,"");
+   const slug=normalizeSlug(text(body.slug,150)||title);
+   if(!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug))return fail(400,"No se pudo generar una URL válida para la propiedad");
    // The public URL must never collide with another published or draft property.
    // Unique constraints still enforce this under concurrent requests.
    const duplicate=await db.property.findUnique({where:{slug},select:{id:true}});
