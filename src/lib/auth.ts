@@ -47,12 +47,16 @@ export async function requireAdmin(){
 }
 export async function startSession(userId:string){
  const raw=randomBytes(32).toString("hex");
- await (process.env.NEXUS_STANDALONE==="true"?getStandalonePrisma():prisma).adminSession.create({data:{userId,tokenHash:tokenHash(raw),expiresAt:new Date(Date.now()+sessionHours*3600e3)}});
+ if(process.env.NEXUS_STANDALONE==="true")await getStandalonePrisma().adminSession.create({data:{userId,tokenHash:tokenHash(raw),expiresAt:new Date(Date.now()+sessionHours*3600e3)}});
+ else await prisma.adminSession.create({data:{userId,tokenHash:tokenHash(raw),expiresAt:new Date(Date.now()+sessionHours*3600e3)}});
  (await cookies()).set(cookieName,raw,{httpOnly:true,secure:process.env.NODE_ENV==="production",sameSite:"lax",path:"/",maxAge:sessionHours*3600});
 }
 export async function destroySession(){
  const jar=await cookies(),raw=jar.get(cookieName)?.value;
- if(raw)await (process.env.NEXUS_STANDALONE==="true"?getStandalonePrisma():prisma).adminSession.deleteMany({where:{tokenHash:tokenHash(raw)}});
+ if(raw){
+  if(process.env.NEXUS_STANDALONE==="true")await getStandalonePrisma().adminSession.deleteMany({where:{tokenHash:tokenHash(raw)}});
+  else await prisma.adminSession.deleteMany({where:{tokenHash:tokenHash(raw)}});
+ }
  jar.delete(cookieName);
 }
 
