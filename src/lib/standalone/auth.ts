@@ -9,7 +9,6 @@ import {parseRoles,primaryRole} from "@/lib/roles";
  * Authentication for NEW standalone PostgreSQL installations.
  * Separate from the production auth module until all Prisma consumers migrate.
  */
-const prisma = standalonePrisma();
 const cookieName = "webappecloud_session";
 const sessionHours = 24;
 const tokenHash = (value:string) => createHash("sha256").update(value).digest("hex");
@@ -17,7 +16,7 @@ const tokenHash = (value:string) => createHash("sha256").update(value).digest("h
 export async function currentStandaloneAdmin(){
  const raw=(await cookies()).get(cookieName)?.value;
  if(!raw||!/^[a-f0-9]{64}$/.test(raw))return null;
- const session=await prisma.adminSession.findUnique({
+ const session=await standalonePrisma().adminSession.findUnique({
   where:{tokenHash:tokenHash(raw)},
   select:{expiresAt:true,user:{select:{id:true,name:true,email:true,role:true,active:true}}}
  });
@@ -37,13 +36,13 @@ export async function requireStandaloneRole(allowed:string[]){
 }
 export async function startStandaloneSession(userId:string){
  const raw=randomBytes(32).toString("hex");
- await prisma.adminSession.create({data:{userId,tokenHash:tokenHash(raw),expiresAt:new Date(Date.now()+sessionHours*3600_000)}});
+ await standalonePrisma().adminSession.create({data:{userId,tokenHash:tokenHash(raw),expiresAt:new Date(Date.now()+sessionHours*3600_000)}});
  (await cookies()).set(cookieName,raw,{httpOnly:true,secure:process.env.NODE_ENV==="production",sameSite:"lax",path:"/",maxAge:sessionHours*3600});
 }
 export async function destroyStandaloneSession(){
  const jar=await cookies();
  const raw=jar.get(cookieName)?.value;
- if(raw)await prisma.adminSession.deleteMany({where:{tokenHash:tokenHash(raw)}});
+ if(raw)await standalonePrisma().adminSession.deleteMany({where:{tokenHash:tokenHash(raw)}});
  jar.delete(cookieName);
 }
 export function verifyStandalonePassword(password:string,stored:string){
