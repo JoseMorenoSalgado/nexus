@@ -81,8 +81,17 @@ export async function POST(request:Request){
     if(!name||!phone)return fail(400,"Name and phone required");
     const propertyId=text(body.propertyId,80)||null;
     if(propertyId&&!await db.property.findUnique({where:{id:propertyId},select:{id:true}}))return fail(400,"Unknown property");
-    const item=await db.lead.create({data:{name,phone,propertyId,email:text(body.email,254)||null,message:text(body.message,5000)||null,source:"admin",consent:body.consent===true}});
-    return NextResponse.json({item},{status:201});
+    const email=text(body.email,254).toLowerCase();
+    if(email&&!/^\S+@\S+\.\S+$/.test(email))return fail(400,"Correo electrónico inválido");
+    const agentId=text(body.assignedAgentId,80)||null;
+    if(agentId&&!await db.adminUser.findFirst({where:{id:agentId,active:true},select:{id:true}}))return fail(400,"Agente desconocido");
+    const status=text(body.status,40)||"nuevo";
+    if(!["nuevo","contactado","seguimiento","cerrado","descartado"].includes(status))return fail(400,"Estado CRM inválido");
+    const item=await db.lead.create({
+     data:{name,phone,propertyId,assignedAgentId:agentId,email:email||null,message:text(body.message,5000)||null,source:"admin",consent:body.consent===true,crm:{create:{status}}},
+     select:{id:true,name:true,phone:true,email:true,propertyId:true,assignedAgentId:true,crm:{select:{status:true}}}
+    });
+    return NextResponse.json({ok:true,item},{status:201});
    }
    const id=text(body.id,80),status=text(body.status,40);
    if(!["nuevo","contactado","seguimiento","cerrado","descartado"].includes(status))return fail(400,"Invalid status");
