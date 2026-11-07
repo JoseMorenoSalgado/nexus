@@ -2,7 +2,7 @@
 import {useState} from "react";
 type Kind="property.create"|"lead.create"|"agenda.create"|"agent.create";
 const fields:Record<Kind,{name:string;label:string;type?:string}[]>={
- "property.create":[{name:"title",label:"Título"},{name:"slug",label:"URL (slug)"},{name:"city",label:"Ciudad"},{name:"type",label:"Tipo"},{name:"operation",label:"Operación: venta o alquiler"},{name:"price",label:"Precio",type:"number"},{name:"description",label:"Descripción"}],
+ "property.create":[{name:"title",label:"Título"},{name:"slug",label:"URL (slug)"},{name:"city",label:"Ciudad"},{name:"neighborhood",label:"Sector"},{name:"type",label:"Tipo"},{name:"operation",label:"Operación: venta o alquiler"},{name:"price",label:"Precio",type:"number"},{name:"description",label:"Descripción"}],
  "lead.create":[{name:"name",label:"Nombre"},{name:"phone",label:"Teléfono"},{name:"email",label:"Correo",type:"email"},{name:"propertyId",label:"ID de propiedad (opcional)"}],
  "agenda.create":[{name:"leadId",label:"ID del prospecto"},{name:"title",label:"Título"},{name:"startsAt",label:"Fecha y hora",type:"datetime-local"},{name:"location",label:"Lugar"}],
  "agent.create":[{name:"name",label:"Nombre"},{name:"email",label:"Correo",type:"email"},{name:"password",label:"Contraseña (12 caracteres mínimo)",type:"password"}]
@@ -31,9 +31,10 @@ export function StandaloneOperations(){
   </label>
   <form key={kind} action={submit} className="mt-6 flex flex-col gap-4">
    {fields[kind].map(field=><label key={field.name} className="block">{field.label}
-    <input name={field.name} type={field.type||"text"} required={!["description","email","propertyId","location"].includes(field.name)}
+    <input name={field.name} type={field.type||"text"} required={!["description","email","propertyId","location","neighborhood"].includes(field.name)}
      className="mt-1 block w-full rounded border p-3" minLength={field.name==="password"?12:undefined}/>
    </label>)}
+   {kind==="property.create"&&<label className="block"><input type="checkbox" name="published" className="mr-2"/> Publicar propiedad en el sitio web</label>}
    <button disabled={busy} className="rounded bg-black p-3 text-white disabled:opacity-50" type="submit">{busy?"Guardando…":"Guardar"}</button>
   </form>
   {message&&<p role="status" className="mt-4">{message}</p>}
