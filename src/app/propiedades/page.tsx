@@ -1,4 +1,4 @@
-import {redirect} from "next/navigation";
+import StandaloneCatalog from "../standalone/propiedades/page";
 import Link from "next/link";
 import type {Metadata} from "next";
 import {ArrowUpRight,Search,SlidersHorizontal,Building2,X} from "lucide-react";
@@ -19,7 +19,7 @@ export const metadata:Metadata={title:"Propiedades",description:"Explora inmuebl
 type Filters={operacion?:string;tipo?:string;ubicacion?:string;pagina?:string;orden?:string;precioMin?:string;precioMax?:string;ciudad?:string;codigo?:string};
 export default async function Catalog({searchParams}:{searchParams:Promise<Filters>}){
  const raw=await searchParams;
- if(process.env.NEXUS_STANDALONE_MODE==="true")redirect("/standalone/propiedades?"+new URLSearchParams(Object.entries(raw).filter((entry):entry is [string,string]=>typeof entry[1]==="string")).toString());
+ if(process.env.NEXUS_STANDALONE_MODE==="true")return <StandaloneCatalog searchParams={Promise.resolve(raw)}/>;
  const orden:CatalogSort=raw.orden==="precio-asc"||raw.orden==="precio-desc"?raw.orden:"recientes";
  const parsePrice=(value:unknown)=>typeof value==="string"&&/^\d{1,10}(?:\.\d{1,2})?$/.test(value)&&Number(value)<=9999999999?Number(value):undefined;
  const rawMin=parsePrice(raw.precioMin),rawMax=parsePrice(raw.precioMax);
