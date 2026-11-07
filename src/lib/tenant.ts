@@ -6,6 +6,7 @@ import {notFound,redirect} from "next/navigation";
 import {hasDatabaseConfig} from "@/lib/server-config";
 import {isPreviewHost,normalizeSiteHost} from "@/lib/preview";
 import {prisma} from "@/lib/prisma";
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {singleInstallationTenantId} from "@/lib/single-installation";
 import {demoTenant,demoProperties,type PublicTenant,type PublicProperty} from "@/lib/demo";
 import {getSiteSettings,DEFAULT_SITE_SETTINGS,type SiteSettings} from "@/lib/site-settings";
@@ -39,6 +40,27 @@ export async function getPublicContext(options:{loadProperties?:boolean}={}):Pro
    if(process.env.NODE_ENV!=="production")return demoContext;
    reportPublicDiagnostic("PUBLIC_DATABASE_MISSING",{path:"public"});
    redirect("/instalar");
+ }
+ if(process.env.NEXUS_STANDALONE==="true"){
+  const db=getStandalonePrisma();
+  const site=await db.siteConfig.findUnique({where:{id:"main"}});
+  if(!site){
+   reportPublicDiagnostic("PUBLIC_SITE_CONFIG_MISSING",{path:"public"});
+   notFound();
+  }
+  const [props,settings]=await Promise.all([
+   options.loadProperties===false?Promise.resolve([]):db.property.findMany({where:{published:true},select:{id:true,slug:true,refCode:true,title:true,description:true,city:true,neighborhood:true,type:true,operation:true,price:true,bedrooms:true,bathrooms:true,areaM2:true,featured:true,photos:{orderBy:{sortOrder:"asc"},select:{url:true}}},orderBy:{createdAt:"desc"}}),
+   getSiteSettings("main")
+  ]);
+  const prioritized=[...props].sort((a,b)=>{
+   const rank=(id:string)=>{const i=settings.featuredIds.indexOf(id);return i===-1?999:i;};
+   return rank(a.id)-rank(b.id)||Number(b.featured)-Number(a.featured);
+  });
+  return {tenant:{id:"main",name:site.name,tagline:site.tagline||"",whatsapp:site.whatsapp||"",logoUrl:site.logoUrl||"",contactEmail:site.contactEmail||"",primaryColor:site.primaryColor||"#CB2027"},demo:false,settings,heroImage:false,properties:prioritized.map(p=>({
+   id:p.id,slug:p.slug,refCode:p.refCode,title:p.title,description:p.description,city:p.city,neighborhood:p.neighborhood||"",type:p.type,
+   operation:p.operation==="alquiler"?"alquiler" as const:"venta" as const,price:Number(p.price),
+   bedrooms:p.bedrooms||0,bathrooms:p.bathrooms||0,areaM2:p.areaM2||0,image:p.photos[0]?.url||"",photos:p.photos.map(x=>x.url)
+  }))};
  }
  let d:Awaited<ReturnType<typeof tenantFromHost>>;
  try{d=await standaloneOrganization();}
