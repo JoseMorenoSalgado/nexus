@@ -43,6 +43,7 @@ export function StandaloneOperations({properties,leads,agents,agenda}:{propertie
    if(kind==="property.photo.delete")body.photoId=String(form.get("photoId")||"");
    if(kind==="property.update"||kind==="property.create")body.published=form.has("published");
    if(kind==="agenda.create")body.leadId=String(form.get("leadId")||"");
+   if(kind==="lead.create")body.consent=form.has("consent");
    const response=await fetch("/api/standalone/manage",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
    const result:unknown=await response.json();
    const receipt=result&&typeof result==="object"?result as Record<string,unknown>:{};
