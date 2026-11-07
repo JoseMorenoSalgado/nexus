@@ -12,16 +12,16 @@ source=source.replace('output = "../src/generated/postgres"','output = "../src/g
 source=source.replace(/model (?:Tenant|Domain) \{[\s\S]*?^\}/gm,"");
 source=source.replace(/^\s*tenantId String(?:\?)?[^\n]*\n/gm,"");
 source=source.replace(/^\s*tenant Tenant[^\n]*\n/gm,"");
-source=source.replace(/^\s*@@index\(\[tenantId[^\n]*\n/gm,"");
 source=source.replace(/^\s*@@unique\(\[tenantId,\s*([^\]]+)\]\)/gm,"  @@unique([$1])");
 source=source.replace(/^\s*@@index\(\[tenantId,\s*([^\]]+)\]\)/gm,"  @@index([$1])");
+source=source.replace(/^\s*@@index\(\[tenantId\]\)[^\n]*\n/gm,"");
 source=source.replace(/model PropertySequence \{[\s\S]*?^\}/m,`model PropertySequence {
   id String @id @default("main")
   prefix String @default("NRE")
   nextNumber Int @default(1)
   updatedAt DateTime @updatedAt
 }`);
-source=source.replace(/(model AdminUser \{[\s\S]*?)(\n\})/m,(full,body,end)=>body.replace(/^\s*@@unique\(\[email\]\)/m,"  @@unique([email])")+end);
+source=source.replace(/Tenant-scoped, transactional/g,"Standalone transactional");
 source+=`
 model SiteConfig {
   id String @id @default("main")
