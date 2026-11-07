@@ -114,7 +114,7 @@ export async function POST(req:NextRequest){
     ? await probe.$queryRaw<Array<{n:bigint}>>`SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`
     : await probe.$queryRaw<Array<{n:bigint}>>`SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE'`;
    if(Number(tables[0]?.n||0)!==0)return response("Utiliza una base de datos vacía y exclusiva para esta instalación.",409);
-   if(data.engine==="postgresql"){
+   if(data.engine==="postgresql"&&process.env.NEXUS_STANDALONE==="true"){
     const privileges=await probe.$queryRaw<Array<{can_connect:boolean;can_create:boolean;can_use:boolean}>>`SELECT has_database_privilege(current_user,current_database(),'CONNECT') AS can_connect, has_schema_privilege(current_user,'public','CREATE') AS can_create, has_schema_privilege(current_user,'public','USAGE') AS can_use`;
     const rights=privileges[0];
     if(!rights?.can_connect||!rights.can_create||!rights.can_use){
@@ -137,7 +137,7 @@ export async function POST(req:NextRequest){
   }
   finally{await probe.$disconnect();}
   try{
-   await execute(process.execPath,[join(process.cwd(),"node_modules","prisma","build","index.js"),"db","push","--skip-generate","--schema="+(data.engine==="postgresql"?standalonePrismaSchemaFor(data.engine):prismaSchemaFor(data.engine))],{
+   await execute(process.execPath,[join(process.cwd(),"node_modules","prisma","build","index.js"),"db","push","--skip-generate","--schema="+(data.engine==="postgresql"&&process.env.NEXUS_STANDALONE==="true"?standalonePrismaSchemaFor(data.engine):prismaSchemaFor(data.engine))],{
     cwd:process.cwd(),
     env:{...process.env,DATABASE_URL:data.url},
     timeout:120000,maxBuffer:512000
