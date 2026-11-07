@@ -68,7 +68,7 @@ export async function POST(request:Request){
     const seq=await tx.propertySequence.update({where:{id:"main"},data:{nextNumber:{increment:1}}});
     return tx.property.create({data:{...data,slug,refCode:seq.prefix+"-"+String(seq.nextNumber).padStart(5,"0")}});
    });
-   return NextResponse.json({item:property},{status:201});
+   return NextResponse.json({ok:true,property:{id:property.id,slug:property.slug,refCode:property.refCode,published:property.published}},{status:201});
   }
   if(action==="lead.create"||action==="lead.update"){
    if(!canManageLeads(JSON.stringify(admin.roles)))return fail(403,"Forbidden");

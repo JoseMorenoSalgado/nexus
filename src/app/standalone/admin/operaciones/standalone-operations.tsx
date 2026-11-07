@@ -24,6 +24,7 @@ const kinds:Kind[]=["property.create","property.update","property.delete","prope
 const labels=["Crear propiedad","Editar propiedad","Eliminar propiedad","Añadir fotografía","Eliminar fotografía","Crear prospecto","Cambiar estado CRM","Asignar agente al prospecto","Crear cita","Editar cita","Crear agente"];
 export function StandaloneOperations({properties,leads,agents,agenda}:{properties:Property[];leads:Lead[];agents:Agent[];agenda:Agenda[]}){
  const [kind,setKind]=useState<Kind>("property.create"),[selected,setSelected]=useState(""),[message,setMessage]=useState(""),[busy,setBusy]=useState(false);
+ const [createdProperty,setCreatedProperty]=useState<{slug:string;refCode:string;published:boolean}|null>(null);
  const property=properties.find(p=>p.id===selected);
  const lead=leads.find(l=>l.id===selected);
  const event=agenda.find(a=>a.id===selected);
@@ -32,7 +33,7 @@ export function StandaloneOperations({properties,leads,agents,agenda}:{propertie
  const agendaAction=kind.startsWith("agenda.");
  const needsExisting=!["property.create","lead.create","agenda.create","agent.create"].includes(kind);
  async function submit(form:FormData){
-  setBusy(true);setMessage("");
+  setBusy(true);setMessage("");setCreatedProperty(null);
   try{
    const body:Record<string,unknown>={action:kind};
    for(const [key,value] of form.entries())body[key]=String(value);
@@ -42,14 +43,22 @@ export function StandaloneOperations({properties,leads,agents,agenda}:{propertie
    if(kind==="property.update"||kind==="property.create")body.published=form.has("published");
    if(kind==="agenda.create")body.leadId=String(form.get("leadId")||"");
    const response=await fetch("/api/standalone/manage",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
-   const result=await response.json();
-   setMessage(response.ok?"Operación guardada correctamente.":"Error: "+String(result.error||"No se pudo guardar"));
+   const result:unknown=await response.json();
+   const receipt=result&&typeof result==="object"?result as Record<string,unknown>:{};
+   if(!response.ok){setMessage("Error al guardar ("+response.status+"): "+String(receipt.error||"No se pudo guardar"));return;}
+   if(kind==="property.create"){
+    const created=receipt.property&&typeof receipt.property==="object"?receipt.property as Record<string,unknown>:null;
+    if(created&&typeof created.slug==="string"){
+     setCreatedProperty({slug:created.slug,refCode:String(created.refCode||""),published:created.published===true});
+     setMessage(created.published===true?"Propiedad creada y publicada correctamente.":"Propiedad creada correctamente en borrador.");
+    }else setMessage("La solicitud se completó, pero no se recibió la confirmación de la propiedad.");
+   }else setMessage("Operación guardada correctamente.");
    // Do not trigger a new React server render as part of the mutation.
    // A separate explicit refresh lets users keep the successful save confirmation.
   }catch{setMessage("No se pudo conectar con el servidor");}finally{setBusy(false);}
  }
  return <section className="mt-8 max-w-3xl">
-  <label className="block font-medium">Acción<select className="mt-2 block w-full rounded border p-3" value={kind} onChange={e=>{setKind(e.target.value as Kind);setSelected("");setMessage("");}}>{kinds.map((k,i)=><option key={k} value={k}>{labels[i]}</option>)}</select></label>
+  <label className="block font-medium">Acción<select className="mt-2 block w-full rounded border p-3" value={kind} onChange={e=>{setKind(e.target.value as Kind);setSelected("");setMessage("");setCreatedProperty(null);}}>{kinds.map((k,i)=><option key={k} value={k}>{labels[i]}</option>)}</select></label>
   {needsExisting&&<label className="mt-4 block">Registro<select required className="mt-2 block w-full rounded border p-3" value={selected} onChange={e=>setSelected(e.target.value)}>
    <option value="">Seleccionar…</option>
    {(propertyAction?properties:leadAction?leads:agenda).map(item=><option key={item.id} value={item.id}>{("name" in item?item.name:item.title)}</option>)}
@@ -65,6 +74,7 @@ export function StandaloneOperations({properties,leads,agents,agenda}:{propertie
    <button disabled={busy||(needsExisting&&!selected)} type="submit" className="rounded bg-black p-3 text-white disabled:opacity-50">{busy?"Guardando…":kind==="property.delete"?"Eliminar definitivamente":"Guardar cambios"}</button>
   </form>
   {property&&<p className="mt-3"><Link href={`/propiedades/${property.slug}`} target="_blank">Ver ficha pública (solo si está publicada)</Link></p>}
+  {createdProperty&&<div className="mt-4 rounded border p-4" role="status"><p>Referencia: <strong>{createdProperty.refCode}</strong></p><p>Estado: <strong>{createdProperty.published?"Publicada":"Borrador"}</strong></p>{createdProperty.published&&<p><Link className="underline" href={`/propiedades/${encodeURIComponent(createdProperty.slug)}`} target="_blank">Abrir ficha pública de esta propiedad</Link></p>}</div>}
   {message&&<div className="mt-4" role="status"><p>{message}</p>{message.startsWith("Operación guardada")&&<a className="mt-2 inline-block underline" href="/standalone/admin/operaciones">Actualizar listado de propiedades</a>}</div>}
  </section>;
 }
