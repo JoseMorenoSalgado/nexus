@@ -45,7 +45,7 @@ export function StandaloneOperations({properties,leads,agents,agenda}:{propertie
    const response=await fetch("/api/standalone/manage",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
    const result:unknown=await response.json();
    const receipt=result&&typeof result==="object"?result as Record<string,unknown>:{};
-   if(!response.ok){setMessage("Error al guardar ("+response.status+"): "+String(receipt.error||"No se pudo guardar"));return;}
+   if(!response.ok){setMessage("Error al guardar ("+response.status+"): "+String(receipt.error||"No se pudo guardar")+(typeof receipt.requestId==="string"?" · Ref. "+receipt.requestId:""));return;}
    if(kind==="property.create"){
     const created=receipt.property&&typeof receipt.property==="object"?receipt.property as Record<string,unknown>:null;
     if(created&&typeof created.slug==="string"){
@@ -55,7 +55,7 @@ export function StandaloneOperations({properties,leads,agents,agenda}:{propertie
    }else setMessage("Operación guardada correctamente.");
    // Do not trigger a new React server render as part of the mutation.
    // A separate explicit refresh lets users keep the successful save confirmation.
-  }catch{setMessage("No se pudo conectar con el servidor");}finally{setBusy(false);}
+  }catch(error){console.error("[NEXUS] Error en formulario de gestión",error);setMessage("No se pudo procesar la respuesta del servidor. Revisa la consola y los logs de Enhance.");}finally{setBusy(false);}
  }
  return <section className="mt-8 max-w-3xl">
   <label className="block font-medium">Acción<select className="mt-2 block w-full rounded border p-3" value={kind} onChange={e=>{setKind(e.target.value as Kind);setSelected("");setMessage("");setCreatedProperty(null);}}>{kinds.map((k,i)=><option key={k} value={k}>{labels[i]}</option>)}</select></label>
