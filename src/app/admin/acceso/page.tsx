@@ -53,6 +53,7 @@ const errors:Record<string,string>={
  captcha_config:"El captcha no está configurado. Solicita asistencia al administrador del servidor."
 };
 export default async function Access({searchParams}:{searchParams:Promise<{error?:string}>}){
+ if(process.env.NEXUS_STANDALONE_MODE==="true")redirect("/standalone/acceso");
  if(!hasDatabaseConfig())redirect("/instalar");
  if(await currentAdmin())redirect("/admin");
  const q=await searchParams;
