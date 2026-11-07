@@ -11,7 +11,7 @@ const legacy = ["prisma/schema.prisma","prisma/schema.postgres.prisma"];
 const standalonePath="prisma/schema.standalone.postgres.prisma";
 const standalone=read(standalonePath);
 const runtime=read("src/lib/prisma.ts");
-const standaloneClient=read("src/lib/standalone-prisma.ts");
+const standaloneClient=read("src/lib/standalone/db.ts");
 const generator=read("scripts/generate-prisma-clients.mjs");
 const models=[...standalone.matchAll(/^model\s+(\w+)\s*\{/gm)].map(m=>m[1]);
 const checks=[
@@ -21,8 +21,8 @@ const checks=[
  {name:"Standalone contains critical models",ok:["Property","Lead","AdminUser","AdminSession","SiteConfig","PropertySequence"].every(m=>models.includes(m))},
  {name:"Standalone Prisma client generated",ok:generator.includes(standalonePath)},
  {name:"Explicit standalone client imports generated client",ok:standaloneClient.includes("generated/standalone-postgres")},
- {name:"Explicit standalone client requires PostgreSQL",ok:standaloneClient.includes("engineFromUrl(url)")},
- {name:"Explicit standalone client guarded by mode",ok:standaloneClient.includes('NEXUS_STANDALONE_MODE!=="true"')},
+ {name:"Explicit standalone client requires PostgreSQL",ok:standaloneClient.includes('engineFromUrl(url)!=="postgresql"')},
+ {name:"Explicit standalone client guarded by mode",ok:read("src/app/api/standalone/manage/route.ts").includes('NEXUS_STANDALONE_MODE!=="true"')},
  {name:"Legacy runtime is not silently switched",ok:!runtime.includes("generated/standalone-postgres")},
  ...legacy.map(path=>({name:`Legacy schema remains for compatibility: ${path}`,ok:/model\s+Tenant\s*\{/.test(read(path))}))
 ];
