@@ -36,7 +36,7 @@ export async function POST(request:Request){
    const operation=text(body.operation,20);
    const price=Number(body.price);
    if(!title||!city||!type||!["venta","alquiler"].includes(operation)||!Number.isFinite(price)||price<0||price>99999999999)return fail(400,"Invalid property");
-   const data={title,city,type,operation,price,description:text(body.description,10000),neighborhood:text(body.neighborhood,150)||null,published:body.published===true};
+   const data={title,city,type,operation,price,description:text(body.description,10000),neighborhood:text(body.neighborhood,150)||null,published:body.published===true||body.published==="on"||body.published==="true"};
    if(action==="property.update"){
     const id=text(body.id,80);
     if(!await db.property.findUnique({where:{id},select:{id:true}}))return fail(404,"Not found");
