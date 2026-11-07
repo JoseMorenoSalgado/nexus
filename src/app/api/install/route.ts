@@ -3,7 +3,8 @@ import {validateStandaloneSnapshot} from "@/lib/standalone-installation";
 import {execFile} from "node:child_process";
 import {promisify} from "node:util";
 import {join} from "node:path";
-import {prismaSchemaFor,type DatabaseEngine} from "@/lib/db-provider";
+import {prismaSchemaFor,standalonePrismaSchemaFor,type DatabaseEngine} from "@/lib/db-provider";
+import {PrismaClient as StandalonePrismaClient} from "@/generated/standalone-postgres";
 import {isTemplateKey,type SiteTemplateKey} from "@/lib/site-template-registry";
 import {normalizeEnabledModules,type ModuleKey} from "@/lib/tenant-modules-registry";
 import {prismaFor} from "@/lib/prisma";
@@ -136,7 +137,7 @@ export async function POST(req:NextRequest){
   }
   finally{await probe.$disconnect();}
   try{
-   await execute(process.execPath,[join(process.cwd(),"node_modules","prisma","build","index.js"),"db","push","--skip-generate","--schema="+prismaSchemaFor(data.engine)],{
+   await execute(process.execPath,[join(process.cwd(),"node_modules","prisma","build","index.js"),"db","push","--skip-generate","--schema="+(data.engine==="postgresql"?standalonePrismaSchemaFor(data.engine):prismaSchemaFor(data.engine))],{
     cwd:process.cwd(),
     env:{...process.env,DATABASE_URL:data.url},
     timeout:120000,maxBuffer:512000
@@ -164,6 +165,29 @@ export async function POST(req:NextRequest){
    if(/P1003|database .* does not exist/i.test(diagnostic))
     return response("La base de datos indicada no existe en PostgreSQL.",422);
    return response("Prisma no pudo crear las tablas. Consulta los registros de Node.js en Enhance: [installer] Prisma db push failed.",422);
+  }
+  if(data.engine==="postgresql"){
+   const db=new StandalonePrismaClient({datasources:{db:{url:data.url}}});
+   try{
+    await db.$transaction(async tx=>{
+     const realEstate=data.templateKey==="real-estate";
+     await tx.siteConfig.create({data:{id:"main",name:data.institution,contactEmail:data.institutionEmail,tagline:realEstate?"Pensando en tu futuro":null,primaryColor:realEstate?"#cf202b":"#203F63"}});
+     await tx.sitePage.create({data:{slug:"site-template",title:"Plantilla del sitio",blocks:{key:data.templateKey,contentByTemplate:{}},published:true}});
+     await tx.sitePage.create({data:{slug:"site-modules",title:"Módulos de la empresa",blocks:{version:1,byTemplate:{[data.templateKey]:data.modules}},published:false}});
+     await tx.adminUser.create({data:{name:data.adminName,email:data.adminEmail,passwordHash:hashPassword(data.adminPassword),role:"admin"}});
+    });
+    const [config,admin]=await Promise.all([db.siteConfig.findUnique({where:{id:"main"}}),db.adminUser.findUnique({where:{email:data.adminEmail}})]);
+    if(!config||!admin||!admin.active)return response("La instalación independiente no superó la verificación inicial.",500);
+   }catch(error){
+    console.error("[installer] Standalone seed failed",{errorType:error instanceof Error?error.name:"unknown"});
+    return response("No fue posible inicializar el sitio independiente. Revisa los registros antes de repetir.",500);
+   }finally{await db.$disconnect();}
+   try{saveInstallation(data.url);}
+   catch{return response("La base fue preparada, pero no pudo guardarse la configuración persistente.",500);}
+   clearInstallerSession();
+   const result=NextResponse.json({ok:true,redirectTo:"/admin/acceso?installed=1"},{headers:{"Cache-Control":"no-store"}});
+   result.cookies.delete(INSTALLER_SESSION_COOKIE);
+   return result;
   }
   const db=prismaFor(data.url);
   try{
