@@ -2,14 +2,14 @@ import "server-only";
 import {createHash,randomBytes,scryptSync,timingSafeEqual} from "node:crypto";
 import {cookies} from "next/headers";
 import {redirect} from "next/navigation";
-import {PrismaClient} from "@/generated/standalone-postgres";
+import {standalonePrisma} from "@/lib/standalone/db";
 import {parseRoles,primaryRole} from "@/lib/roles";
 
 /**
  * Authentication for NEW standalone PostgreSQL installations.
  * Separate from the production auth module until all Prisma consumers migrate.
  */
-const prisma = new PrismaClient();
+const prisma = standalonePrisma();
 const cookieName = "webappecloud_session";
 const sessionHours = 24;
 const tokenHash = (value:string) => createHash("sha256").update(value).digest("hex");
