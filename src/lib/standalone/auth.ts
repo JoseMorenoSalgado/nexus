@@ -9,7 +9,7 @@ import {parseRoles,primaryRole} from "@/lib/roles";
  * Authentication for NEW standalone PostgreSQL installations.
  * Separate from the production auth module until all Prisma consumers migrate.
  */
-const cookieName = "webappecloud_session";
+const cookieName = "nexus_standalone_session";
 const sessionHours = 24;
 const tokenHash = (value:string) => createHash("sha256").update(value).digest("hex");
 
@@ -51,4 +51,14 @@ export function verifyStandalonePassword(password:string,stored:string){
  const expected=Buffer.from(parts[2],"hex");
  if(expected.length!==64)return false;
  return timingSafeEqual(expected,scryptSync(password,parts[1],64));
+}
+
+/** Authenticate against the independent user table; generic failure prevents enumeration. */
+export async function authenticateStandalone(email:string,password:string){
+ const normalized=email.trim().toLowerCase();
+ if(!/^\S+@\S+\.\S+$/.test(normalized)||!password)return false;
+ const user=await standalonePrisma().adminUser.findUnique({where:{email:normalized}});
+ if(!user||!user.active||!verifyStandalonePassword(password,user.passwordHash))return false;
+ await startStandaloneSession(user.id);
+ return true;
 }
