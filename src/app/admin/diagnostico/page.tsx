@@ -8,7 +8,7 @@ import {getPageDefinitions} from "@/lib/site-pages";
 import {isAllowedPublicHost} from "@/lib/public-site/host-match";
 export const dynamic="force-dynamic";
 export default async function DiagnosticsPage(){
- const admin=await requireRole(["admin","superadmin"]);
+ const admin=await requireRole(["admin"]);
  const h=await headers();
  const host=publicPageHostname(h);
  const configured=(process.env.SITE_URL||process.env.APP_URL||process.env.NEXT_PUBLIC_SITE_URL||"").trim();
