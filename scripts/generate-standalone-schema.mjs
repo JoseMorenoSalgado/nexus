@@ -8,6 +8,7 @@ import {resolve} from "node:path";
 const input=resolve("prisma/schema.postgres.prisma");
 const output=resolve("prisma/schema.standalone.postgres.prisma");
 let source=readFileSync(input,"utf8");
+source=source.replace('output = "../src/generated/postgres"','output = "../src/generated/standalone-postgres"');
 source=source.replace(/model (?:Tenant|Domain) \{[\s\S]*?^\}/gm,"");
 source=source.replace(/^\s*tenantId String(?:\?)?[^\n]*\n/gm,"");
 source=source.replace(/^\s*tenant Tenant[^\n]*\n/gm,"");
