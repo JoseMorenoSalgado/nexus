@@ -118,11 +118,13 @@ export async function POST(request:Request){
    });
    return NextResponse.json({ok:true});
   }
-  if(action==="agent.create"){
+  if(action==="agent.create"||action==="user.create"){
    if(!canManageUsers(JSON.stringify(admin.roles)))return fail(403,"Forbidden");
    const name=text(body.name,180),email=text(body.email,254).toLowerCase(),password=String(body.password||"");
-   if(!name||!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)||password.length<12||password.length>1024)return fail(400,"Invalid agent");
-   const item=await db.adminUser.create({data:{name,email,passwordHash:hashPassword(password),role:"agente"},select:{id:true,name:true,email:true,role:true}});
+   if(!name||!/^\S+@\S+\.\S+$/.test(email)||password.length<12||password.length>1024)return fail(400,"Invalid agent");
+   const role=action==="agent.create"?"agente":text(body.role,20);
+   if(!["admin","editor","agente","lector"].includes(role))return fail(400,"Rol no permitido");
+   const item=await db.adminUser.create({data:{name,email,passwordHash:hashPassword(password),role,active:true},select:{id:true,name:true,email:true,role:true}});
    return NextResponse.json({item},{status:201});
   }
   return fail(400,"Unknown action");
