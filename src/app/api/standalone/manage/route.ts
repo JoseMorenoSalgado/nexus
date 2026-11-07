@@ -61,10 +61,12 @@ export async function POST(request:Request){
     const id=text(body.id,80);
     if(!await db.property.findUnique({where:{id},select:{id:true}}))return fail(404,"Not found");
     const property=await db.property.update({where:{id},data});
-    return NextResponse.json({item:property});
+    return NextResponse.json({ok:true,item:{id:property.id,slug:property.slug,refCode:property.refCode,published:property.published}});
    }
    const slug=text(body.slug,150).toLowerCase();
    if(!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug))return fail(400,"Invalid slug");
+   // The public URL must never collide with another published or draft property.
+   // Unique constraints still enforce this under concurrent requests.
    const duplicate=await db.property.findUnique({where:{slug},select:{id:true}});
    if(duplicate)return fail(409,"Ya existe una propiedad con esa URL. Utiliza un slug diferente.");
    const property=await db.$transaction(async tx=>{
