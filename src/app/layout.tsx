@@ -22,6 +22,7 @@ export const viewport:Viewport={width:"device-width",initialScale:1,viewportFit:
 /** Metadata is always resolved by the current site host, never from NEXUS constants. */
 export async function generateMetadata():Promise<Metadata>{
  const fallback:Metadata={title:{default:"NEXUS Inmobiliaria",template:"%s | NEXUS"},description:"Catálogo inmobiliario, propiedades en venta y alquiler."};
+ if(process.env.NEXUS_STANDALONE_MODE==="true")return fallback;
  if(!hasDatabaseConfig())return fallback;
  const host=(await headers()).get("host")||"";
  const match=await tenantFromHost(host);
