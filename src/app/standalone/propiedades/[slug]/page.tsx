@@ -2,6 +2,7 @@ import Link from "next/link";
 import {notFound} from "next/navigation";
 import {ArrowLeft,MapPin,BedDouble,Bath,Maximize2,Home} from "lucide-react";
 import {getStandalonePublicContext} from "@/lib/standalone/public-context";
+import {findStandalonePublishedProperty} from "@/lib/standalone/repositories";
 import {PropertyGallery} from "@/components/property-gallery";
 import {formatPrice} from "@/lib/demo";
 import {SiteNav} from "@/components/site-nav";
@@ -11,9 +12,10 @@ export const dynamic="force-dynamic";
 const links:SiteMenuItem[]=[{id:"home",label:"Inicio",href:"/"},{id:"propiedades",label:"Propiedades",href:"/propiedades"}];
 export default async function StandaloneProperty({params}:{params:Promise<{slug:string}>}){
  if(process.env.NEXUS_STANDALONE_MODE!=="true")notFound();
- const [{slug},context]=await Promise.all([params,getStandalonePublicContext()]);
+ const [{slug},context]=await Promise.all([params,getStandalonePublicContext({loadProperties:false})]);
  if(!context)notFound();
- const p=context.properties.find(item=>item.slug===slug);
+ const record=await findStandalonePublishedProperty(slug);
+ const p=record?{...record,price:Number(record.price),operation:record.operation==="alquiler"?"alquiler" as const:"venta" as const,neighborhood:record.neighborhood||"",bedrooms:record.bedrooms||0,bathrooms:record.bathrooms||0,areaM2:record.areaM2||0,photos:record.photos.map(photo=>photo.url),image:record.photos[0]?.url||""}:null;
  if(!p)notFound();
  const {tenant}=context;
  return <div className="public-site" style={{"--red":tenant.primaryColor,"--red-dark":tenant.primaryColor} as React.CSSProperties}>

@@ -1,6 +1,5 @@
 "use client";
 import {useState} from "react";
-import {useRouter} from "next/navigation";
 import Link from "next/link";
 type Property={id:string;title:string;slug:string;city:string;neighborhood:string;type:string;operation:string;price:number;description:string;published:boolean;assignedAgentId:string;bedrooms:number;bathrooms:number;areaM2:number;photos:{id:string;url:string}[]};
 type Lead={id:string;name:string;status:string;assignedAgentId:string};
@@ -24,7 +23,6 @@ const fields:Record<Kind,ReturnType<typeof field>[]> ={
 const kinds:Kind[]=["property.create","property.update","property.delete","property.photo.add","property.photo.delete","lead.create","lead.update","lead.assign","agenda.create","agenda.update","agent.create"];
 const labels=["Crear propiedad","Editar propiedad","Eliminar propiedad","Añadir fotografía","Eliminar fotografía","Crear prospecto","Cambiar estado CRM","Asignar agente al prospecto","Crear cita","Editar cita","Crear agente"];
 export function StandaloneOperations({properties,leads,agents,agenda}:{properties:Property[];leads:Lead[];agents:Agent[];agenda:Agenda[]}){
- const router=useRouter();
  const [kind,setKind]=useState<Kind>("property.create"),[selected,setSelected]=useState(""),[message,setMessage]=useState(""),[busy,setBusy]=useState(false);
  const property=properties.find(p=>p.id===selected);
  const lead=leads.find(l=>l.id===selected);
@@ -46,10 +44,8 @@ export function StandaloneOperations({properties,leads,agents,agenda}:{propertie
    const response=await fetch("/api/standalone/manage",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
    const result=await response.json();
    setMessage(response.ok?"Operación guardada correctamente.":"Error: "+String(result.error||"No se pudo guardar"));
-   if(response.ok){
-    // Refresh server data without a full document navigation or losing client state.
-    router.refresh();
-   }
+   // Do not trigger a new React server render as part of the mutation.
+   // A separate explicit refresh lets users keep the successful save confirmation.
   }catch{setMessage("No se pudo conectar con el servidor");}finally{setBusy(false);}
  }
  return <section className="mt-8 max-w-3xl">
@@ -69,6 +65,6 @@ export function StandaloneOperations({properties,leads,agents,agenda}:{propertie
    <button disabled={busy||(needsExisting&&!selected)} type="submit" className="rounded bg-black p-3 text-white disabled:opacity-50">{busy?"Guardando…":kind==="property.delete"?"Eliminar definitivamente":"Guardar cambios"}</button>
   </form>
   {property&&<p className="mt-3"><Link href={`/propiedades/${property.slug}`} target="_blank">Ver ficha pública (solo si está publicada)</Link></p>}
-  {message&&<p role="status" className="mt-4">{message}</p>}
+  {message&&<div className="mt-4" role="status"><p>{message}</p>{message.startsWith("Operación guardada")&&<a className="mt-2 inline-block underline" href="/standalone/admin/operaciones">Actualizar listado de propiedades</a>}</div>}
  </section>;
 }
