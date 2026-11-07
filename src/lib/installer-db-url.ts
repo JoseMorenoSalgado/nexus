@@ -34,7 +34,9 @@ export function buildInstallerDatabaseUrl({engine,host,port,dbName,dbUser,dbPass
     }
     const user = encodeURIComponent(dbUser);
     const password = encodeURIComponent(dbPassword);
-    const dir = encodeURIComponent(clean);
+    // Prisma expects an absolute Unix socket directory in the host query parameter.
+    // Percent-encoding the path can make libpq/Prisma treat it as a literal host.
+    const dir = clean;
     return `postgresql://${user}:${password}@localhost:${port}/${dbName}?host=${dir}`;
   }
   if (!/^[a-z0-9][a-z0-9.-]*$/.test(endpoint) || endpoint.length > 250 || endpoint.includes("..")) {
