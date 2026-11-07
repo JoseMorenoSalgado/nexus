@@ -34,6 +34,10 @@ model Property {
   updatedAt DateTime @updatedAt
   @@unique([slug])
   @@unique([refCode])
+  @@index([published,operation,type])
+  @@index([published,createdAt,id])
+  @@index([published,price,id])
+  @@index([published,city])
 }
 model Photo {
   id String @id @default(cuid())
@@ -64,12 +68,15 @@ model Lead {
   agendaEvents AgendaEvent[]
   closing CommercialClosing?
   createdAt DateTime @default(now())
+  @@index([assignedAgentId,createdAt])
+  @@index([createdAt])
 }
 model VisitEvent {
   id String @id @default(cuid())
   kind String
   path String?
   createdAt DateTime @default(now())
+  @@index([kind,createdAt])
 }
 model SitePage {
   id String @id @default(cuid())
@@ -121,6 +128,7 @@ model LeadCrm {
   status String @default("nuevo")
   nextContactAt DateTime?
   updatedAt DateTime @updatedAt
+  @@index([status])
 }
 model LeadNote {
   id String @id @default(cuid())
@@ -129,6 +137,7 @@ model LeadNote {
   authorName String
   body String @db.Text
   createdAt DateTime @default(now())
+  @@index([leadId,createdAt])
 }
 
 /** Immutable snapshots of changes in the prospect's responsible agent.
@@ -144,6 +153,7 @@ model LeadAssignmentHistory {
   toAgentName String?
   changedByName String
   createdAt DateTime @default(now())
+  @@index([leadId,createdAt])
 }
 
 /** Scheduled commercial activity is linked to a lead; transferring the lead
@@ -165,6 +175,8 @@ model AgendaEvent {
   completedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@index([startsAt])
+  @@index([leadId,startsAt])
 }
 
 /** A verified-by-staff commercial transaction is a separate ledger entry.
@@ -196,6 +208,8 @@ model CommercialClosing {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   commissionPayments CommissionPayment[]
+  @@index([closedAt])
+  @@index([agentId,closedAt])
 }
 
 /** Append-only commission payment ledger. Corrections void entries, never delete them. */
@@ -214,10 +228,12 @@ model CommissionPayment {
  voidedAt DateTime?
  voidedByName String?
  createdAt DateTime @default(now())
+  @@index([closingId,paidAt])
+  @@index([paidAt])
 }
 
 
-/** Tenant-scoped, transactional next-number allocator. Existing Property.refCode never changes. */
+/** Standalone transactional next-number allocator. Existing Property.refCode never changes. */
 model PropertySequence {
   id String @id @default("main")
   prefix String @default("NRE")
@@ -233,6 +249,7 @@ model LeadSource {
   active Boolean @default(true)
   createdAt DateTime @default(now())
   @@unique([code])
+  @@index([active])
 }
 
 /** Append-only property association history for existing and external interests. */
@@ -248,6 +265,7 @@ model LeadPropertyHistory {
   externalDescription String? @db.VarChar(300)
   changedByName String
   createdAt DateTime @default(now())
+  @@index([leadId,createdAt])
 }
 
 model SiteConfig {
