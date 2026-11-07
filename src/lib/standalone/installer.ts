@@ -1,5 +1,6 @@
 import "server-only";
 import {standalonePrisma} from "@/lib/standalone/db";
+import {PrismaClient} from "@/generated/standalone-postgres";
 import {hashPassword} from "@/lib/auth";
 
 /**
@@ -10,14 +11,14 @@ import {hashPassword} from "@/lib/auth";
 export async function initializeStandaloneSite(input:{
  name:string;adminName:string;adminEmail:string;adminPassword:string;
  contactEmail?:string;whatsapp?:string;
-}){
+},databaseUrlOverride?:string){
  const name=input.name.trim(),adminName=input.adminName.trim();
  const email=input.adminEmail.trim().toLowerCase();
  if(!name||!adminName||!/^\S+@\S+\.\S+$/.test(email)||input.adminPassword.length<12){
   throw new Error("Invalid standalone installation details");
  }
- const db=standalonePrisma();
- return db.$transaction(async tx=>{
+ const db=databaseUrlOverride?new PrismaClient({datasources:{db:{url:databaseUrlOverride}}}):standalonePrisma();
+ try{return await db.$transaction(async tx=>{
   const [existingSite,adminCount]=await Promise.all([
    tx.siteConfig.count(),tx.adminUser.count()
   ]);
@@ -32,5 +33,5 @@ export async function initializeStandaloneSite(input:{
   }});
   await tx.propertySequence.create({data:{id:"main"}});
   return {siteId:site.id,adminId:admin.id};
- });
+ });}finally{if(databaseUrlOverride)await db.$disconnect();}
 }
