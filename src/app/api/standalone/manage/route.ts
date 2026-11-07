@@ -61,15 +61,28 @@ export async function POST(request:Request){
     const id=text(body.id,80);
     if(!await db.property.findUnique({where:{id},select:{id:true}}))return fail(404,"Not found");
     const property=await db.property.update({where:{id},data});
-    return NextResponse.json({item:property});
+    return NextResponse.json({ok:true,item:{id:property.id,slug:property.slug,refCode:property.refCode,published:property.published}});
    }
-   const slug=text(body.slug,150).toLowerCase();
-   if(!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug))return fail(400,"Invalid slug");
+   // Allow a human-readable title to generate the public slug automatically.
+   // The uniqueness constraint below remains the final concurrency guard.
+   const normalizeSlug=(value:string)=>value.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,150).replace(/-+$/,"");
+   const slug=normalizeSlug(text(body.slug,150)||title);
+   if(!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug))return fail(400,"No se pudo generar una URL válida para la propiedad");
+   // The public URL must never collide with another published or draft property.
+   // Unique constraints still enforce this under concurrent requests.
    const duplicate=await db.property.findUnique({where:{slug},select:{id:true}});
    if(duplicate)return fail(409,"Ya existe una propiedad con esa URL. Utiliza un slug diferente.");
    const property=await db.$transaction(async tx=>{
-    const seq=await tx.propertySequence.update({where:{id:"main"},data:{nextNumber:{increment:1}}});
-    return tx.property.create({data:{...data,slug,refCode:seq.prefix+"-"+String(seq.nextNumber).padStart(5,"0")}});
+    // Allocate the currently available number; nextNumber is the NEXT free
+    // value, not the number that should be assigned after incrementing.
+    const seq=await tx.propertySequence.update({
+     where:{id:"main"},data:{nextNumber:{increment:1}}
+    });
+    const allocated=seq.nextNumber-1;
+    if(allocated<1)throw new Error("Invalid property sequence");
+    return tx.property.create({
+     data:{...data,slug,refCode:seq.prefix+"-"+String(allocated).padStart(5,"0")}
+    });
    });
    console.info("[standalone.property.create] saved",{requestId,propertyId:property.id,published:property.published});
    return NextResponse.json({ok:true,requestId,property:{id:property.id,slug:property.slug,refCode:property.refCode,published:property.published}},{status:201});
@@ -81,8 +94,17 @@ export async function POST(request:Request){
     if(!name||!phone)return fail(400,"Name and phone required");
     const propertyId=text(body.propertyId,80)||null;
     if(propertyId&&!await db.property.findUnique({where:{id:propertyId},select:{id:true}}))return fail(400,"Unknown property");
-    const item=await db.lead.create({data:{name,phone,propertyId,email:text(body.email,254)||null,message:text(body.message,5000)||null,source:"admin",consent:body.consent===true}});
-    return NextResponse.json({item},{status:201});
+    const email=text(body.email,254).toLowerCase();
+    if(email&&!/^\S+@\S+\.\S+$/.test(email))return fail(400,"Correo electrónico inválido");
+    const agentId=text(body.assignedAgentId,80)||null;
+    if(agentId&&!await db.adminUser.findFirst({where:{id:agentId,active:true},select:{id:true}}))return fail(400,"Agente desconocido");
+    const status=text(body.status,40)||"nuevo";
+    if(!["nuevo","contactado","seguimiento","cerrado","descartado"].includes(status))return fail(400,"Estado CRM inválido");
+    const item=await db.lead.create({
+     data:{name,phone,propertyId,assignedAgentId:agentId,email:email||null,message:text(body.message,5000)||null,source:"admin",consent:body.consent===true,crm:{create:{status}}},
+     select:{id:true,name:true,phone:true,email:true,propertyId:true,assignedAgentId:true,crm:{select:{status:true}}}
+    });
+    return NextResponse.json({ok:true,item},{status:201});
    }
    const id=text(body.id,80),status=text(body.status,40);
    if(!["nuevo","contactado","seguimiento","cerrado","descartado"].includes(status))return fail(400,"Invalid status");
@@ -118,11 +140,13 @@ export async function POST(request:Request){
    });
    return NextResponse.json({ok:true});
   }
-  if(action==="agent.create"){
+  if(action==="agent.create"||action==="user.create"){
    if(!canManageUsers(JSON.stringify(admin.roles)))return fail(403,"Forbidden");
    const name=text(body.name,180),email=text(body.email,254).toLowerCase(),password=String(body.password||"");
-   if(!name||!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)||password.length<12||password.length>1024)return fail(400,"Invalid agent");
-   const item=await db.adminUser.create({data:{name,email,passwordHash:hashPassword(password),role:"agente"},select:{id:true,name:true,email:true,role:true}});
+   if(!name||!/^\S+@\S+\.\S+$/.test(email)||password.length<12||password.length>1024)return fail(400,"Invalid agent");
+   const role=action==="agent.create"?"agente":text(body.role,20);
+   if(!["admin","editor","agente","lector"].includes(role))return fail(400,"Rol no permitido");
+   const item=await db.adminUser.create({data:{name,email,passwordHash:hashPassword(password),role,active:true},select:{id:true,name:true,email:true,role:true}});
    return NextResponse.json({item},{status:201});
   }
   return fail(400,"Unknown action");
