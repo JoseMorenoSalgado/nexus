@@ -26,12 +26,12 @@ export async function currentStandaloneAdmin(){
 }
 export async function requireStandaloneAdmin(){
  const admin=await currentStandaloneAdmin();
- if(!admin)redirect("/admin/acceso");
+ if(!admin)redirect("/standalone/acceso");
  return admin;
 }
 export async function requireStandaloneRole(allowed:string[]){
  const admin=await requireStandaloneAdmin();
- if(!admin.roles.some(role=>allowed.includes(role)))redirect("/admin");
+ if(!admin.roles.some(role=>allowed.includes(role)))redirect("/standalone/admin");
  return admin;
 }
 export async function startStandaloneSession(userId:string){
