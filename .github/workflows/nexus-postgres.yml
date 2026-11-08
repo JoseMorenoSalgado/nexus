@@ -143,3 +143,19 @@ jobs:
             exit 1
           fi
           echo "Standalone public HTTP smoke and unpublished-property isolation passed"
+          # Protected mutations must reject anonymous requests on a fresh installation.
+          check_anonymous_post() {
+            label="$1"
+            url="$2"
+            payload="$3"
+            content_type="$4"
+            status=$(curl --silent --output /tmp/nexus-anonymous-response.html --write-out "%{http_code}" --max-time 15 -X POST -H "Content-Type: $content_type" --data "$payload" "$url")
+            case "$status" in
+              401|403|302|303) echo "$label correctly denied anonymous POST (HTTP $status)" ;;
+              *) echo "::error::$label unexpectedly returned HTTP $status for anonymous POST"; head -c 500 /tmp/nexus-anonymous-response.html; tail -n 60 /tmp/nexus-standalone-public.log; exit 1 ;;
+            esac
+          }
+          check_anonymous_post "Users" http://127.0.0.1:3000/api/admin/users "intent=create&name=Anonymous" "application/x-www-form-urlencoded"
+          check_anonymous_post "Leads" http://127.0.0.1:3000/api/admin/leads '{"name":"Anonymous","phone":"12345678","consent":true}' "application/json"
+          check_anonymous_post "Properties" http://127.0.0.1:3000/api/admin/properties "title=Anonymous" "application/x-www-form-urlencoded"
+          echo "Standalone anonymous admin mutation guards passed"
