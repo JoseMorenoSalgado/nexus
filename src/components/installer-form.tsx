@@ -5,7 +5,7 @@ import {type SiteTemplateKey} from "@/lib/site-template-registry";
 import {defaultEnabledModules,modulesForSector,type ModuleKey} from "@/lib/tenant-modules-registry";
 
 type Values={
- dbType:"mariadb"|"mysql"|"postgresql";dbHost:string;dbPort:string;dbName:string;dbUser:string;dbPassword:string;
+ dbType:"postgresql";dbHost:string;dbPort:string;dbName:string;dbUser:string;dbPassword:string;
  institution:string;institutionEmail:string;adminName:string;adminEmail:string;adminPassword:string;templateKey:SiteTemplateKey;modules:ModuleKey[];
 };
 const defaults:Values={
@@ -52,9 +52,10 @@ export default function InstallerForm({domain,environmentReady=true}:{domain:str
       const next=e.target.value as Values["dbType"];
       setValues(v=>({...v,dbType:next,dbPort:next==="postgresql"?"5432":"3306",dbHost:v.dbHost==="db"&&next==="postgresql"?"postgres":v.dbHost==="postgres"&&next!=="postgresql"?"db":v.dbHost}));
      }}>
-      <option value="mariadb">MariaDB</option><option value="mysql">MySQL</option><option value="postgresql">PostgreSQL</option>
+      <option value="postgresql">PostgreSQL (independiente)</option>
      </select>
     </label>
+    <p>MariaDB/MySQL aún no cuentan con un esquema independiente validado. No se ofrecen para evitar crear estructuras multitenant heredadas.</p>
     <p>Utiliza una base de datos <strong>vacía</strong> creada previamente en Enhance. Sus credenciales no se guardan en GitHub.</p>
     <div className="wizard-grid">{input("dbHost","Servidor de base de datos",{hint:values.dbType==="postgresql"?"Enhance en el mismo servidor: /var/run/postgresql (socket local). Para conexión TCP escribe el servidor o IP.":"Escribe el nombre de servidor o IP asignado por Enhance."})}{input("dbPort","Puerto",{hint:"3306 para MySQL/MariaDB; 5432 para PostgreSQL."})}</div>
     {input("dbName","Nombre de la base de datos")}
