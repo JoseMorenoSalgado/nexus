@@ -66,13 +66,14 @@ export function AdminNav({role="admin",roles=[role],userId,userName,notification
  const realEstate=templateKey==="real-estate";
  const enabled=new Set(enabledModules??defaultEnabledModules(templateKey));
  const entryModule:Record<string,ModuleKey>={"/admin/propiedades":"properties","/admin/leads":"inquiries","/admin/agenda":"agenda","/admin/cierres":"closings","/admin/reportes":"analytics"};
- const allowed=(entry:Entry)=>standalone?["/admin","/admin/propiedades","/admin/leads","/admin/agenda","/admin/cierres","/admin/reportes"].includes(entry.href):!entryModule[entry.href]||enabled.has(entryModule[entry.href]);
+ const allowed=(entry:Entry)=>standalone?["/admin","/admin/propiedades","/admin/leads","/admin/agenda","/admin/cierres","/admin/reportes","/admin/notificaciones"].includes(entry.href):!entryModule[entry.href]||enabled.has(entryModule[entry.href]);
  const main=primary.filter(x=>(manager||(agent&&["/admin","/admin/propiedades","/admin/leads","/admin/agenda","/admin/cierres"].includes(x.href))||x.href==="/admin")
   &&(realEstate||["/admin","/admin/leads","/admin/personalizar/inicio"].includes(x.href)))
   .filter(allowed)
   .map(x=>!realEstate&&x.href==="/admin/leads"?{...x,label:"Consultas"}:x);
  const tools=secondary.filter(x=>realEstate&&(manager||(agent&&x.href==="/admin/notificaciones"))).filter(allowed);
  if(manager&&!standalone)tools.unshift({href:"/admin/personalizar/inicio",label:"Mi sitio web",Icon:FileText});
+ if(standalone&&has("admin"))tools.push({href:"/admin/clientes-agentes",label:"Equipo y usuarios",Icon:ShieldCheck});
  if(has("admin")&&!standalone){
   if(realEstate&&enabled.has("properties"))tools.push({href:"/admin/clientes-agentes",label:"Equipo y usuarios",Icon:ShieldCheck});
   tools.push({href:"/admin/modulos",label:"Módulos",Icon:Settings});
