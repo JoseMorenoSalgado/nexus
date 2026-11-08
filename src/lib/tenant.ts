@@ -15,6 +15,11 @@ export const canonicalHost = normalizeSiteHost;
 /** Standalone installation: organization is resolved from the local database, not the HTTP host. */
 export async function standaloneOrganization(){
  if(!hasDatabaseConfig())return null;
+ if(process.env.NEXUS_STANDALONE==="true"){
+  const site=await getStandalonePrisma().siteConfig.findUnique({where:{id:"main"}});
+  if(!site)return null;
+  return {tenantId:"main",tenant:{id:"main",name:site.name,tagline:site.tagline,whatsapp:site.whatsapp,logoUrl:site.logoUrl,contactEmail:site.contactEmail,primaryColor:site.primaryColor,active:true}};
+ }
  const tenantId=await singleInstallationTenantId();
  if(!tenantId)return null;
  const tenant=await prisma.tenant.findUnique({where:{id:tenantId},select:{id:true,name:true,tagline:true,whatsapp:true,logoUrl:true,contactEmail:true,primaryColor:true,active:true}});
@@ -27,7 +32,7 @@ export async function tenantFromHost(hostname:string){
  const configured=(process.env.SITE_URL||process.env.APP_URL||process.env.NEXT_PUBLIC_SITE_URL||"").trim();
  const requested=canonicalHost(hostname);
  if(!requested)return null;
- const domains=configured?[]:await prisma.domain.findMany({where:{tenantId:resolved.tenantId},select:{hostname:true},take:100});
+ const domains=configured||process.env.NEXUS_STANDALONE==="true"?[]:await prisma.domain.findMany({where:{tenantId:resolved.tenantId},select:{hostname:true},take:100});
  return isAllowedPublicHost(requested,configured,domains.map(d=>d.hostname))?resolved:null;
 }
 export async function getPublicContext(options:{loadProperties?:boolean}={}):Promise<{tenant:PublicTenant;properties:PublicProperty[];demo:boolean;settings:SiteSettings;heroImage:boolean}>{
