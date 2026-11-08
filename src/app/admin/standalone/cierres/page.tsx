@@ -1,5 +1,6 @@
 import {notFound} from "next/navigation";
 import CreateClosingForm from "./create-form";
+import VoidClosingForm from "./void-form";
 import {requireRole} from "@/lib/auth";
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
 export const dynamic="force-dynamic";
@@ -17,8 +18,8 @@ export default async function StandaloneClosings(){
   <div className="admin-heading"><div><h1>Cierres comerciales</h1><p>Ventas y alquileres registrados en PostgreSQL independiente.</p></div></div>
   <div className="closing-metrics"><div><span>Operaciones mostradas</span><strong>{records.length}{records.length===100?"+":""}</strong></div><div><span>Confirmadas</span><strong>{confirmed.length}</strong></div><div><span>Importe confirmado (muestra)</span><strong>{money(confirmed.reduce((s,r)=>s+Number(r.amount),0))}</strong></div><div><span>Comisiones confirmadas (muestra)</span><strong>{money(confirmed.reduce((s,r)=>s+Number(r.commissionAmount),0))}</strong></div></div>
   {manager&&<CreateClosingForm leads={eligible}/>}
-  <section className="admin-panel"><h2>Registro de operaciones</h2><p>Las anulaciones y los pagos de comisiones permanecen deshabilitados hasta completar su validación.</p>
-   {records.length?<div className="agenda-event-list">{records.map(r=><article className="agenda-event" key={r.id}><div className="agenda-event-main"><strong>{r.propertyRefCode} · {r.clientName}</strong><p>{r.kind} · {r.status} · {r.agentName} · {r.closedAt.toISOString().slice(0,10)}</p><p>Importe: {money(r.amount)} · Comisión: {money(r.commissionAmount)}</p></div></article>)}</div>:<p>No hay cierres registrados.</p>}
+  <section className="admin-panel"><h2>Registro de operaciones</h2><p>Los administradores pueden anular cierres sin pagos confirmados. Los pagos de comisiones permanecen pendientes de validación.</p>
+   {records.length?<div className="agenda-event-list">{records.map(r=><article className="agenda-event" key={r.id}><div className="agenda-event-main"><strong>{r.propertyRefCode} · {r.clientName}</strong><p>{r.kind} · {r.status} · {r.agentName} · {r.closedAt.toISOString().slice(0,10)}</p><p>Importe: {money(r.amount)} · Comisión: {money(r.commissionAmount)}</p>{admin.roles.includes("admin")&&r.status==="confirmado"&&<VoidClosingForm id={r.id}/>}</div></article>)}</div>:<p>No hay cierres registrados.</p>}
   </section>
  </section>;
 }
