@@ -1,6 +1,7 @@
 import {readFile} from "node:fs/promises";
 import {NextRequest,NextResponse} from "next/server";
 import {prisma} from "@/lib/prisma";
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {currentAdmin} from "@/lib/auth";
 import {tenantFromHost} from "@/lib/tenant";
 import {getSiteTemplate} from "@/lib/site-template-store";
@@ -10,6 +11,27 @@ export const dynamic="force-dynamic";
 export async function GET(req:NextRequest,{params}:{params:Promise<{id:string}>}){
  const {id}=await params;
  if(!isPhotoId(id))return new NextResponse(null,{status:404});
+ if(process.env.NEXUS_STANDALONE==="true"){
+  const photo=await getStandalonePrisma().photo.findUnique({where:{id},select:{id:true,url:true,property:{select:{published:true}}}});
+  if(!photo||photo.url!=="/api/media/"+id)return new NextResponse(null,{status:404});
+  if(!photo.property.published){
+   const admin=await currentAdmin();
+   if(!admin)return new NextResponse(null,{status:404});
+  }
+  const requested=req.nextUrl.searchParams.get("variant");
+  const variant:MediaVariant|null=requested==="card"||requested==="thumb"?requested:null;
+  if(requested&&!variant)return new NextResponse(null,{status:400});
+  try{
+   const buffer=variant?await readFile(mediaVariantPath("main",id,variant)).catch((error:NodeJS.ErrnoException)=>{
+    if(error.code!=="ENOENT")throw error;
+    return readFile(mediaFilePath("main",id));
+   }):await readFile(mediaFilePath("main",id));
+   return new NextResponse(new Uint8Array(buffer),{headers:{
+    "Content-Type":"image/webp","X-Content-Type-Options":"nosniff",
+    "Cache-Control":"private, max-age=3600, must-revalidate","Content-Disposition":"inline"
+   }});
+  }catch{return new NextResponse(null,{status:404});}
+ }
  const tenant=await tenantFromHost(req.headers.get("host")||"");
  if(!tenant)return new NextResponse(null,{status:404});
  if((await getSiteTemplate(tenant.tenantId)).key!=="real-estate"){
