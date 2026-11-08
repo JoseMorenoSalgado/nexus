@@ -26,7 +26,7 @@ const response=(error:string,status=400)=>NextResponse.json({error},{status,head
 const safe=(input:unknown,max=128)=>String(input??"").trim().slice(0,max);
 function validate(input:Form){
  const dbType=safe(input.dbType,20)||"mariadb";
- if(!["mysql","mariadb","postgresql"].includes(dbType))throw Error("Selecciona MySQL, MariaDB o PostgreSQL.");
+ if(dbType!=="postgresql")throw Error("La instalación independiente solo admite PostgreSQL hasta que exista un esquema MariaDB independiente validado.");
  const dbPort=Number(input.dbPort||(dbType==="postgresql"?"5432":"3306"));
  const dbHost=safe(input.dbHost,250).toLowerCase();
  const dbName=safe(input.dbName,64),dbUser=safe(input.dbUser,80);
@@ -118,7 +118,7 @@ export async function POST(req:NextRequest){
   mkdirSync(configDir(),{recursive:true,mode:0o700});
   accessSync(configDir(),constants.W_OK);
   // The public installer must never initialize a legacy tenant schema for PostgreSQL.
-  if(data.engine==="postgresql"&&process.env.NEXUS_STANDALONE!=="true")return response("Configura NEXUS_STANDALONE=true en Enhance y reinicia la aplicación antes de instalar.",422);
+  if(process.env.NEXUS_STANDALONE!=="true")return response("Configura NEXUS_STANDALONE=true en Enhance y reinicia la aplicación antes de instalar.",422);
   const probe=prismaFor(data.url);
   try{
    const tables=data.engine==="postgresql"
