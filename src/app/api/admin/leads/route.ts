@@ -47,7 +47,7 @@ export async function POST(req:NextRequest){
  const source=typeof body.source==="string"?body.source.trim():"manual";
  const propertyId=typeof body.propertyId==="string"?body.propertyId.trim():"";
  const assigned=typeof body.assignedAgentId==="string"?body.assignedAgentId.trim():"";
- if(name.length<2||name.length>120||!/^[+\\d() -]{7,30}$/.test(phone)||email.length>180||(email&&!/^\\S+@\\S+\\.\\S+$/.test(email))||message.length>2000||source.length<1||source.length>80||body.consent!==true)return NextResponse.json({error:"Revisa los datos y confirma el consentimiento"},{status:400});
+ if(name.length<2||name.length>120||!/^[+\d() -]{7,30}$/.test(phone)||email.length>180||(email&&!/^\S+@\S+\.\S+$/.test(email))||message.length>2000||source.length<1||source.length>80||body.consent!==true)return NextResponse.json({error:"Revisa los datos y confirma el consentimiento"},{status:400});
  if(assigned&&!manager)return NextResponse.json({error:"No puedes asignar otro agente"},{status:403});
  const db=getStandalonePrisma();
  try{
