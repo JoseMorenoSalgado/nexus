@@ -1,5 +1,6 @@
 import {requireAdmin} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {ROLE_LABELS,parseRoles} from "@/lib/roles";
 import {redirect} from "next/navigation";
 import Link from "next/link";
@@ -8,9 +9,9 @@ export const dynamic="force-dynamic";
 const messages:Record<string,string>={creado:"Usuario creado correctamente.",perfil:"Perfil actualizado. Debe iniciarse una nueva sesión para aplicar el cambio.",guardado:"Permisos actualizados.",datos:"Revisa los datos ingresados.",duplicado:"No se pudo crear el usuario. Verifica si el correo ya existe.",propia:"No puedes modificar tu propia cuenta desde esta sección.",ultimo:"Debe quedar al menos un administrador activo."};
 export default async function Users({searchParams}:{searchParams:Promise<{status?:string}>}){
  const admin=await requireAdmin();if(!admin.roles.includes("admin"))redirect("/admin");
- const users=await prisma.adminUser.findMany({where:{tenantId:admin.tenantId},orderBy:[{active:"desc"},{createdAt:"asc"}],select:{id:true,name:true,email:true,role:true,active:true}});
+ const users=process.env.NEXUS_STANDALONE==="true"?await getStandalonePrisma().adminUser.findMany({orderBy:[{active:"desc"},{createdAt:"asc"}],select:{id:true,name:true,email:true,role:true,active:true}}):await prisma.adminUser.findMany({where:{tenantId:admin.tenantId},orderBy:[{active:"desc"},{createdAt:"asc"}],select:{id:true,name:true,email:true,role:true,active:true}});
  const agents=users.filter(u=>parseRoles(u.role).includes("agente"));
- const counts=agents.length?await prisma.property.groupBy({by:["assignedAgentId"],where:{tenantId:admin.tenantId,assignedAgentId:{in:agents.map(a=>a.id)}},_count:{_all:true}}):[];
+ const counts=agents.length?(process.env.NEXUS_STANDALONE==="true"?await getStandalonePrisma().property.groupBy({by:["assignedAgentId"],where:{assignedAgentId:{in:agents.map(a=>a.id)}},_count:{_all:true}}):await prisma.property.groupBy({by:["assignedAgentId"],where:{tenantId:admin.tenantId,assignedAgentId:{in:agents.map(a=>a.id)}},_count:{_all:true}})):[];
  const agentPropertyCounts=new Map(counts.map(x=>[x.assignedAgentId,x._count._all]));
  const {status}=await searchParams;
  return <section className="user-management">
@@ -32,7 +33,7 @@ export default async function Users({searchParams}:{searchParams:Promise<{status
    <UserPasswordFields/>
    <fieldset className="user-role-options"><legend>Roles del usuario (puedes seleccionar varios)</legend>{Object.entries(ROLE_LABELS).map(([value,label])=><label key={value}><input type="checkbox" name="roles" value={value} defaultChecked={value==="agente"}/>{label}</label>)}</fieldset>
    <button className="btn btn-red" type="submit">Crear usuario</button>
-  </form><p className="property-help">Las contraseñas deben tener al menos 12 caracteres. Cada usuario solo accederá a la empresa a la que pertenece.</p></div>
+  </form><p className="property-help">Las contraseñas deben tener al menos 12 caracteres. Cada usuario tendrá acceso únicamente a esta instalación.</p></div>
   <div className="admin-panel"><h2>Usuarios registrados ({users.length})</h2><div className="user-table-wrap"><table className="admin-table"><thead><tr><th>Usuario</th><th>Estado</th><th>Rol</th><th>Acciones</th></tr></thead><tbody>{users.map(u=><tr key={u.id}><td><strong>{u.name}</strong><div className="user-email">{u.email}</div></td><td>{u.active?"Activo":"Inactivo"}</td><td>{parseRoles(u.role).map(r=>ROLE_LABELS[r]).join(", ")||"Sin rol válido"}</td><td>{u.id===admin.userId?<span>Tu cuenta</span>:<div className="user-actions"><form method="post" action="/api/admin/users"><input type="hidden" name="intent" value="role"/><input type="hidden" name="id" value={u.id}/><fieldset className="user-role-options user-role-inline"><legend>Roles</legend>{Object.entries(ROLE_LABELS).map(([value,label])=><label key={value}><input type="checkbox" name="roles" value={value} defaultChecked={parseRoles(u.role).includes(value as keyof typeof ROLE_LABELS)}/>{label}</label>)}</fieldset><button type="submit">Guardar rol</button></form><form method="post" action="/api/admin/users"><input type="hidden" name="intent" value="toggle"/><input type="hidden" name="id" value={u.id}/><button type="submit">{u.active?"Desactivar":"Activar"}</button></form></div>}</td></tr>)}</tbody></table></div></div>
  </section>;
 }
