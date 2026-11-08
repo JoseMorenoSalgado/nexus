@@ -17,6 +17,7 @@ export default function AgendaClient(){
   e.preventDefault();setSaving(true);setError("");
   const form=e.currentTarget;const fields=new FormData(form);
   const date=String(fields.get("startsAt")||"");
+  if(!date||Number.isNaN(new Date(date).getTime())){setError("Selecciona una fecha válida");setSaving(false);return;}
   const body={leadId:String(fields.get("leadId")||""),title:String(fields.get("title")||""),type:String(fields.get("type")||"llamada"),startsAt:new Date(date).toISOString(),durationMinutes:Number(fields.get("durationMinutes")||60),location:String(fields.get("location")||"")};
   try{const response=await fetch("/api/admin/standalone/agenda",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw new Error(data.error||"No se pudo programar");form.reset();await load();}catch(e){setError(e instanceof Error?e.message:"Error al guardar");}finally{setSaving(false);}
  }
