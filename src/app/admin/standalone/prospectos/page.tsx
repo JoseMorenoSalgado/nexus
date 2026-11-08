@@ -7,8 +7,8 @@ export const dynamic="force-dynamic";
 export default async function ProspectosStandalonePage(){
  if(process.env.NEXUS_STANDALONE!=="true")notFound();
  const admin=await requireAdmin();
- if(!admin.roles.includes("admin")&&!admin.roles.includes("agente"))notFound();
- const isAdmin=admin.roles.includes("admin");
+ if(!admin.roles.some(role=>["admin","editor","agente"].includes(role)))notFound();
+ const isAdmin=admin.roles.includes("admin")||admin.roles.includes("editor");
  const agents=isAdmin?await getStandalonePrisma().adminUser.findMany({where:{active:true},select:{id:true,name:true,role:true},orderBy:{name:"asc"}}):[];
  return <main style={{maxWidth:1120,margin:"2rem auto",padding:"1rem"}}>
   <h1>Prospectos · CRM</h1>
