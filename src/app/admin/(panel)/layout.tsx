@@ -14,7 +14,7 @@ export default async function DashboardLayout({children}:{children:React.ReactNo
  if(process.env.NEXUS_STANDALONE==="true"){
   const config=await getStandalonePrisma().siteConfig.findUnique({where:{id:"main"}});
   const name=config?.name||"Nexus Real Estate";
-  return <div className="admin-shell"><aside className="admin-sidebar"><Link href="/admin" className="brand"><span className="brand-icon"><img src={config?.logoUrl||"/brand/nexus-icon.webp"} alt=""/></span><span><strong>NEXUS</strong><small>REAL ESTATE</small></span></Link><AdminNav role={admin.role} roles={admin.roles} userId={admin.userId} userName={admin.name} notificationCount={0} templateKey="real-estate" enabledModules={["properties","leads"]}/></aside><div className="admin-main"><div className="admin-body">{children}</div></div></div>;
+  return <div className="admin-shell"><aside className="admin-sidebar"><Link href="/admin" className="brand"><span className="brand-icon"><img src={config?.logoUrl||"/brand/nexus-icon.webp"} alt=""/></span><span><strong>NEXUS</strong><small>REAL ESTATE</small></span></Link><AdminNav role={admin.role} roles={admin.roles} userId={admin.userId} userName={admin.name} notificationCount={0} templateKey="real-estate" enabledModules={["properties"]}/></aside><div className="admin-main"><div className="admin-body">{children}</div></div></div>;
  }
 
  const template=await getSiteTemplate(admin.tenantId);
