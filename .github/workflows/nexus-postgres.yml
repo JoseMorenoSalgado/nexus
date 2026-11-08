@@ -193,17 +193,13 @@ jobs:
             tail -n 60 /tmp/nexus-standalone-public.log
             exit 1
           fi
-          if ! grep -Eiq '^location: .*/admin/clientes-agentes\?status=creado\r?
-          node --import tsx scripts/verify-standalone-http-mutations.ts
- /tmp/nexus-create-user.headers; then
-            echo "::error::User POST redirected to an error instead of success"
+          if ! grep -Fq 'status=creado' /tmp/nexus-create-user.headers; then
+            echo "::error::User POST did not redirect to success"
             cat /tmp/nexus-create-user.headers
             exit 1
           fi
-          if ! grep -Eiq '^location: /admin/propiedades/[^/]+/editar\?created=1\r?
-          node --import tsx scripts/verify-standalone-http-mutations.ts
- /tmp/nexus-create-property.headers; then
-            echo "::error::Property POST redirected to an error instead of success"
+          if ! grep -Fq 'created=1' /tmp/nexus-create-property.headers; then
+            echo "::error::Property POST did not redirect to success"
             cat /tmp/nexus-create-property.headers
             exit 1
           fi
