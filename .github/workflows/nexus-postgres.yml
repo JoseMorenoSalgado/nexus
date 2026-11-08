@@ -88,3 +88,5 @@ jobs:
         run: npx prisma db push --schema prisma/schema.standalone.postgres.prisma
       - name: Verify independent tables and queries
         run: node --import tsx scripts/check-fresh-standalone-db.ts
+      - name: Verify standalone financial lifecycle
+        run: node --import tsx scripts/check-fresh-standalone-finance.ts
