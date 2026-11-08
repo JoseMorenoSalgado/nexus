@@ -1,4 +1,5 @@
 import Link from "next/link";
+import {redirect} from "next/navigation";
 import {Banknote,FileText,HandCoins,ShieldCheck,Wallet,ArrowLeft,AlertCircle} from "lucide-react";
 import {requireRole} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
@@ -24,6 +25,7 @@ export default async function Commissions({searchParams}:{searchParams:Promise<{
  periodo?:string;agente?:string;estado?:string;activated?:string;created?:string;voided?:string;error?:string;
 }>}){
  const user=await requireRole(["admin","editor","agente"]),q=await searchParams;
+ if(process.env.NEXUS_STANDALONE==="true")redirect("/admin/standalone/cierres/comisiones");
  const all=managesAllLeads(user),admin=user.roles.includes("admin");
  if(!await closingTableReady())return <section className="admin-panel">
   <h1>Comisiones por agente</h1><p>Debes activar primero el registro de ventas y alquileres.</p>
