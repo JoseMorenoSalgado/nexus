@@ -29,7 +29,7 @@ export default async function Catalog({searchParams}:{searchParams:Promise<Filte
  const codigo=typeof raw.codigo==="string"?raw.codigo.trim().slice(0,90):"";
  const f={ciudad,codigo,precioMin,precioMax,operacion:(raw.operacion||"").slice(0,20),tipo:(raw.tipo||"").slice(0,40),ubicacion:(raw.ubicacion||"").slice(0,90),orden};
  const {tenant,properties:demoProperties,demo}=await getPublicContext({loadProperties:false});
- if(process.env.NEXUS_STANDALONE!=="true"&&((await getSiteTemplate(tenant.id)).key!=="real-estate"||!await tenantModuleEnabled(tenant.id,"properties")))notFound();
+ if((await getSiteTemplate(tenant.id)).key!=="real-estate"||!await tenantModuleEnabled(tenant.id,"properties"))notFound();
  await assertPagePublished(tenant.id,demo,"propiedades");
  const requestedPage=/^[1-9]\d{0,5}$/.test(raw.pagina||"")?Number(raw.pagina):1;
  const normalizedLocation=f.ubicacion.toLocaleLowerCase();
