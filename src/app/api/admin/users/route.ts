@@ -22,7 +22,7 @@ export async function POST(req:NextRequest){
    const email=String(form.get("email")||"").trim().toLowerCase().slice(0,180);
    const password=String(form.get("password")||"");
    const roles=form.getAll("roles").map(String);
-   if(name.length<2||!/^\\S+@\\S+\\.\\S+$/.test(email)||password.length<12||password.length>256||password!==String(form.get("confirmPassword")||"")||!/[a-z]/i.test(password)||!/\\d/.test(password)||!roles.length||roles.length!==new Set(roles).size||!roles.every(isUserRole))return redirect(req,"datos");
+   if(name.length<2||!/^\S+@\S+\.\S+$/.test(email)||password.length<12||password.length>256||password!==String(form.get("confirmPassword")||"")||!/[a-z]/i.test(password)||!/\d/.test(password)||!roles.length||roles.length!==new Set(roles).size||!roles.every(isUserRole))return redirect(req,"datos");
    try{await db.adminUser.create({data:{name,email,role:serializeRoles(roles.filter(isUserRole)),passwordHash:hashPassword(password),active:true}});}
    catch{return redirect(req,"duplicado");}
    return redirect(req,"creado");
@@ -34,7 +34,7 @@ export async function POST(req:NextRequest){
   if(intent==="profile"){
    const name=String(form.get("name")||"").trim();
    const email=String(form.get("email")||"").trim().toLowerCase();
-   if(name.length<2||name.length>120||email.length>180||!/^\\S+@\\S+\\.\\S+$/.test(email))return redirect(req,"datos");
+   if(name.length<2||name.length>120||email.length>180||!/^\S+@\S+\.\S+$/.test(email))return redirect(req,"datos");
    try{await db.adminUser.update({where:{id},data:{name,email}});await db.adminSession.deleteMany({where:{userId:id}});return redirect(req,"perfil");}
    catch{return redirect(req,"duplicado");}
   }
