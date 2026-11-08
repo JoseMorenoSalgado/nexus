@@ -11,7 +11,7 @@ import type {SiteMenuItem} from "@/lib/site-pages";
 export const dynamic="force-dynamic";
 const links:SiteMenuItem[]=[{id:"home",label:"Inicio",href:"/"},{id:"propiedades",label:"Propiedades",href:"/propiedades"}];
 export default async function StandaloneProperty({params}:{params:Promise<{slug:string}>}){
- if(process.env.NEXUS_STANDALONE_MODE!=="true")notFound();
+ if(process.env.NEXUS_STANDALONE!=="true")notFound();
  const [{slug},context]=await Promise.all([params,getStandalonePublicContext({loadProperties:false})]);
  if(!context)notFound();
  const record=await findStandalonePublishedProperty(slug);
