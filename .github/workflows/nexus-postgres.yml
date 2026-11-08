@@ -34,6 +34,8 @@ jobs:
         with:
           node-version: '22'
       - run: npm install --include=dev --no-audit --no-fund
+      - name: Verify standalone code isolation
+        run: node scripts/check-standalone-isolation.mjs
       - run: npm run db:generate
       - run: npx prisma db push --schema prisma/schema.postgres.prisma
       - run: npm run db:seed
@@ -53,3 +55,153 @@ jobs:
           done
           tail -n 100 /tmp/nexus-postgres.log
           exit 1
+
+  fresh-standalone:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: nexus_fresh
+          POSTGRES_USER: ciuser
+          POSTGRES_PASSWORD: ci_password_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U ciuser -d nexus_fresh"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://ciuser:ci_password_only@127.0.0.1:5432/nexus_fresh
+      NEXUS_STANDALONE: 'true'
+      NODE_ENV: test
+      SITE_URL: https://nexus-ci.example
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --include=dev --no-audit --no-fund
+      - run: npm run db:generate
+      - name: Guard standalone Prisma schema isolation
+        run: node scripts/check-standalone-schema-isolation.mjs
+      - name: Initialize isolated PostgreSQL schema
+        run: npx prisma db push --schema prisma/schema.standalone.postgres.prisma
+      - name: Verify independent tables and queries
+        run: node --import tsx scripts/check-fresh-standalone-db.ts
+      - name: Verify standalone financial lifecycle
+        run: node --import tsx scripts/check-fresh-standalone-finance.ts
+      - name: Seed independent public smoke fixtures
+        run: node --import tsx scripts/seed-standalone-public-smoke.ts
+      - name: Build standalone public application
+        run: npm run build
+      - name: Test independent public HTTP routes
+        run: |
+          (npm start > /tmp/nexus-standalone-public.log 2>&1 &)
+          ready=0
+          for i in $(seq 1 60); do
+            if curl --location --fail --silent --show-error --max-time 5 http://127.0.0.1:3000/ -o /tmp/nexus-standalone-home.html; then
+              ready=1
+              break
+            fi
+            sleep 2
+          done
+          if [ "$ready" -ne 1 ]; then
+            echo "::error::Standalone homepage unavailable"
+            tail -n 100 /tmp/nexus-standalone-public.log
+            exit 1
+          fi
+          check_page() {
+            label="$1"
+            url="$2"
+            expected="$3"
+            file="$4"
+            echo "Checking $label: $url"
+            if ! curl --location --fail --silent --show-error --max-time 15 "$url" -o "$file"; then
+              echo "::error::$label returned HTTP error"
+              tail -n 100 /tmp/nexus-standalone-public.log
+              return 1
+            fi
+            if ! grep -Fq "$expected" "$file"; then
+              echo "::error::$label returned HTML without expected content: $expected"
+              head -c 700 "$file"
+              echo
+              tail -n 100 /tmp/nexus-standalone-public.log
+              return 1
+            fi
+          }
+          check_page "Standalone homepage" http://127.0.0.1:3000/ "Encuentra el lugar" /tmp/nexus-standalone-home.html
+          check_page "Standalone catalog" http://127.0.0.1:3000/propiedades "CI published property" /tmp/nexus-standalone-catalog.html
+          check_page "Standalone property" http://127.0.0.1:3000/propiedades/ci-public-property "CI published property" /tmp/nexus-standalone-detail.html
+          if grep -Fq "CI draft property" /tmp/nexus-standalone-catalog.html; then
+            echo "::error::Unpublished property leaked into public catalog"
+            exit 1
+          fi
+          draft_status=$(curl --location --silent --output /tmp/nexus-standalone-draft.html --write-out "%{http_code}" --max-time 15 http://127.0.0.1:3000/propiedades/ci-draft-property)
+          if [ "$draft_status" != "404" ]; then
+            echo "::error::Unpublished property detail returned HTTP $draft_status instead of 404"
+            tail -n 100 /tmp/nexus-standalone-public.log
+            exit 1
+          fi
+          echo "Standalone public HTTP smoke and unpublished-property isolation passed"
+          # Protected mutations must reject anonymous requests on a fresh installation.
+          check_anonymous_post() {
+            label="$1"
+            url="$2"
+            payload="$3"
+            content_type="$4"
+            status=$(curl --silent --output /tmp/nexus-anonymous-response.html --write-out "%{http_code}" --max-time 15 -X POST -H "Content-Type: $content_type" --data "$payload" "$url")
+            case "$status" in
+              401|403|302|303) echo "$label correctly denied anonymous POST (HTTP $status)" ;;
+              *) echo "::error::$label unexpectedly returned HTTP $status for anonymous POST"; head -c 500 /tmp/nexus-anonymous-response.html; tail -n 60 /tmp/nexus-standalone-public.log; exit 1 ;;
+            esac
+          }
+          check_anonymous_post "Users" http://127.0.0.1:3000/api/admin/users "intent=create&name=Anonymous" "application/x-www-form-urlencoded"
+          check_anonymous_post "Leads" http://127.0.0.1:3000/api/admin/leads '{"name":"Anonymous","phone":"12345678","consent":true}' "application/json"
+          check_anonymous_post "Properties" http://127.0.0.1:3000/api/admin/properties "title=Anonymous" "application/x-www-form-urlencoded"
+          echo "Standalone anonymous admin mutation guards passed"
+          # CI-only session exists solely in ephemeral PostgreSQL.
+          cookie="webappecloud_session=$(printf 'a%.0s' {1..64})"
+          auth_status=$(curl --silent --output /tmp/nexus-auth-leads.json --write-out "%{http_code}" --max-time 15 -H "Cookie: $cookie" http://127.0.0.1:3000/api/admin/leads)
+          if [ "$auth_status" != "200" ]; then
+            echo "::error::Authenticated standalone leads GET returned HTTP $auth_status"
+            head -c 500 /tmp/nexus-auth-leads.json
+            tail -n 60 /tmp/nexus-standalone-public.log
+            exit 1
+          fi
+          create_status=$(curl --silent --output /tmp/nexus-create-lead.json --write-out "%{http_code}" --max-time 15 -X POST -H "Cookie: $cookie" -H "Origin: https://nexus-ci.example" -H "Content-Type: application/json" --data '{"name":"CI HTTP prospect","phone":"88888888","consent":true}' http://127.0.0.1:3000/api/admin/leads)
+          if [ "$create_status" != "201" ]; then
+            echo "::error::Authenticated standalone lead creation returned HTTP $create_status"
+            head -c 500 /tmp/nexus-create-lead.json
+            tail -n 60 /tmp/nexus-standalone-public.log
+            exit 1
+          fi
+          grep -Fq '"ok":true' /tmp/nexus-create-lead.json
+          echo "Standalone authenticated prospect creation passed"
+          user_status=$(curl --silent --dump-header /tmp/nexus-create-user.headers --output /tmp/nexus-create-user.html --write-out "%{http_code}" --max-time 15 -X POST -H "Cookie: $cookie" -H "Origin: https://nexus-ci.example" --data-urlencode "intent=create" --data-urlencode "name=CI HTTP Agent" --data-urlencode "email=ci-http-agent@example.invalid" --data-urlencode "password=CI-Only-Password-12345" --data-urlencode "confirmPassword=CI-Only-Password-12345" --data-urlencode "roles=agente" http://127.0.0.1:3000/api/admin/users)
+          if [ "$user_status" != "303" ]; then
+            echo "::error::Authenticated standalone user creation returned HTTP $user_status"
+            head -c 500 /tmp/nexus-create-user.html
+            tail -n 60 /tmp/nexus-standalone-public.log
+            exit 1
+          fi
+          property_status=$(curl --silent --dump-header /tmp/nexus-create-property.headers --output /tmp/nexus-create-property.html --write-out "%{http_code}" --max-time 15 -X POST -H "Cookie: $cookie" -H "Origin: https://nexus-ci.example" --data-urlencode "title=CI HTTP Created House" --data-urlencode "city=Managua" --data-urlencode "neighborhood=Centro" --data-urlencode "description=Standalone HTTP creation test property" --data-urlencode "type=Casa" --data-urlencode "operation=venta" --data-urlencode "price=123456" --data-urlencode "bedrooms=3" --data-urlencode "bathrooms=2" --data-urlencode "areaM2=150" http://127.0.0.1:3000/api/admin/properties)
+          if [ "$property_status" != "303" ]; then
+            echo "::error::Authenticated standalone property creation returned HTTP $property_status"
+            head -c 500 /tmp/nexus-create-property.html
+            tail -n 60 /tmp/nexus-standalone-public.log
+            exit 1
+          fi
+          if ! grep -Fq 'status=creado' /tmp/nexus-create-user.headers; then
+            echo "::error::User POST did not redirect to success"
+            cat /tmp/nexus-create-user.headers
+            exit 1
+          fi
+          if ! grep -Fq 'created=1' /tmp/nexus-create-property.headers; then
+            echo "::error::Property POST did not redirect to success"
+            cat /tmp/nexus-create-property.headers
+            exit 1
+          fi
+          echo "Standalone authenticated user and property creation requests returned HTTP 303"
+          node --import tsx scripts/verify-standalone-http-mutations.ts

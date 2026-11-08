@@ -3,6 +3,7 @@ import { randomBytes, createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { currentAdmin, verifyPassword } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getStandalonePrisma } from "@/lib/prisma-standalone";
 import { hasDatabaseConfig } from "@/lib/server-config";
 import { singleInstallationTenantId } from "@/lib/single-installation";
 import { verifyLoginCaptcha } from "@/lib/recaptcha";
@@ -81,6 +82,28 @@ export async function POST(req: NextRequest) {
 
   try {
     // Each deployment owns exactly one organization; do not trust proxy Host for tenant routing.
+    if (process.env.NEXUS_STANDALONE === "true") {
+      const db = getStandalonePrisma();
+      const hostname = new URL(process.env.SITE_URL || process.env.APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost").hostname;
+      const key = createHash("sha256").update("standalone:" + email).digest("hex");
+      const now = new Date();
+      const previous = await db.adminLoginThrottle.findUnique({where:{key}});
+      if (previous && previous.expiresAt > now && previous.attempts >= 5) return fail(req,"bloqueado");
+      if (!await verifyLoginCaptcha(captchaToken,hostname)) return fail(req,"captcha");
+      const user = await db.adminUser.findUnique({where:{email},select:{id:true,active:true,passwordHash:true}});
+      if (!user || !user.active || !verifyPassword(password,user.passwordHash)) {
+        const expiresAt = new Date(Date.now()+15*60*1000);
+        if(previous && previous.expiresAt > now) await db.adminLoginThrottle.update({where:{key},data:{attempts:{increment:1}}});
+        else await db.adminLoginThrottle.upsert({where:{key},create:{key,attempts:1,expiresAt},update:{attempts:1,expiresAt}});
+        return fail(req,"credenciales");
+      }
+      await db.adminLoginThrottle.deleteMany({where:{key}});
+      const raw = randomBytes(32).toString("hex");
+      await db.adminSession.create({data:{userId:user.id,tokenHash:createHash("sha256").update(raw).digest("hex"),expiresAt:new Date(Date.now()+sessionSeconds*1000)}});
+      const response = go(req,"/api/admin/session");
+      response.cookies.set(cookieName,raw,{httpOnly:true,secure:process.env.NODE_ENV==="production",sameSite:"lax",path:"/",maxAge:sessionSeconds});
+      return response;
+    }
     const tenantId = await singleInstallationTenantId();
     if (!tenantId) return fail(req, "instalacion");
     const hostname = new URL(process.env.SITE_URL || process.env.APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost").hostname;

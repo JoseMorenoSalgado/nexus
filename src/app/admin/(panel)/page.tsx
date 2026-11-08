@@ -3,6 +3,7 @@ import Link from "next/link";
 import {House,Users,Eye,MessageCircle,ArrowUpRight,Plus} from "lucide-react";
 import {requireAdmin} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {leadWhere,managesAllLeads} from "@/lib/agent-scope";
 import {commercialSchemaState} from "@/lib/commercial-schema";
 import {CommercialAlertsPreview} from "@/components/commercial-alerts-preview";
@@ -12,6 +13,7 @@ import {getTenantModules} from "@/lib/tenant-modules";
 export const dynamic="force-dynamic";
 const days=14;
 export default async function Dashboard(){
+ if(process.env.NEXUS_STANDALONE==="true")return <StandaloneDashboard/>;
  if(process.env.NEXUS_STANDALONE_MODE==="true")redirect("/standalone/admin");
  const admin=await requireAdmin(),tenantId=admin.tenantId;
  const modules=await getTenantModules(tenantId);
@@ -112,4 +114,22 @@ async function AgentDashboard({user}:{user:{tenantId:string;userId:string;name:s
   </div>
   <p className="property-help">Las consultas generales sin propiedad y los datos de otros agentes son gestionados por el administrador.</p>
  </>;
+}
+
+async function StandaloneDashboard(){
+ const admin=await requireAdmin();
+ const db=getStandalonePrisma();
+ const since=new Date(Date.now()-30*864e5);
+ const [total,leadsCount,viewCount,waCount,props,leads]=await Promise.all([
+  db.property.count(),db.lead.count({where:{createdAt:{gte:since}}}),
+  db.visitEvent.count({where:{kind:"view",createdAt:{gte:since}}}),
+  db.visitEvent.count({where:{kind:"whatsapp",createdAt:{gte:since}}}),
+  db.property.findMany({take:4,orderBy:{createdAt:"desc"},select:{id:true,title:true,refCode:true,published:true}}),
+  db.lead.findMany({take:4,orderBy:{createdAt:"desc"},select:{id:true,name:true,createdAt:true,property:{select:{refCode:true}}}})
+ ]);
+ const cards=[{label:"Propiedades",value:total,Icon:House},{label:"Prospectos (30 días)",value:leadsCount,Icon:Users},{label:"Visitas (30 días)",value:viewCount,Icon:Eye},{label:"WhatsApp (30 días)",value:waCount,Icon:MessageCircle}];
+ return <><div className="admin-heading"><div><h1>Resumen</h1><p>Lo más importante de tu inmobiliaria en un solo lugar.</p></div>{admin.roles.some(role=>["admin","editor"].includes(role))&&<Link href="/admin/propiedades/nueva" className="btn btn-red"><Plus size={17}/> Nueva propiedad</Link>}</div>
+ <div className="metric-grid">{cards.map(c=><div className="metric-card" key={c.label}><div className="metric-label"><span>{c.label}</span><span className="metric-icon"><c.Icon size={19}/></span></div><strong>{c.value.toLocaleString("es")}</strong></div>)}</div>
+ <div className="admin-panels"><section className="admin-panel"><div className="heading-row"><h2>Propiedades recientes</h2><Link className="inline-link" href="/admin/propiedades">Ver todas <ArrowUpRight size={16}/></Link></div>{props.length?props.map(p=><div className="lead-row" key={p.id}><div><strong>{p.title}</strong><small>Ref. {p.refCode} · {p.published?"Publicada":"Borrador"}</small></div></div>):<p className="admin-empty">Aún no hay propiedades registradas.</p>}</section>
+ <section className="admin-panel"><div className="heading-row"><h2>Últimos prospectos</h2><Link className="inline-link" href="/admin/leads">Ver todos <ArrowUpRight size={16}/></Link></div>{leads.length?leads.map(l=><div className="lead-row" key={l.id}><div><strong>{l.name}</strong><small>{l.property?.refCode||"Consulta general"} · {l.createdAt.toLocaleDateString("es-NI")}</small></div></div>):<p className="admin-empty">Los contactos del sitio aparecerán aquí.</p>}</section></div></>;
 }

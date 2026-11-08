@@ -1,5 +1,6 @@
 import "server-only";
 import {prisma} from "@/lib/prisma";
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {type Prisma} from "@prisma/client";
 import {NEXUS_SITE_DEFAULTS} from "@/lib/templates/nexus-defaults";
 
@@ -51,10 +52,18 @@ export function normalizeSiteSettings(value:unknown):SiteSettings{
  return copy;
 }
 export async function getSiteSettings(tenantId:string):Promise<SiteSettings>{
+ if(process.env.NEXUS_STANDALONE==="true"){
+  const page=await getStandalonePrisma().sitePage.findUnique({where:{slug:"home"},select:{blocks:true,published:true}});
+  return page?.published?normalizeSiteSettings(page.blocks):{...DEFAULT_SITE_SETTINGS};
+ }
  const page=await prisma.sitePage.findUnique({where:{tenantId_slug:{tenantId,slug:"home"}},select:{blocks:true,published:true}});
  return page?.published?normalizeSiteSettings(page.blocks):{...DEFAULT_SITE_SETTINGS};
 }
 export async function saveSiteSettings(tenantId:string,settings:SiteSettings){
+ if(process.env.NEXUS_STANDALONE==="true"){
+  await getStandalonePrisma().sitePage.upsert({where:{slug:"home"},create:{slug:"home",title:"Inicio",blocks:settings as unknown as Prisma.InputJsonValue,published:true},update:{blocks:settings as unknown as Prisma.InputJsonValue,published:true,title:"Inicio"}});
+  return;
+ }
  await prisma.sitePage.upsert({
   where:{tenantId_slug:{tenantId,slug:"home"}},
   create:{tenantId,slug:"home",title:"Inicio",blocks:settings as unknown as Prisma.InputJsonValue,published:true},

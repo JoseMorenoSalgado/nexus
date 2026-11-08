@@ -1,4 +1,5 @@
 import Link from "next/link";
+import {redirect} from "next/navigation";
 import {headers} from "next/headers";
 import {requireRole} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
@@ -9,6 +10,7 @@ export const dynamic="force-dynamic";
 export const revalidate=0;
 type Check={name:string;status:"correcto"|"advertencia"|"error";detail:string};
 export default async function Diagnostico(){
+ if(process.env.NEXUS_STANDALONE==="true")redirect("/admin/standalone/sistema");
  await requireRole(["admin"]);
  const checks:Check[]=[];
  const add=(name:string,status:Check["status"],detail:string)=>checks.push({name,status,detail});

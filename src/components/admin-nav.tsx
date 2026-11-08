@@ -26,8 +26,8 @@ const secondary:Entry[]=[
 function selectedLink(pathname:string,href:string){
  return href==="/admin"?pathname===href:href==="/admin/personalizar/inicio"?pathname.startsWith("/admin/personalizar"):pathname===href||pathname.startsWith(href+"/");
 }
-export function AdminNav({role="admin",roles=[role],userId,userName,notificationCount=0,templateKey="real-estate",enabledModules}:{
- role?:string;roles?:string[];userId?:string;userName:string;notificationCount?:number;templateKey?:SiteTemplateKey;enabledModules?:ModuleKey[]
+export function AdminNav({role="admin",roles=[role],userId,userName,notificationCount=0,templateKey="real-estate",enabledModules,standalone=false}:{
+ role?:string;roles?:string[];userId?:string;userName:string;notificationCount?:number;templateKey?:SiteTemplateKey;enabledModules?:ModuleKey[];standalone?:boolean
 }){
  const pathname=usePathname();
  const [mobileOpen,setMobileOpen]=useState(false);
@@ -66,23 +66,24 @@ export function AdminNav({role="admin",roles=[role],userId,userName,notification
  const realEstate=templateKey==="real-estate";
  const enabled=new Set(enabledModules??defaultEnabledModules(templateKey));
  const entryModule:Record<string,ModuleKey>={"/admin/propiedades":"properties","/admin/leads":"inquiries","/admin/agenda":"agenda","/admin/cierres":"closings","/admin/reportes":"analytics"};
- const allowed=(entry:Entry)=>!entryModule[entry.href]||enabled.has(entryModule[entry.href]);
+ const allowed=(entry:Entry)=>standalone?["/admin","/admin/propiedades","/admin/leads","/admin/agenda","/admin/cierres","/admin/reportes","/admin/notificaciones"].includes(entry.href):!entryModule[entry.href]||enabled.has(entryModule[entry.href]);
  const main=primary.filter(x=>(manager||(agent&&["/admin","/admin/propiedades","/admin/leads","/admin/agenda","/admin/cierres"].includes(x.href))||x.href==="/admin")
   &&(realEstate||["/admin","/admin/leads","/admin/personalizar/inicio"].includes(x.href)))
   .filter(allowed)
   .map(x=>!realEstate&&x.href==="/admin/leads"?{...x,label:"Consultas"}:x);
  const tools=secondary.filter(x=>realEstate&&(manager||(agent&&x.href==="/admin/notificaciones"))).filter(allowed);
- if(manager)tools.unshift({href:"/admin/personalizar/inicio",label:"Mi sitio web",Icon:FileText});
- if(has("admin")){
+ if(manager&&!standalone)tools.unshift({href:"/admin/personalizar/inicio",label:"Mi sitio web",Icon:FileText});
+ if(standalone&&has("admin")){tools.push({href:"/admin/clientes-agentes",label:"Equipo y usuarios",Icon:ShieldCheck});tools.push({href:"/admin/sistema",label:"Estado técnico",Icon:Settings});}
+ if(has("admin")&&!standalone){
   if(realEstate&&enabled.has("properties"))tools.push({href:"/admin/clientes-agentes",label:"Equipo y usuarios",Icon:ShieldCheck});
   tools.push({href:"/admin/modulos",label:"Módulos",Icon:Settings});
   tools.push({href:"/admin/sistema",label:"Estado técnico",Icon:Settings});
   tools.push({href:"/admin/integraciones",label:"Correo y seguridad",Icon:ShieldCheck});
  }
- if(realEstate&&enabled.has("analytics")&&agent&&!manager){
+ if(!standalone&&realEstate&&enabled.has("analytics")&&agent&&!manager){
   tools.push({href:"/admin/reportes/agentes",label:"Mi rendimiento",Icon:ChartNoAxesCombined});
  }
- if(realEstate&&enabled.has("properties")&&agent&&userId){
+ if(!standalone&&realEstate&&enabled.has("properties")&&agent&&userId){
   tools.push({href:"/admin/clientes-agentes/agentes/"+encodeURIComponent(userId),label:"Mi perfil comercial",Icon:UserRound});
  }
  const notifyBadge=(x:Entry)=>x.href==="/admin/notificaciones"&&notificationCount>0

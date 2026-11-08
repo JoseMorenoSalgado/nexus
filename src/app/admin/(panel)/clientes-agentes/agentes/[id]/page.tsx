@@ -1,5 +1,5 @@
 import Link from "next/link";
-import {notFound} from "next/navigation";
+import {notFound,redirect} from "next/navigation";
 import {Building2,ArrowLeft,Mail,UserRound,UsersRound,ExternalLink} from "lucide-react";
 import {requireRole} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
@@ -10,6 +10,7 @@ export default async function AgentDetail({params}:{params:Promise<{id:string}>}
  const admin=await requireRole(["admin","agente"]);
  const {id}=await params;
  if(!admin.roles.includes("admin")&&id!==admin.userId)notFound();
+ if(process.env.NEXUS_STANDALONE==="true")redirect("/admin/standalone/agentes/"+encodeURIComponent(id));
  const agent=await prisma.adminUser.findFirst({
   where:{id,tenantId:admin.tenantId},
   select:{id:true,name:true,email:true,role:true,active:true}

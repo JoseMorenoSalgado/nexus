@@ -11,6 +11,7 @@ export async function captchaForHost(host:string):Promise<CaptchaConfig>{
  // Emergency recovery switch available to the server operator via Plesk.
  if(process.env.NEXUS_DISABLE_CAPTCHA==="true")return {enabled:false,siteKey:"",secretKey:""};
  const fallback=environmentIntegrations().captcha;
+ if(process.env.NEXUS_STANDALONE==="true")return fallback;
  if(!process.env.APP_CONFIG_DIR||!process.env.APP_CONFIG_DIR.startsWith("/"))return fallback;
  const [{hasDatabaseConfig},{prisma}]=await Promise.all([import("@/lib/server-config"),import("@/lib/prisma")]);
  if(!hasDatabaseConfig())return fallback;

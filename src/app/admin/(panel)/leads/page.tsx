@@ -1,3 +1,4 @@
+import {redirect} from "next/navigation";
 import Link from "next/link";
 import {Building2,CalendarClock,ChevronRight,ClipboardList,Filter,MessageCircle,Search,Users,UserPlus,X} from "lucide-react";
 import {Prisma} from "@prisma/client";
@@ -15,6 +16,7 @@ type Search={q?:string;status?:string;agent?:string;source?:string;page?:string;
 const date=(x:Date)=>x.toLocaleDateString("es-NI",{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"});
 export default async function AdminLeads({searchParams}:{searchParams:Promise<Search>}){
  const admin=await requireRole(["admin","editor","agente"]);
+ if(process.env.NEXUS_STANDALONE==="true")redirect("/admin/standalone/prospectos");
  const realEstate=(await getSiteTemplate(admin.tenantId)).key==="real-estate";
  const params=await searchParams;
  const ready=await crmTablesReady();

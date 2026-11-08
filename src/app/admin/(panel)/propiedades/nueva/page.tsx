@@ -2,6 +2,7 @@ import Link from "next/link";
 import {Plus} from "lucide-react";
 import {requireRole} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {parseRoles} from "@/lib/roles";
 import {AdminPropertyFields} from "@/components/admin-property-fields";
 export const dynamic="force-dynamic";
@@ -15,7 +16,7 @@ const errors:Record<string,string>={
 export default async function NewProperty({searchParams}:{searchParams:Promise<{error?:string}>}){
  const admin=await requireRole(["admin","editor","agente"]);
  const {error}=await searchParams;
- const users=await prisma.adminUser.findMany({where:{tenantId:admin.tenantId,active:true},select:{id:true,name:true,email:true,role:true}});
+ const users=process.env.NEXUS_STANDALONE==="true"?await getStandalonePrisma().adminUser.findMany({where:{active:true},select:{id:true,name:true,email:true,role:true}}):await prisma.adminUser.findMany({where:{tenantId:admin.tenantId,active:true},select:{id:true,name:true,email:true,role:true}});
  const agents=users.filter(u=>parseRoles(u.role).includes("agente"));
  return <>
   <div className="admin-heading"><div><h1>Nueva propiedad</h1><p>Registra la información principal, guarda y después agrega las fotografías.</p></div><Link href="/admin/propiedades" className="inline-link">← Volver a propiedades</Link></div>

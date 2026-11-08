@@ -1,7 +1,7 @@
 import "server-only";
 import {standalonePrisma} from "@/lib/standalone/db";
 import {PrismaClient} from "@/generated/standalone-postgres";
-import {hashPassword} from "@/lib/auth";
+import {hashStandalonePassword} from "@/lib/standalone/auth";
 
 /**
  * Called only after a FRESH PostgreSQL database has been initialized with
@@ -28,7 +28,7 @@ export async function initializeStandaloneSite(input:{
    whatsapp:input.whatsapp?.trim()||null
   }});
   const admin=await tx.adminUser.create({data:{
-   name:adminName,email,passwordHash:hashPassword(input.adminPassword),
+   name:adminName,email,passwordHash:hashStandalonePassword(input.adminPassword),
    role:"admin",active:true
   }});
   await tx.propertySequence.create({data:{id:"main"}});

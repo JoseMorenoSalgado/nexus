@@ -1,6 +1,7 @@
 import {hasDatabaseConfig} from "@/lib/server-config";
 import {NextResponse,type NextRequest} from "next/server";
 import {prisma} from "@/lib/prisma";
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {parseRoles} from "@/lib/roles";
 import {tenantFromHost} from "@/lib/tenant";
 import {tenantModuleEnabled} from "@/lib/tenant-modules";
@@ -18,6 +19,21 @@ export async function POST(req:NextRequest){
  const name=String(b.name||"").trim().slice(0,120),phone=String(b.phone||"").trim().slice(0,30),email=String(b.email||"").trim().slice(0,180),message=String(b.message||"").trim().slice(0,2000);
  if(name.length<2||!/^[+\d() -]{7,30}$/.test(phone)||b.consent!=="yes"||(email&&!/^\S+@\S+\.\S+$/.test(email)))return NextResponse.json({error:"Revisa tus datos y acepta el consentimiento de contacto."},{status:400});
  try{
+  if(process.env.NEXUS_STANDALONE==="true"){
+   const db=getStandalonePrisma();
+   const site=await db.siteConfig.findUnique({where:{id:"main"},select:{id:true}});
+   if(!site)return NextResponse.json({error:"Sitio no configurado"},{status:503});
+   let propertyId:string|undefined;
+   let assignedAgentId:string|null=null;
+   if(typeof b.propertyId==="string"&&b.propertyId){
+    const property=await db.property.findFirst({where:{id:b.propertyId,published:true},select:{id:true,assignedAgentId:true,assignedAgent:{select:{active:true,role:true}}}});
+    if(!property)return NextResponse.json({error:"Propiedad no encontrada"},{status:400});
+    propertyId=property.id;
+    if(property.assignedAgentId&&property.assignedAgent?.active&&parseRoles(property.assignedAgent.role).includes("agente"))assignedAgentId=property.assignedAgentId;
+   }
+   await db.lead.create({data:{propertyId,name,phone,email:email||null,message:message||null,source:"web",consent:true,assignedAgentId},select:{id:true}});
+   return NextResponse.json({ok:true},{status:201});
+  }
   const tenant=await tenantFromHost(req.headers.get("host")||"");
   if(!tenant)return NextResponse.json({error:"Sitio no encontrado"},{status:404});
   if(!await tenantModuleEnabled(tenant.tenantId,"inquiries"))return NextResponse.json({error:"Formulario desactivado."},{status:403});

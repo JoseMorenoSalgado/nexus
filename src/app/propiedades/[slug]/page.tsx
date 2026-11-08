@@ -20,7 +20,7 @@ export const dynamic="force-dynamic";
 
 export default async function Detail({params}:{params:Promise<{slug:string}>}){
  const {slug}=await params;
- if(process.env.NEXUS_STANDALONE_MODE==="true")redirect("/standalone/propiedades/"+encodeURIComponent(slug));
+ if(process.env.NEXUS_STANDALONE==="true")redirect("/standalone/propiedades/"+encodeURIComponent(slug));
  const {tenant,properties:demoProperties,demo}=await getPublicContext({loadProperties:false});
  if((await getSiteTemplate(tenant.id)).key!=="real-estate"||!await tenantModuleEnabled(tenant.id,"properties"))notFound();
  await assertPagePublished(tenant.id,demo,"propiedades");
