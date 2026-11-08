@@ -1,5 +1,6 @@
 import "server-only";
 import {prisma} from "@/lib/prisma";
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {type Prisma} from "@prisma/client";
 import {SITE_TEMPLATES,TEMPLATE_DEFAULTS,isTemplateKey,normalizeTemplateContent,type SiteTemplateKey,type TemplateContent} from "@/lib/site-template-registry";
 
@@ -10,9 +11,9 @@ function blocksObject(value:unknown):Record<string,unknown>{
 }
 export async function getSiteTemplate(tenantId:string):Promise<SiteTemplate>{
  if(tenantId==="demo")return {key:"real-estate",content:structuredClone(TEMPLATE_DEFAULTS["real-estate"])};
- const record=await prisma.sitePage.findUnique({
-  where:{tenantId_slug:{tenantId,slug:TEMPLATE_PAGE_SLUG}},select:{blocks:true}
- });
+ const record=process.env.NEXUS_STANDALONE==="true"
+  ?await getStandalonePrisma().sitePage.findUnique({where:{slug:TEMPLATE_PAGE_SLUG},select:{blocks:true}})
+  :await prisma.sitePage.findUnique({where:{tenantId_slug:{tenantId,slug:TEMPLATE_PAGE_SLUG}},select:{blocks:true}});
  const blocks=blocksObject(record?.blocks);
  const key=isTemplateKey(blocks.key)?blocks.key:"real-estate"; // existing customers keep NEXUS unchanged
  const drafts=blocksObject(blocks.contentByTemplate);
@@ -26,9 +27,9 @@ export async function getTemplateLibrary(tenantId:string):Promise<{
  selected:SiteTemplateKey;
  variants:Record<SiteTemplateKey,TemplateContent>;
 }>{
- const record=tenantId==="demo"?null:await prisma.sitePage.findUnique({
-  where:{tenantId_slug:{tenantId,slug:TEMPLATE_PAGE_SLUG}},select:{blocks:true}
- });
+ const record=tenantId==="demo"?null:process.env.NEXUS_STANDALONE==="true"
+  ?await getStandalonePrisma().sitePage.findUnique({where:{slug:TEMPLATE_PAGE_SLUG},select:{blocks:true}})
+  :await prisma.sitePage.findUnique({where:{tenantId_slug:{tenantId,slug:TEMPLATE_PAGE_SLUG}},select:{blocks:true}});
  const blocks=blocksObject(record?.blocks);
  const selected=isTemplateKey(blocks.key)?blocks.key:"real-estate";
  const drafts=blocksObject(blocks.contentByTemplate);
