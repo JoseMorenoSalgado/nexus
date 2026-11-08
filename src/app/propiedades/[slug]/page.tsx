@@ -3,7 +3,6 @@ import Link from "next/link";
 import {ArrowLeft,ArrowUpRight,MapPin,BedDouble,Bath,Maximize2,Download,FileText,Home,MessageCircle,ShieldCheck,Check} from "lucide-react";
 import {getPublicContext} from "@/lib/tenant";
 import {prisma} from "@/lib/prisma";
-import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import type {PublicProperty} from "@/lib/demo";
 import {getSiteTemplate} from "@/lib/site-template-store";
 import {tenantModuleEnabled} from "@/lib/tenant-modules";
@@ -23,16 +22,10 @@ export default async function Detail({params}:{params:Promise<{slug:string}>}){
  const {slug}=await params;
  if(process.env.NEXUS_STANDALONE==="true")redirect("/standalone/propiedades/"+encodeURIComponent(slug));
  const {tenant,properties:demoProperties,demo}=await getPublicContext({loadProperties:false});
- const standalone=process.env.NEXUS_STANDALONE==="true";
- if(!standalone){
-  if((await getSiteTemplate(tenant.id)).key!=="real-estate"||!await tenantModuleEnabled(tenant.id,"properties"))notFound();
-  await assertPagePublished(tenant.id,demo,"propiedades");
- }
+ if((await getSiteTemplate(tenant.id)).key!=="real-estate"||!await tenantModuleEnabled(tenant.id,"properties"))notFound();
+ await assertPagePublished(tenant.id,demo,"propiedades");
  const p:PublicProperty|undefined=demo?demoProperties.find(x=>x.slug===slug):await (async()=>{
-  const row=standalone?await getStandalonePrisma().property.findUnique({
-   where:{slug},
-   select:{id:true,slug:true,refCode:true,title:true,description:true,city:true,neighborhood:true,type:true,operation:true,price:true,bedrooms:true,bathrooms:true,areaM2:true,published:true,photos:{orderBy:{sortOrder:"asc"},select:{url:true}}}
-  }):await prisma.property.findUnique({
+  const row=await prisma.property.findUnique({
    where:{tenantId_slug:{tenantId:tenant.id,slug}},
    select:{id:true,slug:true,refCode:true,title:true,description:true,city:true,neighborhood:true,type:true,operation:true,price:true,bedrooms:true,bathrooms:true,areaM2:true,published:true,photos:{orderBy:{sortOrder:"asc"},select:{url:true}}}
   });
@@ -41,7 +34,7 @@ export default async function Detail({params}:{params:Promise<{slug:string}>}){
   return {id:row.id,slug:row.slug,refCode:row.refCode,title:row.title,description:row.description,city:row.city,neighborhood:row.neighborhood||"",type:row.type,operation:row.operation==="alquiler"?"alquiler" as const:"venta" as const,price:Number(row.price),bedrooms:row.bedrooms||0,bathrooms:row.bathrooms||0,areaM2:row.areaM2||0,image:photos[0]||"",photos};
  })();
  if(!p)notFound();
- const customPdfAvailable=!standalone&&!demo&&await hasCustomPdf(tenant.id,p.id);
+ const customPdfAvailable=!demo&&await hasCustomPdf(tenant.id,p.id);
  return <PublicFrame tenant={tenant} demo={demo} property={p}>
   <main className="container property-detail-page" id="contenido" data-nexus-inner-motion="detalle"><NexusInnerMotion/>
    <nav className="property-detail-breadcrumb" aria-label="Ubicación de página">
