@@ -1,9 +1,10 @@
 "use client";
 import {useCallback,useEffect,useState} from "react";
 type Agent={id:string;name:string};
+type PropertyOption={id:string;refCode:string;title:string};
 type Lead={id:string;name:string;phone:string;email:string|null;message:string|null;createdAt:string;assignedAgentId:string|null;crm:{status:string;nextContactAt:string|null}|null;property:{title:string;refCode:string}|null};
 type History={notes:{id:string;authorName:string;body:string;createdAt:string}[];assignments:{id:string;fromAgentName:string|null;toAgentName:string|null;changedByName:string;createdAt:string}[]};
-export default function ProspectosClient({agents,canAssign}:{agents:Agent[];canAssign:boolean}){
+export default function ProspectosClient({agents,canAssign,properties}:{agents:Agent[];canAssign:boolean;properties:PropertyOption[]}){
  const [leads,setLeads]=useState<Lead[]>([]);
  const [page,setPage]=useState(1);
  const [total,setTotal]=useState(0);
@@ -44,7 +45,7 @@ export default function ProspectosClient({agents,canAssign}:{agents:Agent[];canA
   event.preventDefault();setCreating(true);setError("");
   const form=event.currentTarget;
   const fields=new FormData(form);
-  const body={name:String(fields.get("name")||""),phone:String(fields.get("phone")||""),email:String(fields.get("email")||""),message:String(fields.get("message")||""),source:"manual",consent:fields.get("consent")==="on"};
+  const body={name:String(fields.get("name")||""),phone:String(fields.get("phone")||""),email:String(fields.get("email")||""),message:String(fields.get("message")||""),source:"manual",propertyId:String(fields.get("propertyId")||""),...(canAssign?{assignedAgentId:String(fields.get("assignedAgentId")||"")}:{}),consent:fields.get("consent")==="on"};
   try{const response=await fetch("/api/admin/leads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw new Error(data.error||"No se pudo registrar el prospecto");form.reset();setPage(1);await refresh();}
   catch(e){setError(e instanceof Error?e.message:"Error al registrar el prospecto");}
   finally{setCreating(false);}
@@ -54,6 +55,8 @@ export default function ProspectosClient({agents,canAssign}:{agents:Agent[];canA
    <form className="admin-form" onSubmit={e=>void createLead(e)}>
     <div className="admin-form-grid"><label>Nombre completo<input name="name" required minLength={2} maxLength={120}/></label><label>Teléfono<input name="phone" type="tel" required minLength={7} maxLength={30}/></label></div>
     <label>Correo electrónico<input name="email" type="email" maxLength={180}/></label>
+    <label>Propiedad de interés<select name="propertyId" defaultValue=""><option value="">Consulta general (sin propiedad)</option>{properties.map(p=><option key={p.id} value={p.id}>{p.refCode} · {p.title}</option>)}</select></label>
+    {canAssign&&<label>Agente responsable<select name="assignedAgentId" defaultValue=""><option value="">Automático según la propiedad</option>{agents.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></label>}
     <label>Observaciones<textarea name="message" maxLength={2000}/></label>
     <label className="property-check"><input type="checkbox" name="consent" required/> Confirmo que el cliente autorizó el contacto.</label>
     <button className="btn btn-red" type="submit" disabled={creating}>{creating?"Registrando…":"Guardar prospecto"}</button>
