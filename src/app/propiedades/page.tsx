@@ -19,7 +19,7 @@ export const metadata:Metadata={title:"Propiedades",description:"Explora inmuebl
 type Filters={operacion?:string;tipo?:string;ubicacion?:string;pagina?:string;orden?:string;precioMin?:string;precioMax?:string;ciudad?:string;codigo?:string};
 export default async function Catalog({searchParams}:{searchParams:Promise<Filters>}){
  const raw=await searchParams;
- if(process.env.NEXUS_STANDALONE_MODE==="true")redirect("/standalone/propiedades?"+new URLSearchParams(Object.entries(raw).filter((entry):entry is [string,string]=>typeof entry[1]==="string")).toString());
+ if(process.env.NEXUS_STANDALONE!=="true"&&process.env.NEXUS_STANDALONE_MODE==="true")redirect("/standalone/propiedades?"+new URLSearchParams(Object.entries(raw).filter((entry):entry is [string,string]=>typeof entry[1]==="string")).toString());
  const orden:CatalogSort=raw.orden==="precio-asc"||raw.orden==="precio-desc"?raw.orden:"recientes";
  const parsePrice=(value:unknown)=>typeof value==="string"&&/^\d{1,10}(?:\.\d{1,2})?$/.test(value)&&Number(value)<=9999999999?Number(value):undefined;
  const rawMin=parsePrice(raw.precioMin),rawMax=parsePrice(raw.precioMax);
@@ -29,7 +29,7 @@ export default async function Catalog({searchParams}:{searchParams:Promise<Filte
  const codigo=typeof raw.codigo==="string"?raw.codigo.trim().slice(0,90):"";
  const f={ciudad,codigo,precioMin,precioMax,operacion:(raw.operacion||"").slice(0,20),tipo:(raw.tipo||"").slice(0,40),ubicacion:(raw.ubicacion||"").slice(0,90),orden};
  const {tenant,properties:demoProperties,demo}=await getPublicContext({loadProperties:false});
- if((await getSiteTemplate(tenant.id)).key!=="real-estate"||!await tenantModuleEnabled(tenant.id,"properties"))notFound();
+ if(process.env.NEXUS_STANDALONE!=="true"&&((await getSiteTemplate(tenant.id)).key!=="real-estate"||!await tenantModuleEnabled(tenant.id,"properties")))notFound();
  await assertPagePublished(tenant.id,demo,"propiedades");
  const requestedPage=/^[1-9]\d{0,5}$/.test(raw.pagina||"")?Number(raw.pagina):1;
  const normalizedLocation=f.ubicacion.toLocaleLowerCase();
