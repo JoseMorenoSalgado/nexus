@@ -7,7 +7,7 @@ export async function GET(_req:Request,{params}:{params:Promise<{id:string}>}){
  if(process.env.NEXUS_STANDALONE!=="true")return NextResponse.json({error:"No disponible"},{status:404});
  const admin=await currentAdmin();
  if(!admin)return NextResponse.json({error:"No autorizado"},{status:401});
- const isAdmin=admin.roles.includes("admin");
+ const isAdmin=admin.roles.includes("admin")||admin.roles.includes("editor");
  if(!isAdmin&&!admin.roles.includes("agente"))return NextResponse.json({error:"Sin permisos"},{status:403});
  const {id}=await params;
  const db=getStandalonePrisma();
