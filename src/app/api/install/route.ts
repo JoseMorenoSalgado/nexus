@@ -180,9 +180,11 @@ export async function POST(req:NextRequest){
     const [config,admin]=await Promise.all([db.siteConfig.findUnique({where:{id:"main"}}),db.adminUser.findUnique({where:{email:data.adminEmail}})]);
     if(!config||!admin||!admin.active)return response("La instalación independiente no superó la verificación inicial.",500);
    }catch(error){
-    const prismaCode=typeof error==="object"&&error!==null&&"code" in error&&/^P\\d{4}$/.test(String(error.code))?String(error.code):null;
+    const prismaCode=typeof error==="object"&&error!==null&&"code" in error&&/^P\d{4}$/.test(String(error.code))?String(error.code):null;
     const diagnosticId="NEXUS-SEED-"+(prismaCode||"UNKNOWN");
-    console.error("[installer] Standalone seed failed",{diagnosticId,prismaCode,errorType:error instanceof Error?error.name:"unknown"});
+    const prismaMeta=typeof error==="object"&&error!==null&&"meta" in error?error.meta:null;
+    const model=prismaMeta&&typeof prismaMeta==="object"&&"modelName" in prismaMeta?String(prismaMeta.modelName).slice(0,60):undefined;
+    console.error("[installer] Standalone seed failed",{diagnosticId,prismaCode,model,errorType:error instanceof Error?error.name:"unknown"});
     return response("No fue posible inicializar el sitio independiente. Código: "+diagnosticId+". No repitas sin revisar el estado de la base.",500);
    }finally{await db.$disconnect();}
    try{saveInstallation(data.url);}
