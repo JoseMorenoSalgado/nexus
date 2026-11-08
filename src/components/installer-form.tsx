@@ -12,7 +12,7 @@ const defaults:Values={
  dbType:"postgresql",dbHost:"",dbPort:"5432",dbName:"",dbUser:"",dbPassword:"",
  institution:"",institutionEmail:"",adminName:"",adminEmail:"",adminPassword:"",templateKey:"real-estate",modules:defaultEnabledModules("real-estate")
 };
-export default function InstallerForm({domain}:{domain:string}){
+export default function InstallerForm({domain,environmentReady=true}:{domain:string;environmentReady?:boolean}){
  const [step,setStep]=useState<1|2>(1),[values,setValues]=useState(defaults);
  const [error,setError]=useState(""),[busy,setBusy]=useState(false),[complete,setComplete]=useState(false);
  const availableModules=modulesForSector(values.templateKey);
@@ -20,6 +20,7 @@ export default function InstallerForm({domain}:{domain:string}){
  function change(name:Exclude<keyof Values,"modules">,value:string){setValues(v=>({...v,[name]:value}));}
  async function submit(event:FormEvent<HTMLFormElement>){
   event.preventDefault();setError("");
+  if(!environmentReady){setError("Corrige los problemas de la comprobación previa y actualiza la página.");return;}
   if(step===1){setStep(2);return;}
   if(values.adminPassword.length<14){setError("La contraseña administrativa debe tener al menos 14 caracteres.");return;}
   setBusy(true);
@@ -60,7 +61,7 @@ export default function InstallerForm({domain}:{domain:string}){
     {input("dbUser","Usuario de la base de datos")}
     {input("dbPassword","Contraseña de la base de datos",{type:"password",autoComplete:"new-password"})}
     <p className="wizard-warning"><ShieldCheck size={18}/> Tu sesión inicial se autorizó automáticamente en este navegador. El usuario SQL necesita permisos para crear tablas en una base vacía. No reutilices la base de datos de Edvorya.</p>
-    <button className="btn btn-red" type="submit">Continuar <ArrowRight size={16}/></button>
+    <button className="btn btn-red" type="submit" disabled={!environmentReady}>Continuar <ArrowRight size={16}/></button>
   </section>:<section>
     <h2>Configura tu espacio de trabajo</h2>
     <p>Esta instalación es exclusivamente inmobiliaria. Configura tu agencia y las herramientas para propiedades, clientes y agentes.</p>
@@ -87,7 +88,7 @@ export default function InstallerForm({domain}:{domain:string}){
     {input("adminName","Nombre del administrador",{minLength:2,autoComplete:"name"})}
     {input("adminEmail","Correo del administrador",{type:"email",autoComplete:"email"})}
     {input("adminPassword","Contraseña del administrador",{type:"password",minLength:14,autoComplete:"new-password",hint:"Mínimo 14 caracteres. Se guarda un hash seguro, nunca el texto original."})}
-    <div className="wizard-actions"><button className="btn wizard-back" type="button" onClick={()=>setStep(1)} disabled={busy}><ArrowLeft size={16}/> Atrás</button><button className="btn btn-red" type="submit" disabled={busy}>{busy?"Configurando...":"Instalar plataforma"} <CheckCircle2 size={16}/></button></div>
+    <div className="wizard-actions"><button className="btn wizard-back" type="button" onClick={()=>setStep(1)} disabled={busy}><ArrowLeft size={16}/> Atrás</button><button className="btn btn-red" type="submit" disabled={busy||!environmentReady}>{busy?"Configurando...":"Instalar plataforma"} <CheckCircle2 size={16}/></button></div>
   </section>}
   {error&&<div className="wizard-error" role="alert">{error}</div>}
  </form>;
