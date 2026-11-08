@@ -4,7 +4,7 @@
 import {readdir,readFile} from "node:fs/promises";
 import {join,relative} from "node:path";
 const root=process.cwd();
-const roots=["src/app/admin/standalone","src/app/api/admin/standalone"];
+const roots=["src/app/admin/standalone","src/app/api/admin/standalone","src/lib/prisma-standalone.ts","src/lib/property-reference.ts","src/lib/property-agent.ts"];
 const violations=[];
 let files=0;
 async function walk(dir){
@@ -27,7 +27,7 @@ async function walk(dir){
   }
  }
 }
-for(const dir of roots)await walk(join(root,dir));
+for(const dir of roots){if(/\.[cm]?[jt]sx?$/.test(dir)){const source=await readFile(join(root,dir),"utf8");files++;for(const [i,line] of source.split(/\r?\n/).entries()){const reasons=[];if(/\b(?:tenantModuleEnabled|singleInstallationTenantId|resolveTenant|requireTenant)\b/.test(line))reasons.push("tenant context");if(/\b(?:db|prisma)\.(?:tenant|domain)\b/.test(line))reasons.push("tenant/domain database access");if(reasons.length)violations.push({file:dir,line:i+1,reasons});}}else await walk(join(root,dir));}
 console.log(JSON.stringify({checkedFiles:files,violations},null,2));
 if(!files){console.error("No standalone modules found");process.exitCode=1;}
 if(violations.length)process.exitCode=1;
