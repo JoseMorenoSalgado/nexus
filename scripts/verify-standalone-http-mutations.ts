@@ -10,7 +10,7 @@ async function main(){
    db.lead.findFirst({where:{name:"CI HTTP prospect"},select:{id:true,phone:true,consent:true}})
   ]);
   if(!user||!user.active||!JSON.parse(user.role).includes("agente"))throw Error("Authenticated user creation did not persist an active agent");
-  if(!property||!/^NRE-\\d{6}$/.test(property.refCode)||!property.slug.includes(property.refCode.toLowerCase()))throw Error("Authenticated property creation did not persist a valid reference and slug");
+  if(!property||!/^NRE-\d{6}$/.test(property.refCode)||!property.slug.includes(property.refCode.toLowerCase()))throw Error("Authenticated property creation did not persist a valid reference and slug");
   if(property.published)throw Error("Newly created property unexpectedly published");
   if(!lead||lead.phone!=="88888888"||!lead.consent)throw Error("Authenticated prospect creation did not persist");
   console.log("Authenticated standalone HTTP mutations persisted:",JSON.stringify({user:user.id,property:property.id,reference:property.refCode,lead:lead.id}));
