@@ -102,7 +102,16 @@ export async function POST(req:NextRequest){
  let release:undefined|(()=>void);
  try{
   release=takeInstallLock();
- }catch{return response("Otra instalación está en curso.",409);}
+ }catch(error){
+  const code=error instanceof Error&&"code" in error?String(error.code):"UNKNOWN";
+  if(code==="EEXIST")return response("Otra instalación está en curso. Si no hay otra instalación activa, revisa el archivo .installer.lock en APP_CONFIG_DIR.",409);
+  console.error("[installer] Failed to acquire installation lock",{code});
+  if(code==="EACCES"||code==="EPERM"||code==="EROFS")
+   return response("No se puede escribir en el directorio privado de instalación. Revisa APP_CONFIG_DIR y los permisos del usuario Node.js.",500);
+  if(code==="ENOENT"||code==="ENOTDIR")
+   return response("El directorio privado de instalación no es válido. Revisa APP_CONFIG_DIR.",500);
+  return response("No fue posible iniciar la instalación. Consulta [installer] Failed to acquire installation lock en los registros de Enhance.",500);
+ }
  try{
   if(!installerAvailable())return response("Esta instalación ya se completó.",409);
   // Fallar antes de cambiar la BD si el volumen de configuración no es escribible.
