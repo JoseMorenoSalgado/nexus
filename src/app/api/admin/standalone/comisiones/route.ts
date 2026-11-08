@@ -5,7 +5,7 @@ import {validMutationOrigin} from "@/lib/admin-property-request";
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
 const fail=(error:string,status:number)=>NextResponse.json({error},{status,headers:{"Cache-Control":"no-store"}});
-const cents=(s:string)=>{const [a,b=""]=s.split(".");return BigInt(a)*100n+BigInt(b.padEnd(2,"0"));};
+const cents=(s:string)=>{const [a,b=""]=s.split(".");return BigInt(a)*BigInt(100)+BigInt(b.padEnd(2,"0"));};
 export async function POST(req:NextRequest){
  if(process.env.NEXUS_STANDALONE!=="true")return fail("No disponible",404);
  const admin=await currentAdmin();
@@ -16,7 +16,7 @@ export async function POST(req:NextRequest){
  let form:FormData;try{form=await req.formData();}catch{return fail("Datos inválidos",400);}
  const val=(key:string,max:number)=>{const x=form.get(key);return typeof x==="string"&&x.length<=max?x.trim():null;};
  const closingId=val("closingId",100),amount=val("amount",30),paid=val("paidAt",10),method=val("method",30),reference=val("reference",120),notes=val("notes",1000);
- if(!closingId||!amount||!(/^(?:0|[1-9]\d{0,10})(?:\.\d{1,2})?$/.test(amount))||cents(amount)<=0n||!paid||!/^\d{4}-\d{2}-\d{2}$/.test(paid)||!method||!["transferencia","efectivo","cheque","otro"].includes(method)||reference===null||notes===null)return fail("Datos inválidos",400);
+ if(!closingId||!amount||!(/^(?:0|[1-9]\d{0,10})(?:\.\d{1,2})?$/.test(amount))||cents(amount)<=BigInt(0)||!paid||!/^\d{4}-\d{2}-\d{2}$/.test(paid)||!method||!["transferencia","efectivo","cheque","otro"].includes(method)||reference===null||notes===null)return fail("Datos inválidos",400);
  const paidAt=new Date(paid+"T00:00:00.000Z");const today=new Date();today.setUTCHours(0,0,0,0);
  if(!Number.isFinite(paidAt.getTime())||paidAt.toISOString().slice(0,10)!==paid||paidAt>today||paidAt<new Date("2000-01-01"))return fail("Fecha inválida",400);
  const db=getStandalonePrisma();
@@ -28,7 +28,7 @@ export async function POST(req:NextRequest){
    if(!closing||closing.status!=="confirmado")return "noexiste";
    if(paidAt.getTime()<Date.UTC(closing.closedAt.getUTCFullYear(),closing.closedAt.getUTCMonth(),closing.closedAt.getUTCDate()))return "fecha";
    const payments=await tx.commissionPayment.findMany({where:{closingId,status:"confirmado"},select:{amount:true}});
-   const total=payments.reduce((sum,p)=>sum+cents(p.amount.toFixed(2)),0n);
+   const total=payments.reduce((sum,p)=>sum+cents(p.amount.toFixed(2)),BigInt(0));
    const remaining=cents(closing.commissionAmount.toFixed(2))-total;
    if(cents(amount)>remaining)return "saldo";
    await tx.commissionPayment.create({data:{closingId,amount,paidAt,method,reference:reference||null,notes:notes||null,createdByName:admin.name.slice(0,120)}});
