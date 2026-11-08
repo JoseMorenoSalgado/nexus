@@ -99,9 +99,10 @@ export async function saveSiteMenu(tenantId:string,items:MenuRecord[]){
  if(parsed.length!==items.length)throw new Error("MENU_INVALID");
  if(parsed.length>25)throw new Error("MENU_LIMIT");
  const currentTemplate=await getSiteTemplate(tenantId);
- const existing=await prisma.sitePage.findUnique({
-  where:{tenantId_slug:{tenantId,slug:MENU_SLUG}},select:{blocks:true}
- });
+ const standalone=process.env.NEXUS_STANDALONE==="true";
+ const existing=standalone
+  ?await getStandalonePrisma().sitePage.findUnique({where:{slug:MENU_SLUG},select:{blocks:true}})
+  :await prisma.sitePage.findUnique({where:{tenantId_slug:{tenantId,slug:MENU_SLUG}},select:{blocks:true}});
  const currentBlocks=existing?.blocks&&typeof existing.blocks==="object"&&!Array.isArray(existing.blocks)
   ?existing.blocks as Record<string,unknown>:{};
  const previous=currentBlocks.byTemplate&&typeof currentBlocks.byTemplate==="object"&&!Array.isArray(currentBlocks.byTemplate)
@@ -111,6 +112,14 @@ export async function saveSiteMenu(tenantId:string,items:MenuRecord[]){
   items:parsed,
   byTemplate
  };
+ if(standalone){
+  await getStandalonePrisma().sitePage.upsert({
+   where:{slug:MENU_SLUG},
+   create:{slug:MENU_SLUG,title:"Menú principal",blocks:updated as Prisma.InputJsonValue,published:true},
+   update:{blocks:updated as Prisma.InputJsonValue,published:true,title:"Menú principal"}
+  });
+  return;
+ }
  await prisma.sitePage.upsert({
   where:{tenantId_slug:{tenantId,slug:MENU_SLUG}},
   create:{tenantId,slug:MENU_SLUG,title:"Menú principal",blocks:updated as Prisma.InputJsonValue,published:true},
