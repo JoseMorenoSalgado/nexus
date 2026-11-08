@@ -5,6 +5,7 @@ import {dirname} from "node:path";
 import {NextRequest,NextResponse} from "next/server";
 import sharp from "sharp";
 import {prisma} from "@/lib/prisma";
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {MAX_IMAGE_BYTES,MAX_PHOTOS,mediaFilePath,mediaVariantPath} from "@/lib/property-media";
 import {propertyEditor,validMutationOrigin} from "@/lib/admin-property-request";
 import {propertyWhere} from "@/lib/agent-scope";
@@ -13,13 +14,17 @@ export const runtime="nodejs";
 function json(error:string,status:number){return NextResponse.json({error},{status,headers:{"Cache-Control":"no-store"}});}
 export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>}){
  const admin=await propertyEditor();
- if(!await tenantModuleEnabled(admin.tenantId,"properties"))return new Response("Módulo desactivado",{status:403});
+ if(process.env.NEXUS_STANDALONE!=="true"&&!await tenantModuleEnabled(admin.tenantId,"properties"))return new Response("Módulo desactivado",{status:403});
  if(!admin.canEdit)return json("No autorizado",403);
  if(!validMutationOrigin(req))return json("Origen no permitido",403);
  const length=Number(req.headers.get("content-length")||0);
  if(!length||length>MAX_IMAGE_BYTES+1000000)return json("Archivo demasiado grande (máximo 8 MB).",413);
  const {id}=await params;
- const property=await prisma.property.findFirst({where:{id,...propertyWhere(admin)},select:{id:true,title:true}});
+ const standalone=process.env.NEXUS_STANDALONE==="true";
+ const standaloneScope={id,...(!admin.canManageAll?{assignedAgentId:admin.userId}:{})};
+ const property=standalone
+  ?await getStandalonePrisma().property.findFirst({where:standaloneScope,select:{id:true,title:true}})
+  :await prisma.property.findFirst({where:{id,...propertyWhere(admin)},select:{id:true,title:true}});
  if(!property)return json("Inmueble no encontrado.",404);
  let file:FormDataEntryValue|null;
  try{file=(await req.formData()).get("photo");}
@@ -52,13 +57,21 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
    writeFile(mediaVariantPath(admin.tenantId,photoId,"card"),card,{flag:"wx",mode:0o600}),
    writeFile(mediaVariantPath(admin.tenantId,photoId,"thumb"),thumb,{flag:"wx",mode:0o600})
   ]);
-  await prisma.$transaction(async tx=>{
-   // Lock the parent row during the quota check to serialize concurrent uploads for one property.
-   if((await tx.property.findFirst({where:{id,...propertyWhere(admin)},select:{id:true}}))===null)throw Error("MISSING");
-   const photoCount=await tx.photo.count({where:{propertyId:id}});
-   if(photoCount>=MAX_PHOTOS)throw Error("LIMIT");
-   await tx.photo.create({data:{id:photoId,propertyId:id,url:"/api/media/"+photoId,alt:property.title,sortOrder:photoCount}});
-  },{isolationLevel:"Serializable",timeout:15000,maxWait:10000});
+  if(standalone){
+   await getStandalonePrisma().$transaction(async tx=>{
+    if((await tx.property.findFirst({where:standaloneScope,select:{id:true}}))===null)throw Error("MISSING");
+    const photoCount=await tx.photo.count({where:{propertyId:id}});
+    if(photoCount>=MAX_PHOTOS)throw Error("LIMIT");
+    await tx.photo.create({data:{id:photoId,propertyId:id,url:"/api/media/"+photoId,alt:property.title,sortOrder:photoCount}});
+   },{isolationLevel:"Serializable",timeout:15000,maxWait:10000});
+  }else{
+   await prisma.$transaction(async tx=>{
+    if((await tx.property.findFirst({where:{id,...propertyWhere(admin)},select:{id:true}}))===null)throw Error("MISSING");
+    const photoCount=await tx.photo.count({where:{propertyId:id}});
+    if(photoCount>=MAX_PHOTOS)throw Error("LIMIT");
+    await tx.photo.create({data:{id:photoId,propertyId:id,url:"/api/media/"+photoId,alt:property.title,sortOrder:photoCount}});
+   },{isolationLevel:"Serializable",timeout:15000,maxWait:10000});
+  }
   return NextResponse.json({ok:true,id:photoId,url:"/api/media/"+photoId},{status:201,headers:{"Cache-Control":"no-store"}});
  }catch(error){
   await Promise.allSettled([unlink(path),unlink(mediaVariantPath(admin.tenantId,photoId,"card")),unlink(mediaVariantPath(admin.tenantId,photoId,"thumb"))]);
