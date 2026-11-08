@@ -9,6 +9,7 @@ import {propertyRedirect,validMutationOrigin} from "@/lib/admin-property-request
 export const runtime="nodejs";
 const back=(error:string)=>propertyRedirect("/admin/cierres?error="+encodeURIComponent(error));
 export async function POST(req:NextRequest){
+ if(process.env.NEXUS_STANDALONE==="true")return new Response("Operación financiera no habilitada en modo independiente",{status:403});
  const admin=await requireAdmin();
  if(!await tenantModuleEnabled(admin.tenantId,"closings"))return new Response("Módulo desactivado",{status:403});
  if(!admin.roles.some(r=>r==="admin"||r==="editor"))return back("permisos");
