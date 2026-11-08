@@ -45,6 +45,11 @@ export async function destroyStandaloneSession(){
  if(raw)await standalonePrisma().adminSession.deleteMany({where:{tokenHash:tokenHash(raw)}});
  jar.delete(cookieName);
 }
+export function hashStandalonePassword(password:string){
+ const salt=randomBytes(16).toString("hex");
+ return "scrypt$"+salt+"$"+scryptSync(password,salt,64).toString("hex");
+}
+
 export function verifyStandalonePassword(password:string,stored:string){
  const parts=stored.split("$");
  if(parts.length!==3||parts[0]!=="scrypt"||!parts[1]||!parts[2])return false;
