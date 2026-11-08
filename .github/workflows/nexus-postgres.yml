@@ -90,3 +90,25 @@ jobs:
         run: node --import tsx scripts/check-fresh-standalone-db.ts
       - name: Verify standalone financial lifecycle
         run: node --import tsx scripts/check-fresh-standalone-finance.ts
+      - name: Seed independent public smoke fixtures
+        run: node --import tsx scripts/seed-standalone-public-smoke.ts
+      - name: Build standalone public application
+        run: npm run build
+      - name: Test independent public HTTP routes
+        run: |
+          (npm start > /tmp/nexus-standalone-public.log 2>&1 &)
+          ready=0
+          for i in $(seq 1 60); do
+            if curl --fail --silent --max-time 3 http://127.0.0.1:3000/ -o /tmp/nexus-standalone-home.html; then
+              ready=1
+              break
+            fi
+            sleep 2
+          done
+          if [ "$ready" -ne 1 ]; then tail -n 100 /tmp/nexus-standalone-public.log; exit 1; fi
+          grep -q "Encuentra el lugar" /tmp/nexus-standalone-home.html
+          curl --fail --silent --max-time 10 http://127.0.0.1:3000/propiedades -o /tmp/nexus-standalone-catalog.html
+          grep -q "CI published property" /tmp/nexus-standalone-catalog.html
+          curl --fail --silent --max-time 10 http://127.0.0.1:3000/propiedades/ci-public-property -o /tmp/nexus-standalone-detail.html
+          grep -q "CI published property" /tmp/nexus-standalone-detail.html
+          echo "Standalone home, catalog and published property HTTP smoke passed"
