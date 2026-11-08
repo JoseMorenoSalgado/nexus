@@ -34,6 +34,8 @@ jobs:
         with:
           node-version: '22'
       - run: npm install --include=dev --no-audit --no-fund
+      - name: Verify standalone code isolation
+        run: node scripts/check-standalone-isolation.mjs
       - run: npm run db:generate
       - run: npx prisma db push --schema prisma/schema.postgres.prisma
       - run: npm run db:seed
