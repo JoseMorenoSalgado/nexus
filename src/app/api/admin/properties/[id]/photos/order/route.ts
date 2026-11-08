@@ -1,6 +1,7 @@
 import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {NextRequest,NextResponse} from "next/server";
 import {prisma} from "@/lib/prisma";
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {propertyEditor,validMutationOrigin} from "@/lib/admin-property-request";
 import {propertyWhere} from "@/lib/agent-scope";
 
@@ -8,7 +9,7 @@ export const runtime="nodejs";
 const error=(message:string,status:number)=>NextResponse.json({error:message},{status,headers:{"Cache-Control":"no-store"}});
 export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}>}){
  const admin=await propertyEditor();
- if(!await tenantModuleEnabled(admin.tenantId,"properties"))return new Response("Módulo desactivado",{status:403});
+ if(process.env.NEXUS_STANDALONE!=="true"&&!await tenantModuleEnabled(admin.tenantId,"properties"))return new Response("Módulo desactivado",{status:403});
  if(!admin.canEdit)return error("No autorizado.",403);
  if(!validMutationOrigin(req))return error("Origen no permitido.",403);
  const {id}=await params;
@@ -18,6 +19,16 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
  const ids=(body as {photoIds:unknown}).photoIds;
  if(!Array.isArray(ids)||ids.length>15||!ids.every(x=>typeof x==="string")||new Set(ids).size!==ids.length)return error("Orden inválido.",400);
  try{
+  if(process.env.NEXUS_STANDALONE==="true"){
+   await getStandalonePrisma().$transaction(async tx=>{
+    const scope={id,...(!admin.canManageAll?{assignedAgentId:admin.userId}:{})};
+    const property=await tx.property.findFirst({where:scope,select:{id:true}});
+    if(!property)throw new Error("NOT_FOUND");
+    const existing=await tx.photo.findMany({where:{propertyId:id},select:{id:true}});
+    if(existing.length!==ids.length||existing.some(p=>!ids.includes(p.id)))throw new Error("CONFLICT");
+    for(let i=0;i<ids.length;i++)await tx.photo.update({where:{id:ids[i]},data:{sortOrder:i}});
+   },{isolationLevel:"Serializable"});
+  }else{
   await prisma.$transaction(async tx=>{
    const property=await tx.property.findFirst({where:{id,...propertyWhere(admin)},select:{id:true}});
    if(!property)throw new Error("NOT_FOUND");
@@ -25,6 +36,7 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
    if(existing.length!==ids.length||existing.some(p=>!ids.includes(p.id)))throw new Error("CONFLICT");
    for(let i=0;i<ids.length;i++)await tx.photo.update({where:{id:ids[i]},data:{sortOrder:i}});
   },{isolationLevel:"Serializable"});
+  }
   return NextResponse.json({ok:true},{headers:{"Cache-Control":"no-store"}});
  }catch(e){
   if(e instanceof Error&&e.message==="NOT_FOUND")return error("Propiedad no encontrada.",404);
