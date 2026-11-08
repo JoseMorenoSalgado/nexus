@@ -55,3 +55,36 @@ jobs:
           done
           tail -n 100 /tmp/nexus-postgres.log
           exit 1
+
+  fresh-standalone:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: nexus_fresh
+          POSTGRES_USER: ciuser
+          POSTGRES_PASSWORD: ci_password_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U ciuser -d nexus_fresh"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://ciuser:ci_password_only@127.0.0.1:5432/nexus_fresh
+      NEXUS_STANDALONE: 'true'
+      NODE_ENV: test
+      SITE_URL: https://nexus-ci.example
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --include=dev --no-audit --no-fund
+      - run: npm run db:generate
+      - name: Initialize isolated PostgreSQL schema
+        run: npx prisma db push --schema prisma/schema.standalone.postgres.prisma
+      - name: Verify independent tables and queries
+        run: node --import tsx scripts/check-fresh-standalone-db.ts
