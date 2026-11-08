@@ -12,6 +12,7 @@ export default function ProspectosClient({agents,canAssign}:{agents:Agent[];canA
  const [saving,setSaving]=useState<string|null>(null);
  const [history,setHistory]=useState<Record<string,History>>({});
  const [expanded,setExpanded]=useState<string|null>(null);
+ const [creating,setCreating]=useState(false);
  const refresh=useCallback(async()=>{
   setLoading(true);setError("");
   try{
@@ -39,7 +40,25 @@ export default function ProspectosClient({agents,canAssign}:{agents:Agent[];canA
   }catch(e){setError(e instanceof Error?e.message:"Error al guardar");}
   finally{setSaving(null);}
  }
+ async function createLead(event:React.FormEvent<HTMLFormElement>){
+  event.preventDefault();setCreating(true);setError("");
+  const form=event.currentTarget;
+  const fields=new FormData(form);
+  const body={name:String(fields.get("name")||""),phone:String(fields.get("phone")||""),email:String(fields.get("email")||""),message:String(fields.get("message")||""),source:"manual",consent:fields.get("consent")==="on"};
+  try{const response=await fetch("/api/admin/leads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw new Error(data.error||"No se pudo registrar el prospecto");form.reset();setPage(1);await refresh();}
+  catch(e){setError(e instanceof Error?e.message:"Error al registrar el prospecto");}
+  finally{setCreating(false);}
+ }
  return <section aria-label="Listado de prospectos">
+  <details className="admin-panel" style={{marginBottom:20}}><summary><strong>Registrar nuevo prospecto</strong></summary>
+   <form className="admin-form" onSubmit={e=>void createLead(e)}>
+    <div className="admin-form-grid"><label>Nombre completo<input name="name" required minLength={2} maxLength={120}/></label><label>Teléfono<input name="phone" type="tel" required minLength={7} maxLength={30}/></label></div>
+    <label>Correo electrónico<input name="email" type="email" maxLength={180}/></label>
+    <label>Observaciones<textarea name="message" maxLength={2000}/></label>
+    <label className="property-check"><input type="checkbox" name="consent" required/> Confirmo que el cliente autorizó el contacto.</label>
+    <button className="btn btn-red" type="submit" disabled={creating}>{creating?"Registrando…":"Guardar prospecto"}</button>
+   </form>
+  </details>
   {error&&<p role="alert" style={{color:"#b42318"}}>{error}</p>}
   {loading?<p>Cargando prospectos…</p>:leads.length===0?<p>No hay prospectos asignados.</p>:(
    <div style={{display:"grid",gap:16}}>
