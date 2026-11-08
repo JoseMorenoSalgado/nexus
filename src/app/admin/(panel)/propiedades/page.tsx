@@ -22,19 +22,21 @@ export default async function AdminProperties({searchParams}:{searchParams:Promi
  const sequence=admin.roles.includes("admin")?(standalone?await getStandalonePrisma().propertySequence.findUnique({where:{id:"main"}}):await prisma.propertySequence.findUnique({where:{tenantId:admin.tenantId}})):null;
  const scoped=standalone?(admin.roles.includes("admin")||admin.roles.includes("editor")?{}:{assignedAgentId:admin.userId}):propertyWhere(admin);
  const db=standalone?getStandalonePrisma():null;
- const [total,rows,activeCount,draftCount]=await Promise.all([
-  ...(db?[
-   db.property.count({where}),
-   db.property.findMany({where,select:{id:true,slug:true,title:true,refCode:true,city:true,neighborhood:true,price:true,operation:true,published:true,bedrooms:true,bathrooms:true,areaM2:true,photos:{select:{url:true},orderBy:{sortOrder:"asc" as const},take:1}},orderBy:{createdAt:"desc" as const},skip:(page-1)*12,take:12}),
-   db.property.count({where:{...scoped,published:true}}),db.property.count({where:{...scoped,published:false}})
-  ]:[]),
-  ...(!db?[
-  prisma.property.count({where}),
-  prisma.property.findMany({where,select:{id:true,slug:true,title:true,refCode:true,city:true,neighborhood:true,price:true,operation:true,published:true,bedrooms:true,bathrooms:true,areaM2:true,photos:{select:{url:true},orderBy:{sortOrder:"asc"},take:1}},orderBy:{createdAt:"desc"},skip:(page-1)*12,take:12}),
-  prisma.property.count({where:{...propertyWhere(admin),published:true}}),
-  prisma.property.count({where:{...propertyWhere(admin),published:false}})
-  ]:[])
- ]);
+ const select={id:true,slug:true,title:true,refCode:true,city:true,neighborhood:true,price:true,operation:true,published:true,bedrooms:true,bathrooms:true,areaM2:true,photos:{select:{url:true},orderBy:{sortOrder:"asc" as const},take:1}} as const;
+ const results=db
+  ?await Promise.all([
+    db.property.count({where}),
+    db.property.findMany({where,select,orderBy:{createdAt:"desc"},skip:(page-1)*12,take:12}),
+    db.property.count({where:{...scoped,published:true}}),
+    db.property.count({where:{...scoped,published:false}})
+   ] as const)
+  :await Promise.all([
+    prisma.property.count({where}),
+    prisma.property.findMany({where,select,orderBy:{createdAt:"desc"},skip:(page-1)*12,take:12}),
+    prisma.property.count({where:{...scoped,published:true}}),
+    prisma.property.count({where:{...scoped,published:false}})
+   ] as const);
+ const [total,rows,activeCount,draftCount]=results;
  const filters=new URLSearchParams();
  if(q)filters.set("q",q);
  if(status==="publicada"||status==="borrador")filters.set("status",status);
