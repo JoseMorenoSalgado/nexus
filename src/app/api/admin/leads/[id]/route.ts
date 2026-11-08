@@ -1,5 +1,6 @@
 import {NextRequest,NextResponse} from "next/server";
 import {currentAdmin} from "@/lib/auth";
+import {parseRoles} from "@/lib/roles";
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {validMutationOrigin} from "@/lib/admin-property-request";
 import {readJsonObjectLimited,RequestPayloadError} from "@/lib/limited-json";
@@ -47,7 +48,7 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
    if(!visible)throw new Error("NOT_FOUND");
    if(targetAgentId!==undefined){
     const target=targetAgentId===null?null:await tx.adminUser.findFirst({where:{id:targetAgentId,active:true},select:{id:true,name:true,role:true}});
-    if(targetAgentId!==null&&(!target||!target.role.split(",").map(r=>r.trim()).includes("agente")))throw new Error("INVALID_AGENT");
+    if(targetAgentId!==null&&(!target||!parseRoles(target.role).includes("agente")))throw new Error("INVALID_AGENT");
     if(visible.assignedAgentId!==targetAgentId){
      await tx.lead.update({where:{id},data:{assignedAgentId:targetAgentId}});
      await tx.leadAssignmentHistory.create({data:{leadId:id,fromAgentId:visible.assignedAgentId,fromAgentName:visible.assignedAgent?.name??null,toAgentId:target?.id??null,toAgentName:target?.name??null,changedByName:admin.name}});
