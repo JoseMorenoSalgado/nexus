@@ -132,4 +132,14 @@ jobs:
           check_page "Standalone homepage" http://127.0.0.1:3000/ "Encuentra el lugar" /tmp/nexus-standalone-home.html
           check_page "Standalone catalog" http://127.0.0.1:3000/propiedades "CI published property" /tmp/nexus-standalone-catalog.html
           check_page "Standalone property" http://127.0.0.1:3000/propiedades/ci-public-property "CI published property" /tmp/nexus-standalone-detail.html
-          echo "Standalone public HTTP smoke passed"
+          if grep -Fq "CI draft property" /tmp/nexus-standalone-catalog.html; then
+            echo "::error::Unpublished property leaked into public catalog"
+            exit 1
+          fi
+          draft_status=$(curl --location --silent --output /tmp/nexus-standalone-draft.html --write-out "%{http_code}" --max-time 15 http://127.0.0.1:3000/propiedades/ci-draft-property)
+          if [ "$draft_status" != "404" ]; then
+            echo "::error::Unpublished property detail returned HTTP $draft_status instead of 404"
+            tail -n 100 /tmp/nexus-standalone-public.log
+            exit 1
+          fi
+          echo "Standalone public HTTP smoke and unpublished-property isolation passed"
