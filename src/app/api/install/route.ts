@@ -108,12 +108,24 @@ export async function POST(req:NextRequest){
   // Fallar antes de cambiar la BD si el volumen de configuración no es escribible.
   mkdirSync(configDir(),{recursive:true,mode:0o700});
   accessSync(configDir(),constants.W_OK);
+  // The public installer must never initialize a legacy tenant schema for PostgreSQL.
+  if(data.engine==="postgresql"&&process.env.NEXUS_STANDALONE!=="true")return response("Configura NEXUS_STANDALONE=true en Enhance y reinicia la aplicación antes de instalar.",422);
   const probe=prismaFor(data.url);
   try{
    const tables=data.engine==="postgresql"
     ? await probe.$queryRaw<Array<{n:bigint}>>`SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`
     : await probe.$queryRaw<Array<{n:bigint}>>`SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE'`;
-   if(Number(tables[0]?.n||0)!==0)return response("Utiliza una base de datos vacía y exclusiva para esta instalación.",409);
+   if(Number(tables[0]?.n||0)!==0){
+    if(data.engine!=="postgresql")return response("Utiliza una base de datos vacía y exclusiva para esta instalación.",409);
+    // Allow only a failed standalone schema push with completely empty Nexus tables.
+    const rows=await probe.$queryRaw<Array<{table_name:string}>>`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`;
+    const allowed=new Set(["Property","Photo","Lead","VisitEvent","SitePage","AdminUser","AdminSession","AdminLoginThrottle","LeadCrm","LeadNote","LeadAssignmentHistory","AgendaEvent","CommercialClosing","CommissionPayment","PropertySequence","LeadSource","LeadPropertyHistory","SiteConfig"]);
+    if(rows.some(row=>!allowed.has(row.table_name)))return response("La base contiene tablas ajenas al esquema independiente de Nexus. No se modificarán.",409);
+    for(const row of rows){
+     const populated=await probe.$queryRawUnsafe<Array<{has_rows:boolean}>>(`SELECT EXISTS(SELECT 1 FROM "public"."${row.table_name}") AS has_rows`);
+     if(populated[0]?.has_rows)return response("La base contiene registros. No se sobrescribirá ni reinicializará.",409);
+    }
+   }
    if(data.engine==="postgresql"&&process.env.NEXUS_STANDALONE==="true"){
     const privileges=await probe.$queryRaw<Array<{can_connect:boolean;can_create:boolean;can_use:boolean}>>`SELECT has_database_privilege(current_user,current_database(),'CONNECT') AS can_connect, has_schema_privilege(current_user,'public','CREATE') AS can_create, has_schema_privilege(current_user,'public','USAGE') AS can_use`;
     const rights=privileges[0];
