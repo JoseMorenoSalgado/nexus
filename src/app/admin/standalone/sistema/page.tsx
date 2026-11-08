@@ -18,7 +18,7 @@ export default async function StandaloneSystem(){
  checks.push({label:"Dominio de acceso",ok:!!host&&!!requestHost&&host.replace(/^www\./,"")===requestHost.replace(/^www\./,""),detail:"Compara el dominio público con SITE_URL y revisa el proxy de Enhance."});
  const db=getStandalonePrisma();
  try{
-  await db.$queryRaw\`SELECT 1\`;
+  await db.$queryRawUnsafe("SELECT 1");
   checks.push({label:"PostgreSQL",ok:true,detail:"Conexión de lectura satisfactoria."});
   const [config,pages,properties,admins]=await Promise.all([
    db.siteConfig.findUnique({where:{id:"main"},select:{id:true}}),
