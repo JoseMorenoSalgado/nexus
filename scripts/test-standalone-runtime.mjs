@@ -16,4 +16,8 @@ assert.match(client,/generated\/standalone-postgres/);
 assert.match(client,/engineFromUrl\(url\)/);
 assert.match(provider,/schema\.standalone\.postgres\.prisma/);
 assert.match(generator,/schema\.standalone\.postgres\.prisma/);
+const tenantResolver=read("src/lib/tenant.ts");
+assert.match(tenantResolver,/NEXUS_STANDALONE==="true"[\s\S]*?getStandalonePrisma\(\)\.siteConfig\.findUnique/);
+assert.match(tenantResolver,/configured\|\|process\.env\.NEXUS_STANDALONE==="true"\?\[\]:await prisma\.domain\.findMany/);
+
 console.log("PASS: contrato de Prisma independiente; no se realizaron cambios en la BD.");
