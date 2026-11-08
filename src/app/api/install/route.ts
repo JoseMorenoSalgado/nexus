@@ -1,9 +1,8 @@
 import {NextRequest,NextResponse} from "next/server";
-import {validateStandaloneSnapshot} from "@/lib/standalone-installation";
 import {execFile} from "node:child_process";
 import {promisify} from "node:util";
 import {join} from "node:path";
-import {prismaSchemaFor,standalonePrismaSchemaFor,type DatabaseEngine} from "@/lib/db-provider";
+import {standalonePrismaSchemaFor,type DatabaseEngine} from "@/lib/db-provider";
 import {PrismaClient as StandalonePrismaClient} from "@/generated/standalone-postgres";
 import {isTemplateKey,type SiteTemplateKey} from "@/lib/site-template-registry";
 import {normalizeEnabledModules,type ModuleKey} from "@/lib/tenant-modules-registry";
@@ -46,7 +45,6 @@ function validate(input:Form){
  const url=buildInstallerDatabaseUrl({engine,host:dbHost,port:dbPort,dbName,dbUser,dbPassword});
  return {institution,institutionEmail,adminName,adminEmail,adminPassword,url,engine,templateKey,modules};
 }
-function slugify(s:string){return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,72)||"institucion";}
 function databaseError(error:unknown,engine:DatabaseEngine){
  const code=typeof error==="object"&&error&&"code" in error?String(error.code):"";
  if(code==="P1000")return "Usuario o contraseña incorrectos.";
@@ -135,7 +133,7 @@ export async function POST(req:NextRequest){
      if(populated[0]?.has_rows)return response("La base contiene registros. No se sobrescribirá ni reinicializará.",409);
     }
    }
-   if(data.engine==="postgresql"&&process.env.NEXUS_STANDALONE==="true"){
+   if(data.engine==="postgresql"){
     const privileges=await probe.$queryRaw<Array<{can_connect:boolean;can_create:boolean;can_use:boolean}>>`SELECT has_database_privilege(current_user,current_database(),'CONNECT') AS can_connect, has_schema_privilege(current_user,'public','CREATE') AS can_create, has_schema_privilege(current_user,'public','USAGE') AS can_use`;
     const rights=privileges[0];
     if(!rights?.can_connect||!rights.can_create||!rights.can_use){
@@ -158,7 +156,7 @@ export async function POST(req:NextRequest){
   }
   finally{await probe.$disconnect();}
   try{
-   await execute(process.execPath,[join(process.cwd(),"node_modules","prisma","build","index.js"),"db","push","--skip-generate","--schema="+(data.engine==="postgresql"&&process.env.NEXUS_STANDALONE==="true"?standalonePrismaSchemaFor(data.engine):prismaSchemaFor(data.engine))],{
+   await execute(process.execPath,[join(process.cwd(),"node_modules","prisma","build","index.js"),"db","push","--skip-generate","--schema="+(standalonePrismaSchemaFor(data.engine))],{
     cwd:process.cwd(),
     env:{...process.env,DATABASE_URL:data.url},
     timeout:120000,maxBuffer:512000
@@ -215,48 +213,5 @@ export async function POST(req:NextRequest){
    result.cookies.delete(INSTALLER_SESSION_COOKIE);
    return result;
   }
-  const db=prismaFor(data.url);
-  try{
-   await db.$transaction(async tx=>{
-    const realEstate=data.templateKey==="real-estate";
-    const tenant=await tx.tenant.create({data:{name:data.institution,slug:slugify(data.institution),contactEmail:data.institutionEmail,
-     tagline:realEstate?"Pensando en tu futuro":null,primaryColor:realEstate?"#cf202b":"#203F63"}});
-    await tx.sitePage.create({data:{tenantId:tenant.id,slug:"site-template",title:"Plantilla del sitio",blocks:{key:data.templateKey,contentByTemplate:{}},published:true}});
-    await tx.sitePage.create({data:{tenantId:tenant.id,slug:"site-modules",title:"Módulos de la empresa",blocks:{version:1,byTemplate:{[data.templateKey]:data.modules}},published:false}});
-    await tx.domain.create({data:{tenantId:tenant.id,hostname:domain}});
-    await tx.adminUser.create({data:{tenantId:tenant.id,name:data.adminName,email:data.adminEmail,passwordHash:hashPassword(data.adminPassword),role:"admin"}});
-   });
-  }catch{return response("La base fue creada, pero no fue posible guardar la institución. No repitas la instalación sin revisar el registro.",500);}
-  finally{await db.$disconnect();}
-  // Verify the newly provisioned standalone organization before persisting the
-  // connection. Otherwise the installer may report success while Home returns 404.
-  const verify=prismaFor(data.url);
-  try {
-   const [activeOrganizations,matchingDomain,admin]=await Promise.all([
-    verify.tenant.findMany({where:{active:true},select:{id:true},take:2}),
-    verify.domain.findUnique({where:{hostname:domain},select:{tenantId:true,tenant:{select:{active:true}}}}),
-    verify.adminUser.findFirst({where:{email:data.adminEmail,active:true,tenant:{active:true}},select:{tenantId:true}})
-   ]);
-   const validOrganizationId=validateStandaloneSnapshot({
-    activeOrganizationIds:activeOrganizations.map(t=>t.id),
-    domainOrganizationId:matchingDomain?.tenantId??null,
-    domainOrganizationActive:matchingDomain?.tenant.active??false,
-    adminOrganizationId:admin?.tenantId??null
-   });
-   if(!validOrganizationId){
-    console.error("[installer] Standalone post-install verification failed",{
-     activeOrganizations:activeOrganizations.length,domainRegistered:Boolean(matchingDomain),adminRegistered:Boolean(admin)
-    });
-    return response("La instalación no pasó la verificación de organización, dominio y administrador. Revisa los registros antes de continuar.",500);
-   }
-  }catch{
-   return response("No fue posible verificar la instalación PostgreSQL. Revisa la conectividad y los registros antes de continuar.",500);
-  }finally{await verify.$disconnect();}
-  try{saveInstallation(data.url);}
-  catch{return response("La base fue preparada, pero no pudo guardarse la configuración. Revisa el volumen persistente antes de continuar.",500);}
-  clearInstallerSession();
-  const result=NextResponse.json({ok:true,redirectTo:"/admin/acceso?installed=1"},{headers:{"Cache-Control":"no-store"}});
-  result.cookies.delete(INSTALLER_SESSION_COOKIE);
-  return result;
  }finally{release?.();}
 }
