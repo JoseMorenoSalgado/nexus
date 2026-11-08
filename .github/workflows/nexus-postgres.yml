@@ -84,6 +84,8 @@ jobs:
           node-version: '22'
       - run: npm install --include=dev --no-audit --no-fund
       - run: npm run db:generate
+      - name: Guard standalone Prisma schema isolation
+        run: node scripts/check-standalone-schema-isolation.mjs
       - name: Initialize isolated PostgreSQL schema
         run: npx prisma db push --schema prisma/schema.standalone.postgres.prisma
       - name: Verify independent tables and queries
