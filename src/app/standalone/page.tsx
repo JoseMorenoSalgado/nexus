@@ -10,7 +10,7 @@ import type {SiteMenuItem} from "@/lib/site-pages";
 export const dynamic="force-dynamic";
 const links:SiteMenuItem[]=[{id:"home",label:"Inicio",href:"/"},{id:"propiedades",label:"Propiedades",href:"/propiedades"}];
 export default async function StandaloneHome(){
- if(process.env.NEXUS_STANDALONE_MODE!=="true")notFound();
+ if(process.env.NEXUS_STANDALONE!=="true")notFound();
  const context=await getStandalonePublicContext();
  if(!context)notFound();
  const {tenant,properties}=context;
