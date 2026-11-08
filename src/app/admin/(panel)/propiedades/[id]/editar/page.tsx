@@ -5,6 +5,7 @@ import {notFound} from "next/navigation";
 import {ExternalLink,Save,Trash2,Users,UserPlus,Images} from "lucide-react";
 import {requireRole} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {parseRoles} from "@/lib/roles";
 import {propertyWhere} from "@/lib/agent-scope";
 import {AdminPropertyFields} from "@/components/admin-property-fields";
@@ -18,13 +19,16 @@ const errors:Record<string,string>={
  duplicado:"Ya existe una propiedad con la misma referencia.",
  origen:"No se pudo verificar el origen del formulario.",
  confirmacion:"Para eliminar el inmueble debes confirmar su referencia. Solo un administrador puede hacerlo.",
- servidor:"No fue posible guardar los cambios. Revisa los registros de Plesk."
+ servidor:"No fue posible guardar los cambios. Revisa los registros del servidor."
 };
 export default async function EditProperty({params,searchParams}:{params:Promise<{id:string}>;searchParams:Promise<{error?:string;created?:string;saved?:string}>}){
  const admin=await requireRole(["admin","editor","agente"]);
  const {id}=await params;
  const q=await searchParams;
- const property=await prisma.property.findFirst({where:{id,...propertyWhere(admin)},include:{photos:{orderBy:{sortOrder:"asc"}}}});
+ const standalone=process.env.NEXUS_STANDALONE==="true";
+ const property=standalone
+  ?await getStandalonePrisma().property.findFirst({where:{id,...(admin.roles.includes("admin")||admin.roles.includes("editor")?{}:{assignedAgentId:admin.userId})},include:{photos:{orderBy:{sortOrder:"asc"}}}})
+  :await prisma.property.findFirst({where:{id,...propertyWhere(admin)},include:{photos:{orderBy:{sortOrder:"asc"}}}});
  if(!property)notFound();
  const photoSizes=Object.fromEntries(await Promise.all(property.photos.map(async photo=>{
   const paths=[mediaFilePath(admin.tenantId,photo.id),mediaVariantPath(admin.tenantId,photo.id,"card"),mediaVariantPath(admin.tenantId,photo.id,"thumb")];
@@ -33,7 +37,9 @@ export default async function EditProperty({params,searchParams}:{params:Promise
  })));
  const canEdit=admin.roles.some(r=>["admin","editor","agente"].includes(r));
  const hasDocument=await hasCustomPdf(admin.tenantId,property.id);
- const users=await prisma.adminUser.findMany({where:{tenantId:admin.tenantId,active:true},select:{id:true,name:true,email:true,role:true}});
+ const users=standalone
+  ?await getStandalonePrisma().adminUser.findMany({where:{active:true},select:{id:true,name:true,email:true,role:true}})
+  :await prisma.adminUser.findMany({where:{tenantId:admin.tenantId,active:true},select:{id:true,name:true,email:true,role:true}});
  const agents=users.filter(u=>parseRoles(u.role).includes("agente"));
  return <>
   <div className="admin-heading"><div><h1>Editar propiedad</h1><p>Referencia {property.refCode} · {property.published?"Publicada":"Borrador"}</p></div><div className="admin-context-actions"><Link href={"/admin/leads?q="+encodeURIComponent(property.refCode)} className="inline-link"><Users size={16}/> Ver prospectos</Link><Link href={"/admin/leads/nuevo?propertyId="+encodeURIComponent(property.id)} className="inline-link"><UserPlus size={16}/> Registrar interesado</Link><Link href="/admin/propiedades" className="inline-link">← Propiedades</Link></div></div>
