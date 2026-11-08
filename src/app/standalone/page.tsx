@@ -1,5 +1,6 @@
 import Link from "next/link";
-import {notFound} from "next/navigation";
+import {notFound,redirect} from "next/navigation";
+import {installerAvailable,hasDatabaseConfig} from "@/lib/server-config";
 import {ArrowUpRight,Building2,Search} from "lucide-react";
 import {getStandalonePublicContext} from "@/lib/standalone/public-context";
 import {SiteNav} from "@/components/site-nav";
@@ -10,6 +11,7 @@ import type {SiteMenuItem} from "@/lib/site-pages";
 export const dynamic="force-dynamic";
 const links:SiteMenuItem[]=[{id:"home",label:"Inicio",href:"/"},{id:"propiedades",label:"Propiedades",href:"/propiedades"}];
 export default async function StandaloneHome(){
+ if(!hasDatabaseConfig()&&installerAvailable())redirect("/instalar");
  if(process.env.NEXUS_STANDALONE!=="true")notFound();
  const context=await getStandalonePublicContext();
  if(!context)notFound();
