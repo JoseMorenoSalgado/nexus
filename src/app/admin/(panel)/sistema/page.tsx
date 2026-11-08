@@ -1,4 +1,5 @@
 import Link from "next/link";
+import {redirect} from "next/navigation";
 import {Database,ShieldCheck,CheckCircle2,AlertTriangle,ArrowLeft} from "lucide-react";
 import {requireRole} from "@/lib/auth";
 import {commercialSchemaState} from "@/lib/commercial-schema";
@@ -11,6 +12,7 @@ const labels=[
 ] as const;
 export default async function SystemStatus({searchParams}:{searchParams:Promise<{status?:string}>}){
  const admin=await requireRole(["admin"]);
+ if(process.env.NEXUS_STANDALONE==="true")redirect("/admin/standalone/sistema");
  const q=await searchParams;
  let state:Awaited<ReturnType<typeof commercialSchemaState>>|null=null;
  let failed=false;
