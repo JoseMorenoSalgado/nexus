@@ -179,18 +179,32 @@ jobs:
           fi
           grep -Fq '"ok":true' /tmp/nexus-create-lead.json
           echo "Standalone authenticated prospect creation passed"
-          user_status=$(curl --silent --output /tmp/nexus-create-user.html --write-out "%{http_code}" --max-time 15 -X POST -H "Cookie: $cookie" -H "Origin: https://nexus-ci.example" --data-urlencode "intent=create" --data-urlencode "name=CI HTTP Agent" --data-urlencode "email=ci-http-agent@example.invalid" --data-urlencode "password=CI-Only-Password-12345" --data-urlencode "confirmPassword=CI-Only-Password-12345" --data-urlencode "roles=agente" http://127.0.0.1:3000/api/admin/users)
+          user_status=$(curl --silent --dump-header /tmp/nexus-create-user.headers --output /tmp/nexus-create-user.html --write-out "%{http_code}" --max-time 15 -X POST -H "Cookie: $cookie" -H "Origin: https://nexus-ci.example" --data-urlencode "intent=create" --data-urlencode "name=CI HTTP Agent" --data-urlencode "email=ci-http-agent@example.invalid" --data-urlencode "password=CI-Only-Password-12345" --data-urlencode "confirmPassword=CI-Only-Password-12345" --data-urlencode "roles=agente" http://127.0.0.1:3000/api/admin/users)
           if [ "$user_status" != "303" ]; then
             echo "::error::Authenticated standalone user creation returned HTTP $user_status"
             head -c 500 /tmp/nexus-create-user.html
             tail -n 60 /tmp/nexus-standalone-public.log
             exit 1
           fi
-          property_status=$(curl --silent --output /tmp/nexus-create-property.html --write-out "%{http_code}" --max-time 15 -X POST -H "Cookie: $cookie" -H "Origin: https://nexus-ci.example" --data-urlencode "title=CI HTTP Created House" --data-urlencode "city=Managua" --data-urlencode "neighborhood=Centro" --data-urlencode "description=Standalone HTTP creation test property" --data-urlencode "type=Casa" --data-urlencode "operation=venta" --data-urlencode "price=123456" --data-urlencode "bedrooms=3" --data-urlencode "bathrooms=2" --data-urlencode "areaM2=150" http://127.0.0.1:3000/api/admin/properties)
+          property_status=$(curl --silent --dump-header /tmp/nexus-create-property.headers --output /tmp/nexus-create-property.html --write-out "%{http_code}" --max-time 15 -X POST -H "Cookie: $cookie" -H "Origin: https://nexus-ci.example" --data-urlencode "title=CI HTTP Created House" --data-urlencode "city=Managua" --data-urlencode "neighborhood=Centro" --data-urlencode "description=Standalone HTTP creation test property" --data-urlencode "type=Casa" --data-urlencode "operation=venta" --data-urlencode "price=123456" --data-urlencode "bedrooms=3" --data-urlencode "bathrooms=2" --data-urlencode "areaM2=150" http://127.0.0.1:3000/api/admin/properties)
           if [ "$property_status" != "303" ]; then
             echo "::error::Authenticated standalone property creation returned HTTP $property_status"
             head -c 500 /tmp/nexus-create-property.html
             tail -n 60 /tmp/nexus-standalone-public.log
+            exit 1
+          fi
+          if ! grep -Eiq '^location: .*/admin/clientes-agentes\?status=creado\r?
+          node --import tsx scripts/verify-standalone-http-mutations.ts
+ /tmp/nexus-create-user.headers; then
+            echo "::error::User POST redirected to an error instead of success"
+            cat /tmp/nexus-create-user.headers
+            exit 1
+          fi
+          if ! grep -Eiq '^location: /admin/propiedades/[^/]+/editar\?created=1\r?
+          node --import tsx scripts/verify-standalone-http-mutations.ts
+ /tmp/nexus-create-property.headers; then
+            echo "::error::Property POST redirected to an error instead of success"
+            cat /tmp/nexus-create-property.headers
             exit 1
           fi
           echo "Standalone authenticated user and property creation requests returned HTTP 303"
