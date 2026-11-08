@@ -175,6 +175,7 @@ export async function POST(req:NextRequest){
      await tx.sitePage.create({data:{slug:"site-template",title:"Plantilla del sitio",blocks:{key:data.templateKey,contentByTemplate:{}},published:true}});
      await tx.sitePage.create({data:{slug:"site-modules",title:"Módulos de la empresa",blocks:{version:1,byTemplate:{[data.templateKey]:data.modules}},published:false}});
      await tx.adminUser.create({data:{name:data.adminName,email:data.adminEmail,passwordHash:hashPassword(data.adminPassword),role:"admin"}});
+     await tx.propertySequence.create({data:{id:"main"}});
     });
     const [config,admin]=await Promise.all([db.siteConfig.findUnique({where:{id:"main"}}),db.adminUser.findUnique({where:{email:data.adminEmail}})]);
     if(!config||!admin||!admin.active)return response("La instalación independiente no superó la verificación inicial.",500);
