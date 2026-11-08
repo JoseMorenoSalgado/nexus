@@ -8,6 +8,7 @@ export default function AgendaClient(){
  const [error,setError]=useState("");
  const [loading,setLoading]=useState(true);
  const [saving,setSaving]=useState(false);
+ const [updating,setUpdating]=useState<string|null>(null);
  const load=useCallback(async()=>{
   setLoading(true);
   try{const response=await fetch("/api/admin/standalone/agenda",{cache:"no-store"});const data=await response.json();if(!response.ok)throw new Error(data.error||"No se pudo cargar la agenda");setEvents(data.events);setLeads(data.leads);}catch(e){setError(e instanceof Error?e.message:"Error de conexión");}finally{setLoading(false);}
@@ -20,6 +21,12 @@ export default function AgendaClient(){
   if(!date||Number.isNaN(new Date(date).getTime())){setError("Selecciona una fecha válida");setSaving(false);return;}
   const body={leadId:String(fields.get("leadId")||""),title:String(fields.get("title")||""),type:String(fields.get("type")||"llamada"),startsAt:new Date(date).toISOString(),durationMinutes:Number(fields.get("durationMinutes")||60),location:String(fields.get("location")||"")};
   try{const response=await fetch("/api/admin/standalone/agenda",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw new Error(data.error||"No se pudo programar");form.reset();await load();}catch(e){setError(e instanceof Error?e.message:"Error al guardar");}finally{setSaving(false);}
+ }
+ async function updateEvent(id:string,body:Record<string,unknown>){
+  setUpdating(id);setError("");
+  try{const response=await fetch("/api/admin/standalone/agenda/"+encodeURIComponent(id),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw new Error(data.error||"No se pudo actualizar la actividad");await load();}
+  catch(e){setError(e instanceof Error?e.message:"Error al actualizar");}
+  finally{setUpdating(null);}
  }
  return <section className="agenda-dashboard">
   {error&&<p role="alert" className="admin-error">{error}</p>}
@@ -34,7 +41,7 @@ export default function AgendaClient(){
    </form>:<p>Registra un prospecto antes de programar actividades.</p>}
   </details>
   <div className="admin-panel"><h2>Actividades programadas</h2>
-   {loading?<p>Cargando agenda…</p>:events.length===0?<p>No hay actividades registradas.</p>:<div className="agenda-event-list">{events.map(event=><article key={event.id} className="agenda-event"><div className="agenda-event-main"><strong>{event.title}</strong><p>{event.lead.name} · {event.type} · {new Date(event.startsAt).toLocaleString("es-NI")} · {event.durationMinutes} minutos</p><p>Estado: {event.status}{event.location?" · "+event.location:""}</p></div></article>)}</div>}
+   {loading?<p>Cargando agenda…</p>:events.length===0?<p>No hay actividades registradas.</p>:<div className="agenda-event-list">{events.map(event=><article key={event.id} className="agenda-event"><div className="agenda-event-main"><strong>{event.title}</strong><p>{event.lead.name} · {event.type} · {new Date(event.startsAt).toLocaleString("es-NI")} · {event.durationMinutes} minutos</p><p>Estado: {event.status}{event.location?" · "+event.location:""}</p>{event.status==="pendiente"&&<div className="agenda-event-controls"><button type="button" className="btn wizard-back" disabled={updating===event.id} onClick={()=>void updateEvent(event.id,{status:"realizada"})}>Marcar realizada</button><button type="button" className="btn wizard-back" disabled={updating===event.id} onClick={()=>void updateEvent(event.id,{status:"cancelada"})}>Cancelar actividad</button><form onSubmit={e=>{e.preventDefault();const input=e.currentTarget.elements.namedItem("startsAt") as HTMLInputElement;if(input.value)void updateEvent(event.id,{startsAt:new Date(input.value).toISOString()});}}><label>Reprogramar <input name="startsAt" type="datetime-local" required disabled={updating===event.id}/></label><button className="btn wizard-back" disabled={updating===event.id}>Guardar fecha</button></form></div>}</div></article>)}</div>}
   </div>
  </section>;
 }
