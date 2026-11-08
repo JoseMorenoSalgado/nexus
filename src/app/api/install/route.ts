@@ -179,8 +179,10 @@ export async function POST(req:NextRequest){
     const [config,admin]=await Promise.all([db.siteConfig.findUnique({where:{id:"main"}}),db.adminUser.findUnique({where:{email:data.adminEmail}})]);
     if(!config||!admin||!admin.active)return response("La instalación independiente no superó la verificación inicial.",500);
    }catch(error){
-    console.error("[installer] Standalone seed failed",{errorType:error instanceof Error?error.name:"unknown"});
-    return response("No fue posible inicializar el sitio independiente. Revisa los registros antes de repetir.",500);
+    const prismaCode=typeof error==="object"&&error!==null&&"code" in error&&/^P\\d{4}$/.test(String(error.code))?String(error.code):null;
+    const diagnosticId="NEXUS-SEED-"+(prismaCode||"UNKNOWN");
+    console.error("[installer] Standalone seed failed",{diagnosticId,prismaCode,errorType:error instanceof Error?error.name:"unknown"});
+    return response("No fue posible inicializar el sitio independiente. Código: "+diagnosticId+". No repitas sin revisar el estado de la base.",500);
    }finally{await db.$disconnect();}
    try{saveInstallation(data.url);}
    catch{return response("La base fue preparada, pero no pudo guardarse la configuración persistente.",500);}
