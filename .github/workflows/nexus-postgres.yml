@@ -192,3 +192,4 @@ jobs:
             exit 1
           fi
           echo "Standalone authenticated user and property creation requests returned HTTP 303"
+          node --import tsx scripts/verify-standalone-http-mutations.ts
