@@ -8,11 +8,11 @@ export async function GET(req:NextRequest){
  if(process.env.NEXUS_STANDALONE!=="true")return NextResponse.json({error:"No disponible"},{status:404});
  const admin=await currentAdmin();
  if(!admin)return NextResponse.json({error:"No autorizado"},{status:401});
- const allowed=admin.roles.includes("admin")||admin.roles.includes("agente");
+ const allowed=admin.roles.includes("admin")||admin.roles.includes("editor")||admin.roles.includes("agente");
  if(!allowed)return NextResponse.json({error:"Sin permisos"},{status:403});
  const raw=Number(req.nextUrl.searchParams.get("page")||"1");
  const page=Number.isSafeInteger(raw)&&raw>=1&&raw<=10000?raw:1;
- const where=admin.roles.includes("admin")?{}:{assignedAgentId:admin.userId};
+ const where=admin.roles.includes("admin")||admin.roles.includes("editor")?{}:{assignedAgentId:admin.userId};
  const db=getStandalonePrisma();
  const [total,leads]=await Promise.all([
   db.lead.count({where}),
