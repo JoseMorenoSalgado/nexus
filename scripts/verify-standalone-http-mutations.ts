@@ -9,7 +9,7 @@ async function main(){
    db.property.findFirst({where:{title:"CI HTTP Created House"},select:{id:true,refCode:true,slug:true,published:true}}),
    db.lead.findFirst({where:{name:"CI HTTP prospect"},select:{id:true,phone:true,consent:true}})
   ]);
-  if(!user||!user.active||!user.role.split(/[, +]+/).includes("agente"))throw Error("Authenticated user creation did not persist an active agent");
+  if(!user||!user.active||!JSON.parse(user.role).includes("agente"))throw Error("Authenticated user creation did not persist an active agent");
   if(!property||!/^NRE-\\d{6}$/.test(property.refCode)||!property.slug.includes(property.refCode.toLowerCase()))throw Error("Authenticated property creation did not persist a valid reference and slug");
   if(property.published)throw Error("Newly created property unexpectedly published");
   if(!lead||lead.phone!=="88888888"||!lead.consent)throw Error("Authenticated prospect creation did not persist");
