@@ -10,7 +10,7 @@ export const dynamic="force-dynamic";
 const links:SiteMenuItem[]=[{id:"home",label:"Inicio",href:"/"},{id:"propiedades",label:"Propiedades",href:"/propiedades"}];
 type Filters={operacion?:string;tipo?:string;ubicacion?:string;pagina?:string;orden?:string};
 export default async function StandaloneCatalog({searchParams}:{searchParams:Promise<Filters>}){
- if(process.env.NEXUS_STANDALONE_MODE!=="true")notFound();
+ if(process.env.NEXUS_STANDALONE!=="true")notFound();
  const [context,raw]=await Promise.all([getStandalonePublicContext(),searchParams]);
  if(!context)notFound();
  const {tenant}=context;
