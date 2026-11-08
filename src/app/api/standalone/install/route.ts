@@ -38,8 +38,16 @@ export async function POST(req:NextRequest){
   mkdirSync(configDir(),{recursive:true,mode:0o700});accessSync(configDir(),constants.W_OK);
   const probe=new PrismaClient({datasources:{db:{url}}});
   try{
-   const rows=await probe.$queryRaw<Array<{n:bigint}>>`SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`;
-   if(Number(rows[0]?.n||0)!==0)return reply("La base de datos debe estar completamente vacía.",409);
+   // A previous attempt may have created the standalone schema before bootstrap failed.
+   // Retry only if every existing table belongs to this exact schema and has no rows.
+   const rows=await probe.$queryRaw<Array<{table_name:string}>>`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`;
+   const allowed=new Set(["Property","Photo","Lead","VisitEvent","SitePage","AdminUser","AdminSession","AdminLoginThrottle","LeadCrm","LeadNote","LeadAssignmentHistory","AgendaEvent","CommercialClosing","CommissionPayment","PropertySequence","LeadSource","LeadPropertyHistory","SiteConfig"]);
+   if(rows.some(row=>!allowed.has(row.table_name)))return reply("La base contiene tablas ajenas a Nexus. Utiliza una base exclusiva y no elimines datos existentes.",409);
+   for(const row of rows){
+    // Names are from a fixed allowlist, never interpolated from untrusted input.
+    const populated=await probe.$queryRawUnsafe<Array<{has_rows:boolean}>>(`SELECT EXISTS(SELECT 1 FROM "public"."${row.table_name}") AS has_rows`);
+    if(populated[0]?.has_rows)return reply("La base ya contiene registros. No se sobrescribirá una instalación existente.",409);
+   }
    const rights=await probe.$queryRaw<Array<{can_create:boolean;can_use:boolean}>>`SELECT has_schema_privilege(current_user,'public','CREATE') AS can_create,has_schema_privilege(current_user,'public','USAGE') AS can_use`;
    if(!rights[0]?.can_create||!rights[0]?.can_use)return reply("Faltan permisos CREATE/USAGE sobre el esquema public.",422);
   }catch{return reply("No se pudo validar PostgreSQL. Comprueba conexión, credenciales y permisos.",422);}
