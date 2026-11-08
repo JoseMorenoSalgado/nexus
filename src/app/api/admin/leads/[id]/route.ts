@@ -10,7 +10,7 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
  if(process.env.NEXUS_STANDALONE!=="true")return error("No disponible",404);
  const admin=await currentAdmin();
  if(!admin)return error("No autorizado",401);
- const isAdmin=admin.roles.includes("admin");
+ const isAdmin=admin.roles.includes("admin")||admin.roles.includes("editor");
  if(!isAdmin&&!admin.roles.includes("agente"))return error("Sin permisos",403);
  if(!validMutationOrigin(req))return error("Origen no permitido",403);
  let body:Record<string,unknown>;
