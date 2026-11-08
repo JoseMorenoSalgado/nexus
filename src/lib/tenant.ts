@@ -45,7 +45,7 @@ export async function getPublicContext(options:{loadProperties?:boolean}={}):Pro
   const db=getStandalonePrisma();
   const site=await db.siteConfig.findUnique({where:{id:"main"}});
   if(!site){
-   reportPublicDiagnostic("PUBLIC_SITE_CONFIG_MISSING",{path:"public"});
+   reportPublicDiagnostic("PUBLIC_TENANT_REJECTED",{reason:"standalone_site_config_missing"});
    notFound();
   }
   const [props,settings]=await Promise.all([
