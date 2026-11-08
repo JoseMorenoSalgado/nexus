@@ -4,7 +4,7 @@
 import {readdir,readFile} from "node:fs/promises";
 import {join,relative} from "node:path";
 const root=process.cwd();
-const roots=["src/app/admin/standalone","src/app/api/admin/standalone","src/lib/prisma-standalone.ts","src/lib/property-reference.ts","src/lib/property-agent.ts","src/app/standalone"];
+const roots=["src/app/admin/standalone","src/app/api/admin/standalone","src/lib/prisma-standalone.ts","src/lib/property-reference.ts","src/lib/property-agent.ts","src/lib/standalone","src/app/standalone"];
 const violations=[];
 let files=0;
 async function walk(dir){
