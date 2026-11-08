@@ -8,7 +8,8 @@ export function isPhotoId(id:string){
  return /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/.test(id);
 }
 export function mediaFilePath(tenantId:string,id:string){
- if(!/^[a-z0-9]{10,50}$/.test(tenantId)||!isPhotoId(id))throw new Error("Identificador de archivo inválido");
+ const validSiteId=/^[a-z0-9]{10,50}$/.test(tenantId)||(process.env.NEXUS_STANDALONE==="true"&&tenantId==="main");
+ if(!validSiteId||!isPhotoId(id))throw new Error("Identificador de archivo inválido");
  return join(configDir(),"media",tenantId,id+".webp");
 }
 
