@@ -76,6 +76,7 @@ export default function ProspectosClient({agents,canAssign,properties}:{agents:A
         {["nuevo","contactado","seguimiento","calificado","cerrado","descartado"].map(s=><option key={s} value={s}>{s}</option>)}
        </select>
       </label>
+      <label>Próximo contacto{" "}<input type="date" aria-label={"Próximo contacto de "+lead.name} value={lead.crm?.nextContactAt?lead.crm.nextContactAt.slice(0,10):""} disabled={saving===lead.id} onChange={e=>void update(lead.id,{nextContactAt:e.target.value||null})}/></label>
       {canAssign&&<label>Agente responsable{" "}
        <select aria-label={"Agente de "+lead.name} value={lead.assignedAgentId||""} disabled={saving===lead.id} onChange={e=>void update(lead.id,{assignedAgentId:e.target.value||null})}>
         <option value="">Sin asignar</option>{agents.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}
