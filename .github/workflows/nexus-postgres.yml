@@ -159,3 +159,21 @@ jobs:
           check_anonymous_post "Leads" http://127.0.0.1:3000/api/admin/leads '{"name":"Anonymous","phone":"12345678","consent":true}' "application/json"
           check_anonymous_post "Properties" http://127.0.0.1:3000/api/admin/properties "title=Anonymous" "application/x-www-form-urlencoded"
           echo "Standalone anonymous admin mutation guards passed"
+          # CI-only session exists solely in ephemeral PostgreSQL.
+          cookie="webappecloud_session=$(printf 'a%.0s' {1..64})"
+          auth_status=$(curl --silent --output /tmp/nexus-auth-leads.json --write-out "%{http_code}" --max-time 15 -H "Cookie: $cookie" http://127.0.0.1:3000/api/admin/leads)
+          if [ "$auth_status" != "200" ]; then
+            echo "::error::Authenticated standalone leads GET returned HTTP $auth_status"
+            head -c 500 /tmp/nexus-auth-leads.json
+            tail -n 60 /tmp/nexus-standalone-public.log
+            exit 1
+          fi
+          create_status=$(curl --silent --output /tmp/nexus-create-lead.json --write-out "%{http_code}" --max-time 15 -X POST -H "Cookie: $cookie" -H "Origin: https://nexus-ci.example" -H "Content-Type: application/json" --data '{"name":"CI HTTP prospect","phone":"88888888","consent":true}' http://127.0.0.1:3000/api/admin/leads)
+          if [ "$create_status" != "201" ]; then
+            echo "::error::Authenticated standalone lead creation returned HTTP $create_status"
+            head -c 500 /tmp/nexus-create-lead.json
+            tail -n 60 /tmp/nexus-standalone-public.log
+            exit 1
+          fi
+          grep -Fq '"ok":true' /tmp/nexus-create-lead.json
+          echo "Standalone authenticated prospect creation passed"
