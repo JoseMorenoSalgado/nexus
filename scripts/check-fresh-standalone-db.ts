@@ -1,8 +1,8 @@
 /** Read-only verification of a genuinely tenant-free fresh PostgreSQL schema. */
-import {getStandalonePrisma} from "../src/lib/prisma-standalone";
+import {PrismaClient} from "../src/generated/standalone-postgres";
 async function main(){
  if(process.env.NEXUS_STANDALONE!=="true")throw Error("NEXUS_STANDALONE must be true");
- const db=getStandalonePrisma();
+ const db=new PrismaClient();
  try{
   await db.$queryRawUnsafe("SELECT 1");
   const [users,properties,leads,pages,config]=await Promise.all([
