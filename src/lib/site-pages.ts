@@ -2,6 +2,7 @@ import "server-only";
 import {notFound} from "next/navigation";
 import {type Prisma} from "@prisma/client";
 import {prisma} from "@/lib/prisma";
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {getSiteTemplate} from "@/lib/site-template-store";
 import {getTenantModules} from "@/lib/tenant-modules";
 import {normalizePageSections,type PageSection} from "@/lib/page-sections";
@@ -32,16 +33,21 @@ export function textBlocks(raw:unknown):{summary:string;body:string;sections:Pag
   body:typeof obj.body==="string"?obj.body.slice(0,12000):"",sections:normalizePageSections(obj.sections)};
 }
 export async function getPageDefinitions(tenantId:string,options:{includeSummary?:boolean}={}):Promise<PageDefinition[]>{
+ const standalone=process.env.NEXUS_STANDALONE==="true";
  const template=await getSiteTemplate(tenantId);
- const available=await getTenantModules(tenantId,template.key);
+ const available=standalone?["properties"]:await getTenantModules(tenantId,template.key);
  const enabledPages=staticPages.filter(p=>p.id!=="propiedades"||available.includes("properties"));
  // Public menus only need page titles and visibility, not potentially large JSON blocks.
  const where={tenantId,OR:[
   {slug:{in:staticPages.map(x=>x.slug)}},{slug:{startsWith:CUSTOM_PAGE_PREFIX}}
  ]};
- const rows=options.includeSummary===false
-  ?await prisma.sitePage.findMany({where,select:{slug:true,title:true,published:true},orderBy:{updatedAt:"desc"}})
-  :await prisma.sitePage.findMany({where,select:{slug:true,title:true,published:true,blocks:true},orderBy:{updatedAt:"desc"}});
+ const rows=standalone
+  ?options.includeSummary===false
+   ?await getStandalonePrisma().sitePage.findMany({where:{OR:[{slug:{in:staticPages.map(x=>x.slug)}},{slug:{startsWith:CUSTOM_PAGE_PREFIX}}]},select:{slug:true,title:true,published:true},orderBy:{updatedAt:"desc"}})
+   :await getStandalonePrisma().sitePage.findMany({where:{OR:[{slug:{in:staticPages.map(x=>x.slug)}},{slug:{startsWith:CUSTOM_PAGE_PREFIX}}]},select:{slug:true,title:true,published:true,blocks:true},orderBy:{updatedAt:"desc"}})
+  :options.includeSummary===false
+   ?await prisma.sitePage.findMany({where,select:{slug:true,title:true,published:true},orderBy:{updatedAt:"desc"}})
+   :await prisma.sitePage.findMany({where,select:{slug:true,title:true,published:true,blocks:true},orderBy:{updatedAt:"desc"}});
  const lookup=new Map(rows.map(x=>[x.slug,x]));
  const builtins:PageDefinition[]=enabledPages.map(p=>({
   ...p,title:p.title,published:p.id==="home"?true:p.id==="asesoria-empresarial"?(lookup.get(p.slug)?.published===true):(lookup.get(p.slug)?.published??true),
@@ -73,7 +79,7 @@ export function normalizedMenu(value:unknown,pages:PageDefinition[]):SiteMenuIte
 export async function getSiteMenu(tenantId:string,existingPages?:PageDefinition[]):Promise<SiteMenuItem[]>{
  const [pages,template,stored]=await Promise.all([
   existingPages||getPageDefinitions(tenantId,{includeSummary:false}),getSiteTemplate(tenantId),
-  prisma.sitePage.findUnique({where:{tenantId_slug:{tenantId,slug:MENU_SLUG}},select:{blocks:true}})
+  process.env.NEXUS_STANDALONE==="true"?getStandalonePrisma().sitePage.findUnique({where:{slug:MENU_SLUG},select:{blocks:true}}):prisma.sitePage.findUnique({where:{tenantId_slug:{tenantId,slug:MENU_SLUG}},select:{blocks:true}})
  ]);
  const defaults=()=>normalizedMenu(defaultMenuForTemplate(template.key),pages);
  if(!stored)return defaults();
@@ -113,11 +119,12 @@ export async function saveSiteMenu(tenantId:string,items:MenuRecord[]){
 }
 export async function assertPagePublished(tenantId:string,isDemo:boolean,id:string){
  if(isDemo||id==="home")return;
- const row=await prisma.sitePage.findUnique({where:{tenantId_slug:{tenantId,slug:id}},select:{published:true}});
+ const row=process.env.NEXUS_STANDALONE==="true"?await getStandalonePrisma().sitePage.findUnique({where:{slug:id},select:{published:true}}):await prisma.sitePage.findUnique({where:{tenantId_slug:{tenantId,slug:id}},select:{published:true}});
  if(row&&!row.published)notFound();
 }
 export async function getCustomPage(tenantId:string,slug:string){
  if(!validCustomSlug(slug))return null;
+ if(process.env.NEXUS_STANDALONE==="true")return getStandalonePrisma().sitePage.findUnique({where:{slug:CUSTOM_PAGE_PREFIX+slug},select:{slug:true,title:true,blocks:true,published:true}});
  return prisma.sitePage.findUnique({where:{tenantId_slug:{tenantId,slug:CUSTOM_PAGE_PREFIX+slug}},
   select:{slug:true,title:true,blocks:true,published:true}});
 }
