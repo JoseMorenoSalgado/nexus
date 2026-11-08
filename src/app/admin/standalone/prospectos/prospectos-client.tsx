@@ -2,6 +2,7 @@
 import {useCallback,useEffect,useState} from "react";
 type Agent={id:string;name:string};
 type Lead={id:string;name:string;phone:string;email:string|null;message:string|null;createdAt:string;assignedAgentId:string|null;crm:{status:string;nextContactAt:string|null}|null;property:{title:string;refCode:string}|null};
+type History={notes:{id:string;authorName:string;body:string;createdAt:string}[];assignments:{id:string;fromAgentName:string|null;toAgentName:string|null;changedByName:string;createdAt:string}[]};
 export default function ProspectosClient({agents,canAssign}:{agents:Agent[];canAssign:boolean}){
  const [leads,setLeads]=useState<Lead[]>([]);
  const [page,setPage]=useState(1);
@@ -9,6 +10,8 @@ export default function ProspectosClient({agents,canAssign}:{agents:Agent[];canA
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
  const [saving,setSaving]=useState<string|null>(null);
+ const [history,setHistory]=useState<Record<string,History>>({});
+ const [expanded,setExpanded]=useState<string|null>(null);
  const refresh=useCallback(async()=>{
   setLoading(true);setError("");
   try{
@@ -20,6 +23,11 @@ export default function ProspectosClient({agents,canAssign}:{agents:Agent[];canA
   finally{setLoading(false);}
  },[page]);
  useEffect(()=>{void refresh();},[refresh]);
+ async function showHistory(id:string){
+  if(expanded===id){setExpanded(null);return;}
+  setError("");
+  try{const response=await fetch("/api/admin/leads/"+encodeURIComponent(id)+"/history",{cache:"no-store"});const data=await response.json();if(!response.ok)throw new Error(data.error||"No se pudo cargar el historial");setHistory(prev=>({...prev,[id]:data}));setExpanded(id);}catch(e){setError(e instanceof Error?e.message:"Error al cargar historial");}
+ }
  async function update(id:string,body:Record<string,unknown>){
   setSaving(id);setError("");
   try{
@@ -27,6 +35,7 @@ export default function ProspectosClient({agents,canAssign}:{agents:Agent[];canA
    const data=await response.json();
    if(!response.ok)throw new Error(data.error||"No se pudo guardar");
    await refresh();
+   if(expanded===id){const response=await fetch("/api/admin/leads/"+encodeURIComponent(id)+"/history",{cache:"no-store"});if(response.ok){const data=await response.json();setHistory(prev=>({...prev,[id]:data}));}}
   }catch(e){setError(e instanceof Error?e.message:"Error al guardar");}
   finally{setSaving(null);}
  }
@@ -51,6 +60,13 @@ export default function ProspectosClient({agents,canAssign}:{agents:Agent[];canA
        </select>
       </label>}
      </div>
+     <button type="button" aria-expanded={expanded===lead.id} onClick={()=>void showHistory(lead.id)} style={{marginTop:12}}>{expanded===lead.id?"Ocultar historial":"Ver historial"}</button>
+     {expanded===lead.id&&history[lead.id]&&<div aria-label={"Historial de "+lead.name}>
+      <h3>Notas de seguimiento</h3>
+      {history[lead.id].notes.length===0?<p>Sin notas.</p>:<ul>{history[lead.id].notes.map(n=><li key={n.id}><strong>{n.authorName}</strong> · {new Date(n.createdAt).toLocaleString("es-NI")}: {n.body}</li>)}</ul>}
+      <h3>Asignaciones</h3>
+      {history[lead.id].assignments.length===0?<p>Sin cambios de responsable.</p>:<ul>{history[lead.id].assignments.map(a=><li key={a.id}>{new Date(a.createdAt).toLocaleString("es-NI")}: {a.fromAgentName||"Sin asignar"} → {a.toAgentName||"Sin asignar"} (por {a.changedByName})</li>)}</ul>}
+     </div>}
      <form onSubmit={e=>{e.preventDefault();const form=e.currentTarget;const input=form.elements.namedItem("note") as HTMLInputElement;const note=input.value.trim();if(note){void update(lead.id,{note}).then(()=>{input.value="";});}}} style={{marginTop:12}}>
       <label>Nota de seguimiento <input name="note" maxLength={2000} required disabled={saving===lead.id}/></label>{" "}
       <button type="submit" disabled={saving===lead.id}>Guardar nota</button>
