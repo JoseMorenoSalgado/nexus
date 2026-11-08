@@ -9,7 +9,7 @@ type Values={
  institution:string;institutionEmail:string;adminName:string;adminEmail:string;adminPassword:string;templateKey:SiteTemplateKey;modules:ModuleKey[];
 };
 const defaults:Values={
- dbType:"mariadb",dbHost:"",dbPort:"3306",dbName:"",dbUser:"",dbPassword:"",
+ dbType:"postgresql",dbHost:"",dbPort:"5432",dbName:"",dbUser:"",dbPassword:"",
  institution:"",institutionEmail:"",adminName:"",adminEmail:"",adminPassword:"",templateKey:"real-estate",modules:defaultEnabledModules("real-estate")
 };
 export default function InstallerForm({domain}:{domain:string}){

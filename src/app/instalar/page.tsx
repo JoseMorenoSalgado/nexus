@@ -12,7 +12,6 @@ import {APP_RELEASE} from "@/lib/release";
 
 export const dynamic = "force-dynamic";
 export default async function InstallPage({searchParams}:{searchParams:Promise<{estado?:string;paso?:string}>}){
- if(process.env.NEXUS_STANDALONE_MODE==="true")redirect("/standalone/instalar");
  if (!installerAvailable()) redirect("/admin/acceso");
  const hostname = normalizeSiteHost((await headers()).get("host") || "");
 

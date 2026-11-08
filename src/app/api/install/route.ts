@@ -108,12 +108,24 @@ export async function POST(req:NextRequest){
   // Fallar antes de cambiar la BD si el volumen de configuración no es escribible.
   mkdirSync(configDir(),{recursive:true,mode:0o700});
   accessSync(configDir(),constants.W_OK);
+  // The public installer must never initialize a legacy tenant schema for PostgreSQL.
+  if(data.engine==="postgresql"&&process.env.NEXUS_STANDALONE!=="true")return response("Configura NEXUS_STANDALONE=true en Enhance y reinicia la aplicación antes de instalar.",422);
   const probe=prismaFor(data.url);
   try{
    const tables=data.engine==="postgresql"
     ? await probe.$queryRaw<Array<{n:bigint}>>`SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`
     : await probe.$queryRaw<Array<{n:bigint}>>`SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE'`;
-   if(Number(tables[0]?.n||0)!==0)return response("Utiliza una base de datos vacía y exclusiva para esta instalación.",409);
+   if(Number(tables[0]?.n||0)!==0){
+    if(data.engine!=="postgresql")return response("Utiliza una base de datos vacía y exclusiva para esta instalación.",409);
+    // Allow only a failed standalone schema push with completely empty Nexus tables.
+    const rows=await probe.$queryRaw<Array<{table_name:string}>>`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`;
+    const allowed=new Set(["Property","Photo","Lead","VisitEvent","SitePage","AdminUser","AdminSession","AdminLoginThrottle","LeadCrm","LeadNote","LeadAssignmentHistory","AgendaEvent","CommercialClosing","CommissionPayment","PropertySequence","LeadSource","LeadPropertyHistory","SiteConfig"]);
+    if(rows.some(row=>!allowed.has(row.table_name)))return response("La base contiene tablas ajenas al esquema independiente de Nexus. No se modificarán.",409);
+    for(const row of rows){
+     const populated=await probe.$queryRawUnsafe<Array<{has_rows:boolean}>>(`SELECT EXISTS(SELECT 1 FROM "public"."${row.table_name}") AS has_rows`);
+     if(populated[0]?.has_rows)return response("La base contiene registros. No se sobrescribirá ni reinicializará.",409);
+    }
+   }
    if(data.engine==="postgresql"&&process.env.NEXUS_STANDALONE==="true"){
     const privileges=await probe.$queryRaw<Array<{can_connect:boolean;can_create:boolean;can_use:boolean}>>`SELECT has_database_privilege(current_user,current_database(),'CONNECT') AS can_connect, has_schema_privilege(current_user,'public','CREATE') AS can_create, has_schema_privilege(current_user,'public','USAGE') AS can_use`;
     const rights=privileges[0];
@@ -175,13 +187,16 @@ export async function POST(req:NextRequest){
      await tx.sitePage.create({data:{slug:"site-template",title:"Plantilla del sitio",blocks:{key:data.templateKey,contentByTemplate:{}},published:true}});
      await tx.sitePage.create({data:{slug:"site-modules",title:"Módulos de la empresa",blocks:{version:1,byTemplate:{[data.templateKey]:data.modules}},published:false}});
      await tx.adminUser.create({data:{name:data.adminName,email:data.adminEmail,passwordHash:hashPassword(data.adminPassword),role:"admin"}});
+     await tx.propertySequence.create({data:{id:"main"}});
     });
     const [config,admin]=await Promise.all([db.siteConfig.findUnique({where:{id:"main"}}),db.adminUser.findUnique({where:{email:data.adminEmail}})]);
     if(!config||!admin||!admin.active)return response("La instalación independiente no superó la verificación inicial.",500);
    }catch(error){
-    const prismaCode=typeof error==="object"&&error!==null&&"code" in error&&/^P\\d{4}$/.test(String(error.code))?String(error.code):null;
+    const prismaCode=typeof error==="object"&&error!==null&&"code" in error&&/^P\d{4}$/.test(String(error.code))?String(error.code):null;
     const diagnosticId="NEXUS-SEED-"+(prismaCode||"UNKNOWN");
-    console.error("[installer] Standalone seed failed",{diagnosticId,prismaCode,errorType:error instanceof Error?error.name:"unknown"});
+    const prismaMeta=typeof error==="object"&&error!==null&&"meta" in error?error.meta:null;
+    const model=prismaMeta&&typeof prismaMeta==="object"&&"modelName" in prismaMeta?String(prismaMeta.modelName).slice(0,60):undefined;
+    console.error("[installer] Standalone seed failed",{diagnosticId,prismaCode,model,errorType:error instanceof Error?error.name:"unknown"});
     return response("No fue posible inicializar el sitio independiente. Código: "+diagnosticId+". No repitas sin revisar el estado de la base.",500);
    }finally{await db.$disconnect();}
    try{saveInstallation(data.url);}
