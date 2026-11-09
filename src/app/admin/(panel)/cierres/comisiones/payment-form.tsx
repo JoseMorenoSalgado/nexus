@@ -13,9 +13,9 @@ export default function PaymentForm({closings}:{closings:Closing[]}){
    form.reset();router.refresh();
   }catch{setError("No se pudo conectar con el servidor");}finally{setBusy(false);}
  }
- return <form className="admin-panel" onSubmit={submit}>
+ return <form className="admin-panel admin-form commercial-entry-form" onSubmit={submit}>
   <h2>Registrar abono de comisión</h2>
-  <div className="form-grid">
+  <div className="admin-form-grid">
    <label>Cierre<select name="closingId" required defaultValue=""><option value="" disabled>Seleccionar cierre</option>{closings.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}</select></label>
    <label>Importe (USD)<input type="number" name="amount" min="0.01" step="0.01" required/></label>
    <label>Fecha del pago<input type="date" name="paidAt" max={new Date().toISOString().slice(0,10)} required/></label>
@@ -23,7 +23,7 @@ export default function PaymentForm({closings}:{closings:Closing[]}){
    <label>Referencia<input name="reference" maxLength={120}/></label>
    <label>Observaciones<textarea name="notes" maxLength={1000}/></label>
   </div>
-  {error&&<p role="alert">{error}</p>}
-  <button type="submit" disabled={busy||!closings.length}>{busy?"Registrando…":"Registrar abono"}</button>
+  {error&&<p role="alert" className="admin-error">{error}</p>}
+  <button className="btn btn-red" type="submit" disabled={busy||!closings.length}>{busy?"Registrando…":"Registrar abono"}</button>
  </form>;
 }

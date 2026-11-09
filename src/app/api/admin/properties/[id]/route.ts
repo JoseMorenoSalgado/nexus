@@ -7,7 +7,7 @@ import {parseProperty,PropertyFormError} from "@/lib/property-form";
 import {propertyWhere} from "@/lib/agent-scope";
 import {propertyRedirect,validMutationOrigin,propertyEditor,propertyErrorPath} from "@/lib/admin-property-request";
 import {unlink} from "node:fs/promises";
-import {mediaFilePath,mediaVariantPath} from "@/lib/property-media";
+import {isStoredPropertyPhoto,mediaFilePath,mediaVariantPath} from "@/lib/property-media";
 import {customPdfPath} from "@/lib/property-document";
 export const runtime="nodejs";
 export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>}){
@@ -39,7 +39,7 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
    if(standaloneDb)await standaloneDb.property.delete({where:{id:property.id}});
    else await prisma.property.delete({where:{id:property.id}});
    await Promise.all([
-    ...property.photos.filter(p=>p.url==="/api/media/"+p.id).map(async p=>{
+    ...property.photos.filter(isStoredPropertyPhoto).map(async p=>{
      await Promise.allSettled([
       unlink(mediaFilePath(admin.tenantId,p.id)),
       unlink(mediaVariantPath(admin.tenantId,p.id,"card")),

@@ -345,3 +345,28 @@
  .admin-shell .standalone-crm .admin-heading h1{font-size:24px}
  .admin-shell .standalone-crm nav{flex-wrap:wrap;justify-content:center}
 }
+
+/* Commercial modules share the editor's form controls and panel spacing. */
+.admin-shell .crm-prospect-list{display:grid;gap:14px;min-width:0}
+.admin-shell .standalone-crm .crm-prospect-card{display:grid;gap:12px;margin:0;min-width:0}
+.admin-shell .crm-prospect-card h2{margin:0;font-size:18px;line-height:1.3;overflow-wrap:anywhere}
+.admin-shell .crm-prospect-card p{margin:0;overflow-wrap:anywhere}
+.admin-shell .crm-prospect-contact{color:#526176}
+.admin-shell .crm-prospect-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end}
+.admin-shell .crm-prospect-fields label,.admin-shell .crm-note-form label,.admin-shell .crm-search-panel label{min-width:0}
+.admin-shell .crm-contact-editor{margin:0}
+.admin-shell .crm-note-form,.admin-shell .crm-search-panel{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end}
+.admin-shell .crm-search-panel .inline-link{grid-column:1/-1}
+.admin-shell .crm-pagination{display:flex;align-items:center;gap:12px;margin-top:16px}
+.admin-shell .crm-pagination button:disabled{opacity:.55}
+.admin-shell .reports-dashboard .report-overview{display:grid;gap:12px;margin-block:16px}
+.admin-shell .report-overview h2{margin:0;font-size:18px}
+.admin-shell .report-overview .report-kpis{margin:0}
+.admin-shell .reports-dashboard .report-period-description{color:#526176;margin:8px 0 0}
+.admin-shell .commercial-entry-form>.btn,.admin-shell .crm-prospect-card>.btn{justify-self:start}
+@media(max-width:720px){
+ .admin-shell .crm-prospect-fields,.admin-shell .crm-note-form{grid-template-columns:minmax(0,1fr)}
+ .admin-shell .crm-note-form>.btn{justify-self:start}
+ .admin-shell .crm-prospect-card input,.admin-shell .crm-prospect-card select,.admin-shell .crm-prospect-card textarea,
+ .admin-shell .crm-search-panel input{font-size:16px}
+}

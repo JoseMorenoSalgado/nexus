@@ -22,13 +22,28 @@ export default async function StandaloneReports({searchParams}:{searchParams:Pro
   db.leadCrm.groupBy({by:["status"],where:{lead:{createdAt:{gte:from}}},_count:{_all:true}}),
   db.lead.groupBy({by:["source"],where:{createdAt:{gte:from}},_count:{_all:true}})
  ]);
- const metrics=[["Propiedades registradas",properties],["Propiedades publicadas",published],["Prospectos del período",leads],["Consultas web",webLeads],["Actividades del período",events],["Actividades vencidas",overdue],["Cierres confirmados",closings._count._all],["Vistas de páginas",views],["Vistas de propiedades",propertyViews],["Clics en WhatsApp",whatsapp]];
+ const metricGroups=[
+  {title:"Inventario y actividad comercial",items:[
+   ["Propiedades registradas",properties],["Propiedades publicadas",published],
+   ["Prospectos del período",leads],["Actividades del período",events],
+   ["Actividades vencidas",overdue],["Cierres confirmados",closings._count._all]
+  ]},
+  {title:"Actividad del sitio web",items:[
+   ["Consultas web",webLeads],["Vistas de páginas",views],
+   ["Vistas de propiedades",propertyViews],["Clics en WhatsApp",whatsapp]
+  ]}
+ ] as const;
  return <section className="reports-dashboard">
-  <div className="admin-heading"><div><h1>Reportes comerciales</h1><p>Estadísticas de esta instalación independiente de Nexus.</p></div></div>
+  <div className="admin-heading"><div><h1>Reportes comerciales</h1><p>Consulta el inventario, el seguimiento comercial y la actividad del sitio.</p></div></div>
   <nav className="reports-periods" aria-label="Período de estadísticas">{[7,30,90].map(d=><Link key={d} href={"/admin/reportes?periodo="+d} aria-current={days===d?"page":undefined} className={days===d?"selected":""}>{d} días</Link>)}</nav>
-  <p>Desde {from.toISOString().slice(0,10)} · Fechas UTC. Los totales de propiedades corresponden al inventario actual.</p>
-  <div className="report-kpis">{metrics.map(([label,value])=><div className="report-kpi" key={label}><div className="report-kpi-heading"><span>{label}</span></div><strong>{fmt(Number(value))}</strong></div>)}</div>
+  <p className="report-period-description">Desde {from.toISOString().slice(0,10)} · Fechas UTC. Los totales de propiedades corresponden al inventario actual.</p>
+  {metricGroups.map(group=><section className="report-overview" key={group.title}>
+   <h2>{group.title}</h2>
+   <div className="report-kpis">{group.items.map(([label,value])=><div className="report-kpi" key={label}>
+    <div className="report-kpi-heading"><span>{label}</span></div><strong>{fmt(value)}</strong>
+   </div>)}</div>
+  </section>)}
   <section className="admin-panel"><h2>Operaciones confirmadas</h2><p>Importe registrado: USD {Number(closings._sum.amount||0).toLocaleString("es-NI",{minimumFractionDigits:2,maximumFractionDigits:2})} · Comisiones: USD {Number(closings._sum.commissionAmount||0).toLocaleString("es-NI",{minimumFractionDigits:2,maximumFractionDigits:2})}</p><small>Solo operaciones confirmadas; los estados del CRM no cuentan como ventas.</small></section>
-  <div className="report-kpis"><section className="admin-panel"><h2>Estados del CRM</h2>{statuses.length?statuses.map(s=><p key={s.status}>{s.status}: {fmt(s._count._all)}</p>):<p>No hay estados registrados en el período.</p>}</section><section className="admin-panel"><h2>Origen de prospectos</h2>{sources.map(s=><p key={s.source}>{s.source}: {fmt(s._count._all)}</p>)}</section></div>
+  <div className="admin-panels"><section className="admin-panel"><h2>Estados del CRM</h2>{statuses.length?statuses.map(s=><p key={s.status}>{s.status}: {fmt(s._count._all)}</p>):<p>No hay estados registrados en el período.</p>}</section><section className="admin-panel"><h2>Origen de prospectos</h2>{sources.map(s=><p key={s.source}>{s.source}: {fmt(s._count._all)}</p>)}</section></div>
  </section>;
 }

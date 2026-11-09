@@ -13,13 +13,13 @@ export default function VoidPaymentForm({id}:{id:string}){
   }catch{setError("No se pudo conectar con el servidor");}finally{setBusy(false);}
  }
  return <div>
-  {!open?<button type="button" onClick={()=>setOpen(true)}>Anular pago</button>:
-  <form onSubmit={submit}>
+  {!open?<button className="btn wizard-back" type="button" onClick={()=>setOpen(true)}>Anular pago</button>:
+  <form onSubmit={submit} className="admin-form commercial-entry-form">
    <input name="intent" type="hidden" value="void" readOnly/>
    <label>Motivo de anulación<textarea name="reason" minLength={10} maxLength={1000} required/></label>
-   {error&&<p role="alert">{error}</p>}
-   <button type="submit" disabled={busy}>{busy?"Anulando…":"Confirmar anulación"}</button>
-   <button type="button" disabled={busy} onClick={()=>setOpen(false)}>Cancelar</button>
+   {error&&<p role="alert" className="admin-error">{error}</p>}
+   <button className="btn btn-danger" type="submit" disabled={busy}>{busy?"Anulando…":"Confirmar anulación"}</button>
+   <button className="btn wizard-back" type="button" disabled={busy} onClick={()=>setOpen(false)}>Cancelar</button>
   </form>}
  </div>;
 }

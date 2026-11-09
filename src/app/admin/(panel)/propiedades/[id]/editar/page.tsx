@@ -1,5 +1,5 @@
 import {stat} from "node:fs/promises";
-import {mediaFilePath,mediaVariantPath} from "@/lib/property-media";
+import {isStoredPropertyPhoto,mediaFilePath,mediaVariantPath} from "@/lib/property-media";
 import Link from "next/link";
 import {notFound} from "next/navigation";
 import {ExternalLink,Save,Trash2,Users,UserPlus,Images} from "lucide-react";
@@ -31,7 +31,7 @@ export default async function EditProperty({params,searchParams}:{params:Promise
   ?await getStandalonePrisma().property.findFirst({where:{id,...(admin.roles.includes("admin")||admin.roles.includes("editor")?{}:{assignedAgentId:admin.userId})},include:{photos:{orderBy:{sortOrder:"asc"}}}})
   :await prisma.property.findFirst({where:{id,...propertyWhere(admin)},include:{photos:{orderBy:{sortOrder:"asc"}}}});
  if(!property)notFound();
- const photoSizes=Object.fromEntries(await Promise.all(property.photos.map(async photo=>{
+ const photoSizes=Object.fromEntries(await Promise.all(property.photos.filter(isStoredPropertyPhoto).map(async photo=>{
   const paths=[mediaFilePath(admin.tenantId,photo.id),mediaVariantPath(admin.tenantId,photo.id,"card"),mediaVariantPath(admin.tenantId,photo.id,"thumb")];
   const sizes=await Promise.all(paths.map(path=>stat(path).then(file=>file.size).catch(()=>null)));
   return [photo.id,{full:sizes[0],card:sizes[1],thumb:sizes[2]}] as const;
