@@ -73,6 +73,10 @@ try {
  assert.match(dashboard,/admin-mobile-trigger/);
  assert.match(dashboard,/Menú de administración/);
  assert.match(dashboard,/Propiedades recientes/);
+ assert.match(dashboard,/Últimos prospectos/);
+ assert.match(dashboard,/Estadísticas detalladas/);
+ assert.match(dashboard,/Actividad del sitio/);
+ assert.match(dashboard,/Tipos de propiedades/);
  location(await request("/admin",{status:307}),/^\/admin\/acceso$/);
  assert.match(await (await request("/admin/personalizar/identidad",{cookie:admin})).text(),/Identidad visual/);
  location(await request("/api/admin/site-section",{method:"POST",cookie:admin,form:{
@@ -93,7 +97,12 @@ try {
 
  const lead = await (await request("/api/admin/leads",{method:"POST",cookie:admin,json:{name:"Prospecto de prueba",phone:"88887777",consent:true},status:201})).json();
  const agentDashboard = await (await request("/admin",{cookie:agentSession})).text();
- assert.doesNotMatch(agentDashboard,/Prospecto de prueba/);
+ assert.match(agentDashboard,/Mi espacio comercial/);
+ assert.match(agentDashboard,/Propiedades asignadas/);
+ assert.doesNotMatch(agentDashboard,/Estadísticas detalladas|Prospecto de prueba/);
+ const managerDashboard = await (await request("/admin",{cookie:admin})).text();
+ assert.match(managerDashboard,/Centro de actividades/);
+ assert.match(managerDashboard,/Prospecto de prueba/);
  await request("/api/admin/leads/"+lead.id,{method:"PATCH",cookie:agentSession,json:{status:"contactado"},status:404});
  await request("/api/admin/leads/"+lead.id,{method:"PATCH",cookie:admin,json:{assignedAgentId:agent.id,status:"seguimiento",note:"Nota de prueba"}});
  const persistedLead = await db.lead.findUniqueOrThrow({where:{id:lead.id},include:{crm:true,assignmentHistory:true,notes:true}});
@@ -115,6 +124,8 @@ try {
  const [property,second] = await Promise.all(ids.map(id=>db.property.findUniqueOrThrow({where:{id}})));
  assert.match(property.refCode,/^NRE-\d{6}$/);
  assert.notEqual(property.refCode,second.refCode);
+ assert.doesNotMatch(await (await request("/admin",{cookie:agentSession})).text(),/Casa de aceptación/);
+ assert.match(await (await request("/admin",{cookie:admin})).text(),new RegExp("/admin/propiedades/"+property.id+"/editar"));
  const edit = "/api/admin/properties/"+property.id;
  const detail = "/propiedades/"+property.slug;
  await request(detail,{status:404,follow:true});

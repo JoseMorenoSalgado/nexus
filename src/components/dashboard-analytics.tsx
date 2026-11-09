@@ -11,12 +11,12 @@ const TrafficChart=dynamic(()=>import("@/components/dashboard-charts").then(m=>m
 const TypesChart=dynamic(()=>import("@/components/dashboard-charts").then(m=>m.TypesChart),{
  ssr:false,loading:()=> <p className="admin-empty">Cargando distribución...</p>
 });
-export function DashboardAnalytics({chart,types}:{chart:MetricDay[];types:{name:string;value:number}[]}){
- const [expanded,setExpanded]=useState(false);
- return <details className="dashboard-details" onToggle={e=>setExpanded(e.currentTarget.open)}>
+export function DashboardAnalytics({chart,types,initiallyExpanded=false}:{chart:MetricDay[];types:{name:string;value:number}[];initiallyExpanded?:boolean}){
+ const [expanded,setExpanded]=useState(initiallyExpanded);
+ return <details className="dashboard-details" open={expanded} onToggle={e=>setExpanded(e.currentTarget.open)}>
   <summary><BarChart3 size={19} aria-hidden="true"/> Estadísticas detalladas <ChevronDown size={18} aria-hidden="true"/></summary>
   {expanded&&<div className="dashboard-details-inner">
-   <p className="dashboard-simple-intro">Visitas, contactos y tipos de inmuebles de los últimos 14 días.</p>
+   <p className="dashboard-simple-intro">Actividad de los últimos 14 días y distribución del inventario.</p>
    <div className="admin-panels">
     <section className="admin-panel"><h2>Actividad del sitio</h2><TrafficChart data={chart}/></section>
     <section className="admin-panel"><h2>Tipos de propiedades</h2><TypesChart data={types}/></section>
