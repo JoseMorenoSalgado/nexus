@@ -17,14 +17,25 @@ import {APP_RELEASE} from "@/lib/release";
 export const dynamic = "force-dynamic";
 export default async function InstallPage({searchParams}:{searchParams:Promise<{estado?:string;paso?:string}>}){
  if (!installerAvailable()) redirect("/admin/acceso");
- const hostname = publicRequestHostname(await headers()) || "";
+ const requestHeaders = await headers();
+ const hostname = publicRequestHostname(requestHeaders) || "";
  const checks:{label:string;ok:boolean;detail:string}[]=[];
  const standalone=process.env.NEXUS_STANDALONE==="true";
  checks.push({label:"Modo independiente",ok:standalone,detail:standalone?"Activado":"Configura NEXUS_STANDALONE=true y reinicia Node.js."});
  const siteUrl=(process.env.SITE_URL||"").trim();
  let urlValid=false;
  try{const u=new URL(siteUrl);urlValid=u.protocol==="https:"&&u.hostname.toLowerCase()===hostname&&u.pathname==="/"&&!u.search&&!u.hash&&!u.username&&!u.password&&!u.port;}catch{}
- checks.push({label:"Dominio HTTPS",ok:urlValid,detail:urlValid?"Coincide con SITE_URL":"Configura SITE_URL con la dirección HTTPS pública de este dominio."});
+ if(!urlValid){
+  const diagnostic = (name:string) => (requestHeaders.get(name)||"").slice(0,260).replace(/[^a-zA-Z0-9.:,\[\] -]/g,"?");
+  console.warn("[installer] HTTPS domain preflight mismatch",{
+   siteUrlConfigured:Boolean(siteUrl),
+   directHost:diagnostic("host"),
+   forwardedHost:diagnostic("x-forwarded-host"),
+   forwardedProto:diagnostic("x-forwarded-proto"),
+   resolvedHostname:hostname||"(unresolved)"
+  });
+ }
+ checks.push({label:"Dominio HTTPS",ok:urlValid,detail:urlValid?"Coincide con SITE_URL":"El host recibido no coincide con SITE_URL. Revisa el diagnóstico HTTPS en los logs de Node.js."});
  let writable=false;
  try{
   mkdirSync(configDir(),{recursive:true,mode:0o700});
