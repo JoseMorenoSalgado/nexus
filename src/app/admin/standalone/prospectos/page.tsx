@@ -11,9 +11,8 @@ export default async function ProspectosStandalonePage(){
  const isAdmin=admin.roles.includes("admin")||admin.roles.includes("editor");
  const agents=isAdmin?await getStandalonePrisma().adminUser.findMany({where:{active:true},select:{id:true,name:true,role:true},orderBy:{name:"asc"}}):[];
  const properties=await getStandalonePrisma().property.findMany({where:isAdmin?{}:{assignedAgentId:admin.userId},select:{id:true,refCode:true,title:true},orderBy:{createdAt:"desc"},take:200});
- return <main style={{maxWidth:1120,margin:"2rem auto",padding:"1rem"}}>
-  <h1>Prospectos · CRM</h1>
-  <p>Seguimiento comercial y asignación de responsables.</p>
+ return <main className="standalone-crm">
+  <div className="admin-heading"><div><h1>Prospectos · CRM</h1><p>Seguimiento comercial y asignación de responsables.</p></div></div>
   <ProspectosClient canAssign={isAdmin} agents={agents.filter(a=>parseRoles(a.role).includes("agente")).map(({id,name})=>({id,name}))} properties={properties}/>
  </main>;
 }
