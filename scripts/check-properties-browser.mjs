@@ -26,6 +26,12 @@ export async function checkPropertiesInBrowser({app,canonical,db,adminEmail,agen
     outgoing.writeHead(403).end();
     return;
    }
+   // Production nginx returns an HTML 400 for multipart property-photo uploads.
+   if(incoming.method==="POST"&&/^\/api\/admin\/properties\/[^/]+\/photos$/.test(incoming.url)&&
+    incoming.headers["content-type"]?.startsWith("multipart/form-data")){
+    outgoing.writeHead(400,{"Content-Type":"text/html"}).end("<h1>400 Bad Request</h1>");
+    return;
+   }
    const upstream=request(new URL(incoming.url,app),{
     method:incoming.method,
     headers:{...incoming.headers,host:app.host,"x-forwarded-host":canonical.host,"x-forwarded-proto":"https"}
@@ -168,6 +174,7 @@ export async function checkPropertiesInBrowser({app,canonical,db,adminEmail,agen
     new URL(response.url()).pathname==="/api/admin/properties/"+property.id+"/photos"),
    upload.setInputFiles({name:"foto.png",mimeType:"image/png",buffer:png})
   ]);
+  assert.equal(uploadResponse.request().headers()["content-type"],"application/json");
   assert.equal(uploadResponse.status(),201,await uploadResponse.text());
   await page.getByText("1 de 15 fotografías").waitFor();
   const photo=await db.photo.findFirstOrThrow({where:{propertyId:property.id}});

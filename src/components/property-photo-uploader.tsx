@@ -8,6 +8,18 @@ type Photo={id:string;url:string;alt:string};
 type Resolution={width:number;height:number};
 type MediaSizes={full:number|null;card:number|null;thumb:number|null};
 const formatSize=(size:number|null)=>size===null?"No disponible":size>=1048576?(size/1048576).toFixed(2)+" MB":(size/1024).toFixed(0)+" KB";
+function photoBase64(file:File):Promise<string>{
+ return new Promise((resolve,reject)=>{
+  const reader=new FileReader();
+  reader.onerror=reader.onabort=()=>reject(new Error("No se pudo leer la fotografía "+file.name+"."));
+  reader.onload=()=>{
+   const result=reader.result;
+   if(typeof result==="string"&&result.includes(","))resolve(result.slice(result.indexOf(",")+1));
+   else reject(new Error("No se pudo leer la fotografía "+file.name+"."));
+  };
+  reader.readAsDataURL(file);
+ });
+}
 export function PropertyPhotoUploader({propertyId,photos,sizes}:{propertyId:string;photos:Photo[];sizes:Record<string,MediaSizes>}){
  const router=useRouter(),inputRef=useRef<HTMLInputElement>(null);
  const [items,setItems]=useState(photos);
@@ -16,7 +28,8 @@ export function PropertyPhotoUploader({propertyId,photos,sizes}:{propertyId:stri
  const [preview,setPreview]=useState<Photo|null>(null);
  const [dragged,setDragged]=useState<string|null>(null);
  const lowQuality=items.filter(photo=>dimensions[photo.id]&&Math.min(dimensions[photo.id].width,dimensions[photo.id].height)<700).length;
- useEffect(()=>{setItems(photos);setError("");},[propertyId,photos]);
+ useEffect(()=>{setItems(photos);},[photos]);
+ useEffect(()=>{setError("");setSuccess("");},[propertyId]);
  const endpoint="/api/admin/properties/"+encodeURIComponent(propertyId)+"/photos";
  async function saveOrder(next:Photo[]){
   if(busy)return;
@@ -48,8 +61,9 @@ export function PropertyPhotoUploader({propertyId,photos,sizes}:{propertyId:stri
    let count=0;
    for(const file of Array.from(files)){
     if(file.size>8*1024*1024){setError("La imagen "+file.name+" supera los 8 MB.");break;}
-    const body=new FormData();body.append("photo",file);
-    const response=await fetch(endpoint,{method:"POST",body,credentials:"same-origin",cache:"no-store"});
+    const body=JSON.stringify({image:await photoBase64(file)});
+    const response=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body,credentials:"same-origin",cache:"no-store"});
+    if(response.status===413&&!response.headers.get("content-type")?.includes("application/json"))throw new Error("El servidor rechazó el tamaño de "+file.name+". Prueba con una copia más liviana.");
     await readAdminJson(response,"No fue posible subir la imagen");
     count++;
    }

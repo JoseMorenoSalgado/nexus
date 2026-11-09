@@ -8,17 +8,38 @@ import {prisma} from "@/lib/prisma";
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {MAX_IMAGE_BYTES,MAX_PHOTOS,mediaFilePath,mediaVariantPath} from "@/lib/property-media";
 import {propertyEditor,validMutationOrigin} from "@/lib/admin-property-request";
+import {readJsonObjectLimited,RequestPayloadError} from "@/lib/limited-json";
 import {propertyWhere} from "@/lib/agent-scope";
 
 export const runtime="nodejs";
 function json(error:string,status:number){return NextResponse.json({error},{status,headers:{"Cache-Control":"no-store"}});}
+const PHOTO_JSON_MAX_BYTES=4*Math.ceil(MAX_IMAGE_BYTES/3)+64;
+
+async function readPhoto(req:NextRequest):Promise<Buffer>{
+ const mediaType=req.headers.get("content-type")?.split(";",1)[0].trim().toLowerCase();
+ if(mediaType==="application/json"){
+  // Enhance rejects multipart file parts before the request reaches Next.js.
+  const {image}=await readJsonObjectLimited(req,PHOTO_JSON_MAX_BYTES);
+  if(typeof image!=="string"||image.length%4!==0||!/^[A-Za-z0-9+/]+={0,2}$/.test(image)){
+   throw new RequestPayloadError(400,"No se pudo leer la fotografía enviada.");
+  }
+  return Buffer.from(image,"base64");
+ }
+ const length=Number(req.headers.get("content-length")||0);
+ if(!Number.isSafeInteger(length)||length<1||length>MAX_IMAGE_BYTES+1000000){
+  throw new RequestPayloadError(413,"Archivo demasiado grande (máximo 8 MB).");
+ }
+ let file:FormDataEntryValue|null;
+ try{file=(await req.formData()).get("photo");}
+ catch{throw new RequestPayloadError(400,"No se pudo leer la imagen.");}
+ if(!(file instanceof File))throw new RequestPayloadError(400,"Selecciona una fotografía.");
+ return Buffer.from(await file.arrayBuffer());
+}
 export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>}){
  const admin=await propertyEditor();
  if(process.env.NEXUS_STANDALONE!=="true"&&!await tenantModuleEnabled(admin.tenantId,"properties"))return new Response("Módulo desactivado",{status:403});
  if(!admin.canEdit)return json("No autorizado",403);
  if(!validMutationOrigin(req))return json("Origen no permitido",403);
- const length=Number(req.headers.get("content-length")||0);
- if(!length||length>MAX_IMAGE_BYTES+1000000)return json("Archivo demasiado grande (máximo 8 MB).",413);
  const {id}=await params;
  const standalone=process.env.NEXUS_STANDALONE==="true";
  const standaloneScope={id,...(!admin.canManageAll?{assignedAgentId:admin.userId}:{})};
@@ -26,18 +47,18 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
   ?await getStandalonePrisma().property.findFirst({where:standaloneScope,select:{id:true,title:true}})
   :await prisma.property.findFirst({where:{id,...propertyWhere(admin)},select:{id:true,title:true}});
  if(!property)return json("Inmueble no encontrado.",404);
- let file:FormDataEntryValue|null;
- try{file=(await req.formData()).get("photo");}
- catch{return json("No se pudo leer la imagen.",400);}
- if(!(file instanceof File))return json("Selecciona una fotografía.",400);
- if(file.size<100||file.size>MAX_IMAGE_BYTES)return json("La fotografía debe tener entre 100 bytes y 8 MB.",413);
- if(!["image/jpeg","image/png","image/webp"].includes(file.type))return json("Solo JPG, PNG y WebP.",415);
+ let input:Buffer;
+ try{input=await readPhoto(req);}
+ catch(error){
+  if(error instanceof RequestPayloadError)return json(error.message,error.status);
+  return json("No se pudo leer la imagen.",400);
+ }
+ if(input.length<100||input.length>MAX_IMAGE_BYTES)return json("La fotografía debe tener entre 100 bytes y 8 MB.",413);
  // Every upload rechecks the quota in a serializable DB transaction.
  let output:Buffer;
  let card:Buffer;
  let thumb:Buffer;
  try{
-  const input=Buffer.from(await file.arrayBuffer());
   const converter=sharp(input,{limitInputPixels:40_000_000,failOn:"error"});
   const meta=await converter.metadata();
   if(!["jpeg","png","webp"].includes(meta.format||""))return json("Formato de imagen no reconocido.",415);

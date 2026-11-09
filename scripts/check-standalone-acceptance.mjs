@@ -279,7 +279,15 @@ try {
  logo.set("image",new Blob([image],{type:"image/png"}),"logo.png");
  await request("/api/admin/site-media/logo",{method:"POST",cookie:admin,multipart:logo});
  await request("/api/site-media/logo");
- const photo = await (await request(edit+"/photos",{method:"POST",cookie:admin,multipart,status:201})).json();
+ const photoUpload=edit+"/photos";
+ const jsonPhoto={image:image.toString("base64")};
+ await request(photoUpload,{method:"POST",cookie:admin,origin:"https://untrusted.example",json:jsonPhoto,status:403});
+ await request(photoUpload,{method:"POST",cookie:agentSession,json:jsonPhoto,status:404});
+ await request(photoUpload,{method:"POST",cookie:admin,json:{image:"***="},status:400});
+ await request(photoUpload,{method:"POST",cookie:admin,json:{image:Buffer.alloc(8*1024*1024+1).toString("base64")},status:413});
+ const legacyPhoto=await (await request(photoUpload,{method:"POST",cookie:admin,multipart,status:201})).json();
+ await request(photoUpload+"/"+legacyPhoto.id,{method:"POST",cookie:admin});
+ const photo=await (await request(photoUpload,{method:"POST",cookie:admin,json:jsonPhoto,status:201})).json();
  await request(edit+"/photos/order",{method:"POST",cookie:admin,origin:"https://untrusted.example",json:{photoIds:[photo.id,importedPhoto.id]},status:403});
  await request(edit+"/photos/order",{method:"POST",cookie:admin,json:{photoIds:[photo.id,importedPhoto.id]}});
  assert.equal((await db.photo.findUniqueOrThrow({where:{id:photo.id}})).sortOrder,0);
