@@ -321,3 +321,27 @@
   font-weight:800;
  }
 }
+
+
+/* Standalone CRM: inherit dashboard sizing rather than public-page typography. */
+.admin-shell .standalone-crm{width:100%;max-width:1120px;margin:0 auto;min-width:0}
+.admin-shell .standalone-crm .admin-heading h1{font-size:clamp(22px,3vw,30px);line-height:1.2;letter-spacing:-.025em}
+.admin-shell .standalone-crm .admin-heading p{font-size:14px;line-height:1.55;color:#667389;margin:6px 0 0}
+.admin-shell .standalone-crm .admin-panel{padding:18px;border:1px solid #e5eaf0;border-radius:12px;background:#fff}
+.admin-shell .standalone-crm .admin-panel>summary{cursor:pointer;list-style:none;font-size:14px;line-height:1.4}
+.admin-shell .standalone-crm .admin-panel>summary::-webkit-details-marker{display:none}
+.admin-shell .standalone-crm .admin-panel>summary::before{content:"+";display:inline-block;margin-right:9px;color:#b51e2a;font-weight:800}
+.admin-shell .standalone-crm .admin-panel[open]>summary::before{content:"−"}
+.admin-shell .standalone-crm .admin-panel[open]>summary{margin-bottom:16px}
+.admin-shell .standalone-crm .admin-form{max-width:100%;min-width:0}
+.admin-shell .standalone-crm .admin-form input,.admin-shell .standalone-crm .admin-form select,.admin-shell .standalone-crm .admin-form textarea{max-width:100%;min-width:0}
+.admin-shell .standalone-crm nav button{min-height:40px;padding:8px 12px;border:1px solid #dce2e9;border-radius:8px;background:white;color:#34465a;font-size:13px}
+.admin-shell .standalone-crm nav span{font-size:13px;color:#526176}
+@media(max-width:720px){
+ .admin-shell .standalone-crm{padding:0;width:100%}
+ .admin-shell .standalone-crm .admin-panel{padding:14px;margin-bottom:14px}
+ .admin-shell .standalone-crm .admin-form-grid{grid-template-columns:minmax(0,1fr)}
+ .admin-shell .standalone-crm .admin-heading{margin-bottom:15px}
+ .admin-shell .standalone-crm .admin-heading h1{font-size:24px}
+ .admin-shell .standalone-crm nav{flex-wrap:wrap;justify-content:center}
+}
