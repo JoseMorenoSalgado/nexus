@@ -1,3 +1,4 @@
+import {isStandaloneMode} from "@/lib/standalone/mode";
 import {NextResponse} from "next/server";
 import {currentStandaloneAdmin} from "@/lib/standalone/auth";
 import {standalonePrisma} from "@/lib/standalone/db";
@@ -14,7 +15,7 @@ function validOrigin(request:Request){
  }catch{return false;}
 }
 export async function POST(request:Request){
- if(process.env.NEXUS_STANDALONE_MODE!=="true")return new Response(null,{status:404});
+ if(!isStandaloneMode())return new Response(null,{status:404});
  if(!validOrigin(request))return fail(403,"Invalid request origin");
  const admin=await currentStandaloneAdmin();
  if(!admin)return fail(401,"Unauthorized");
