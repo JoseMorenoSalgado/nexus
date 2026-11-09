@@ -1,11 +1,10 @@
 import {readJsonObjectLimited,RequestPayloadError} from "@/lib/limited-json";
-import {createStandalonePropertyWithReference} from "@/lib/property-reference";
 import {validPublicMutationOrigin} from "@/lib/public-request-origin";
 import {isStandaloneMode} from "@/lib/installation-mode";
 import {NextResponse} from "next/server";
 import {currentStandaloneAdmin} from "@/lib/independent-auth";
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
-import {canEditProperties,canManageLeads,canManageUsers} from "@/lib/roles";
+import {canManageLeads,canManageUsers} from "@/lib/roles";
 import {hashPassword} from "@/lib/auth";
 export const dynamic="force-dynamic";
 const fail=(status:number,message:string)=>NextResponse.json({error:message},{status});
@@ -23,56 +22,7 @@ export async function POST(request:Request){
  const db=getStandalonePrisma();
  const requestId=crypto.randomUUID();
  try{
-  if(action==="property.create"||action==="property.update"||action==="property.delete"||action==="property.photo.add"||action==="property.photo.delete"){
-   if(!canEditProperties(JSON.stringify(admin.roles)))return fail(403,"Forbidden");
-   if(action==="property.delete"){
-    if(!admin.roles.includes("admin"))return fail(403,"Sin permisos");
-    const id=text(body.id,80);
-    const linked=await db.property.findUnique({where:{id},select:{refCode:true,_count:{select:{closings:true}}}});
-    if(!linked)return fail(404,"Not found");
-    if(linked._count.closings)return fail(409,"Cannot delete property with closings");
-    if(body.confirmation!==linked.refCode)return fail(400,"Confirma la referencia de la propiedad.");
-    await db.property.delete({where:{id}});
-    return NextResponse.json({ok:true});
-   }
-   if(action==="property.photo.add"||action==="property.photo.delete"){
-    const propertyId=text(body.propertyId,80);
-    if(!await db.property.findUnique({where:{id:propertyId},select:{id:true}}))return fail(404,"Propiedad no encontrada");
-    if(action==="property.photo.delete"){
-     const photoId=text(body.photoId,80);
-     const result=await db.photo.deleteMany({where:{id:photoId,propertyId}});
-     return result.count?NextResponse.json({ok:true}):fail(404,"Fotografía no encontrada");
-    }
-    const url=text(body.url,2000);
-    let parsed:URL;
-    try{parsed=new URL(url);}catch{return fail(400,"URL de fotografía inválida");}
-    if(parsed.protocol!=="https:"||parsed.username||parsed.password)return fail(400,"La fotografía requiere URL HTTPS");
-    const item=await db.photo.create({data:{propertyId,url,alt:text(body.alt,180)||null,sortOrder:Number.isSafeInteger(Number(body.sortOrder))?Math.max(0,Math.min(10000,Number(body.sortOrder))):0}});
-    return NextResponse.json({item},{status:201});
-   }
-   const title=text(body.title,180),city=text(body.city,120),type=text(body.type,80);
-   const operation=text(body.operation,20);
-   const price=Number(body.price);
-   if(!title||!city||!type||!["venta","alquiler"].includes(operation)||!Number.isFinite(price)||price<0||price>99999999999)return fail(400,"Invalid property");
-   const agentId=text(body.assignedAgentId,80)||null;
-   if(agentId&&!await db.adminUser.findFirst({where:{id:agentId,active:true},select:{id:true}}))return fail(400,"Agente desconocido");
-   const bedrooms=Number(body.bedrooms||0),bathrooms=Number(body.bathrooms||0),areaM2=Number(body.areaM2||0);
-   if(![bedrooms,bathrooms,areaM2].every(v=>Number.isSafeInteger(v)&&v>=0&&v<=1000000))return fail(400,"Características inválidas");
-   const data={title,city,type,operation,price,description:text(body.description,10000),neighborhood:text(body.neighborhood,150)||null,published:body.published===true||body.published==="on"||body.published==="true",assignedAgentId:agentId,bedrooms,bathrooms,areaM2};
-   if(action==="property.update"){
-    const id=text(body.id,80);
-    if(!await db.property.findUnique({where:{id},select:{id:true}}))return fail(404,"Not found");
-    const property=await db.property.update({where:{id},data});
-    return NextResponse.json({item:property});
-   }
-   const slug=text(body.slug,150).toLowerCase();
-   if(!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug))return fail(400,"Invalid slug");
-   const duplicate=await db.property.findUnique({where:{slug},select:{id:true}});
-   if(duplicate)return fail(409,"Ya existe una propiedad con esa URL. Utiliza un slug diferente.");
-   const property=await createStandalonePropertyWithReference(data,slug);
-   console.info("[standalone.property.create] saved",{requestId,propertyId:property.id,published:property.published});
-   return NextResponse.json({ok:true,requestId,property:{id:property.id,slug:property.slug,refCode:property.refCode,published:property.published}},{status:201});
-  }
+  if(action.startsWith("property."))return fail(410,"Gestiona los inmuebles desde /admin/propiedades.");
   if(action==="lead.create"||action==="lead.update"){
    if(!canManageLeads(JSON.stringify(admin.roles)))return fail(403,"Forbidden");
    if(action==="lead.create"){

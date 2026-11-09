@@ -5,13 +5,14 @@ import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {requireRole} from "@/lib/auth";
 import {propertyWhere} from "@/lib/agent-scope";
 export const dynamic="force-dynamic";
-type Filters={q?:string;status?:string;operation?:string;page?:string;updated?:string;deleted?:string;error?:string};
+type Filters=Record<string,string|string[]|undefined>;
+const single=(value:Filters[string])=>typeof value==="string"?value:"";
 const money=(x:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0}).format(x);
 export default async function AdminProperties({searchParams}:{searchParams:Promise<Filters>}){
  const admin=await requireRole(["admin","editor","agente"]);
  const x=await searchParams;
- const q=(x.q||"").trim().slice(0,70),status=x.status||"",operation=x.operation||"";
- const page=Math.max(1,Math.min(10000,Number.parseInt(x.page||"1",10)||1));
+ const q=single(x.q).trim().slice(0,70),status=single(x.status),operation=single(x.operation);
+ const page=Math.max(1,Math.min(10000,Number.parseInt(single(x.page),10)||1));
  const standalone=process.env.NEXUS_STANDALONE==="true";
  const where={
   ...(!standalone?propertyWhere(admin):admin.roles.includes("admin")||admin.roles.includes("editor")?{}:{assignedAgentId:admin.userId}),
@@ -48,7 +49,8 @@ export default async function AdminProperties({searchParams}:{searchParams:Promi
  const canEdit=admin.roles.some(r=>["admin","editor","agente"].includes(r));
  return <>
   <div className="admin-heading"><div><h1>Propiedades</h1><p>Organiza, publica y administra el catálogo de tu inmobiliaria.</p></div>{canEdit&&<Link href="/admin/propiedades/nueva" className="btn btn-red"><Plus size={18}/> Nueva propiedad</Link>}</div>
-  {admin.roles.includes("admin")&&<details className="admin-panel editor-disclosure"><summary><strong>Configurar referencia automática</strong></summary><div className="editor-disclosure-body"><p className="property-help">Los códigos anteriores no cambian. Próximo número: {sequence?.nextNumber||1}.</p><form method="post" action="/api/admin/properties/reference-settings" className="admin-form"><label>Prefijo de la empresa<input name="prefix" defaultValue={sequence?.prefix||"NRE"} pattern="[A-Z][A-Z0-9-]{0,10}[A-Z0-9]" minLength={2} maxLength={12} required/></label><button className="btn wizard-back" type="submit">Guardar prefijo</button></form></div></details>}
+  {admin.roles.includes("admin")&&<details className="admin-panel editor-disclosure"><summary><strong>Configurar referencia automática</strong></summary><div className="editor-disclosure-body"><p className="property-help">Los códigos anteriores no cambian. Próximo número: {sequence?.nextNumber||1}.</p><form method="post" action="/api/admin/properties/reference-settings" className="admin-form"><label>Prefijo de la empresa<input name="prefix" defaultValue={sequence?.prefix||"NRE"} pattern={String.raw`[A-Z][A-Z0-9\-]{0,10}[A-Z0-9]`} minLength={2} maxLength={12} required/></label><button className="btn wizard-back" type="submit">Guardar prefijo</button></form></div></details>}
+  {x.referenceSaved&&<div className="property-success" role="status">Prefijo de referencia guardado.</div>}
   {(x.updated||x.deleted)&&<div className="property-success" role="status">{x.deleted?"Propiedad eliminada.":"Estado de publicación actualizado."}</div>}
   {x.error&&<div className="admin-error" role="alert">No fue posible completar la operación solicitada.</div>}
   <nav className="admin-quick-filters" aria-label="Estado de las propiedades">

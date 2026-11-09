@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 /** @type {import("next").NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -5,6 +7,22 @@ const nextConfig = {
   compress: true,
   productionBrowserSourceMaps: false,
   experimental: { optimizePackageImports: ["lucide-react", "recharts"] },
+  webpack(config, { dev, isServer }) {
+    if (!dev && !isServer) {
+      const defaultFilename = config.output.filename;
+      config.output.filename = (pathData, assetInfo) => {
+        const name = pathData.chunk?.name;
+        // Enhance can return 403 for JS assets under literal route segments like [slug].
+        // Keep Next's route names intact and let its manifests reference the emitted files.
+        if (name?.startsWith("app/") && /[\[\]()@]/.test(name)) {
+          const routeKey = createHash("sha256").update(name).digest("hex").slice(0, 16);
+          return `static/chunks/route-${routeKey}-[contenthash].js`;
+        }
+        return typeof defaultFilename === "function" ? defaultFilename(pathData, assetInfo) : defaultFilename;
+      };
+    }
+    return config;
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 86400,
