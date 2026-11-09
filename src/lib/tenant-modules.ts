@@ -1,6 +1,7 @@
 import "server-only";
 import {type Prisma} from "@prisma/client";
 import {prisma} from "@/lib/prisma";
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {getSiteTemplate} from "@/lib/site-template-store";
 import {defaultEnabledModules,normalizeEnabledModules,type ModuleKey} from "@/lib/tenant-modules-registry";
 import {type SiteTemplateKey} from "@/lib/site-template-registry";
@@ -15,13 +16,24 @@ function obj(value:unknown):Record<string,unknown>{
 export async function getTenantModules(tenantId:string,sector?:SiteTemplateKey):Promise<ModuleKey[]>{
  const template=sector??(await getSiteTemplate(tenantId)).key;
  if(tenantId==="demo")return defaultEnabledModules(template);
- const row=await prisma.sitePage.findUnique({where:{tenantId_slug:{tenantId,slug:SLUG}},select:{blocks:true}});
+ const row=process.env.NEXUS_STANDALONE==="true"
+  ?await getStandalonePrisma().sitePage.findUnique({where:{slug:SLUG},select:{blocks:true}})
+  :await prisma.sitePage.findUnique({where:{tenantId_slug:{tenantId,slug:SLUG}},select:{blocks:true}});
  const byTemplate=obj(obj(row?.blocks).byTemplate);
  return normalizeEnabledModules(template,byTemplate[template]);
 }
 export async function updateTenantModules(tenantId:string,requested:unknown){
  const sector=(await getSiteTemplate(tenantId)).key;
  const enabled=normalizeEnabledModules(sector,requested,true);
+ if(process.env.NEXUS_STANDALONE==="true"){
+  await getStandalonePrisma().$transaction(async tx=>{
+   const existing=await tx.sitePage.findUnique({where:{slug:SLUG},select:{blocks:true}});
+   const prior=obj(obj(existing?.blocks).byTemplate);
+   const blocks={version:1,byTemplate:{...prior,[sector]:enabled}};
+   await tx.sitePage.upsert({where:{slug:SLUG},create:{slug:SLUG,title:"Módulos de la empresa",blocks:blocks as Prisma.InputJsonValue,published:false},update:{blocks:blocks as Prisma.InputJsonValue,published:false}});
+  });
+  return enabled;
+ }
  await prisma.$transaction(async tx=>{
   const existing=await tx.sitePage.findUnique({where:{tenantId_slug:{tenantId,slug:SLUG}},select:{blocks:true}});
   const prior=obj(obj(existing?.blocks).byTemplate);
