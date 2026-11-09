@@ -1,6 +1,6 @@
 import "server-only";
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
-import {isStandaloneMode} from "@/lib/standalone/mode";
+import {isStandaloneMode} from "@/lib/installation-mode";
 import {prisma} from "@/lib/prisma";
 import {type Prisma} from "@prisma/client";
 import {type PageSection,normalizePageSections} from "@/lib/page-sections";

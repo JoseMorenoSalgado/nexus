@@ -1,4 +1,4 @@
-import {isStandaloneMode} from "@/lib/standalone/mode";
+import {isStandaloneMode} from "@/lib/installation-mode";
 import {publicPageHostname} from "@/lib/public-request-origin";
 import {NextRequest,NextResponse} from "next/server";
 import {tenantFromHost} from "@/lib/tenant";

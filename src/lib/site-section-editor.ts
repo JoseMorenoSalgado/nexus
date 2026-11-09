@@ -1,6 +1,6 @@
 import "server-only";
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
-import {isStandaloneMode} from "@/lib/standalone/mode";
+import {isStandaloneMode} from "@/lib/installation-mode";
 import {prisma} from "@/lib/prisma";
 import {getSiteSettings,parseSiteSettings,saveSiteSettings,SiteSettingsError,validateBrandContact,type SiteSettings} from "@/lib/site-settings";
 

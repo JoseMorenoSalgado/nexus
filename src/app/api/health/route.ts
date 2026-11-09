@@ -1,4 +1,4 @@
-import {isStandaloneMode} from "@/lib/standalone/mode";
+import {isStandaloneMode} from "@/lib/installation-mode";
 import {NextResponse} from "next/server";
 import {hasDatabaseConfig} from "@/lib/server-config";
 import {prisma} from "@/lib/prisma";

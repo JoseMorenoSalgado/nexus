@@ -2,7 +2,7 @@ import {ImageIcon,Palette,Save} from "lucide-react";
 import {SiteCustomizerNav} from "@/components/site-customizer-nav";
 import {requireRole} from "@/lib/auth";
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
-import {isStandaloneMode} from "@/lib/standalone/mode";
+import {isStandaloneMode} from "@/lib/installation-mode";
 import {prisma} from "@/lib/prisma";
 import {hasSiteAsset} from "@/lib/site-assets";
 import {SiteAssetManager} from "@/components/site-asset-manager";

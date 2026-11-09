@@ -1,7 +1,7 @@
 import "server-only";
 import {stat,readFile} from "node:fs/promises";
 import {join} from "node:path";
-import {isStandaloneMode} from "@/lib/standalone/mode";
+import {isStandaloneMode} from "@/lib/installation-mode";
 import {configDir} from "@/lib/server-config";
 export const PAGE_HERO_KINDS=["hero","hero-propiedades","hero-nosotros","hero-servicios","hero-contacto","hero-asesoria-empresarial"] as const;
 export type PageHeroKind=typeof PAGE_HERO_KINDS[number];

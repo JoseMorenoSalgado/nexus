@@ -9,7 +9,7 @@ import {commercialSchemaState} from "@/lib/commercial-schema";
 import {CommercialAlertsPreview,CommercialAlertsSummary} from "@/components/commercial-alerts-preview";
 import {DashboardAnalytics} from "@/components/dashboard-analytics";
 import {firstDayOfSeries,makeDailyMetrics,type MetricDay} from "@/lib/dashboard-metrics";
-import {isStandaloneMode} from "@/lib/standalone/mode";
+import {isStandaloneMode} from "@/lib/installation-mode";
 import {getTenantModules} from "@/lib/tenant-modules";
 export const dynamic="force-dynamic";
 const days=14;

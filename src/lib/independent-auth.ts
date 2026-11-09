@@ -1,9 +1,7 @@
 import "server-only";
 import {redirect} from "next/navigation";
 import {currentAdmin} from "@/lib/auth";
-import {isStandaloneMode} from "@/lib/standalone/mode";
-
-export {hashPassword as hashStandalonePassword} from "@/lib/auth";
+import {isStandaloneMode} from "@/lib/installation-mode";
 
 export async function currentStandaloneAdmin(){
  return isStandaloneMode()?currentAdmin():null;

@@ -3,7 +3,7 @@ import Link from "next/link";
 import {notFound,redirect} from "next/navigation";
 import {installerAvailable,hasDatabaseConfig} from "@/lib/server-config";
 import {ArrowUpRight,Building2,Search} from "lucide-react";
-import {getStandalonePublicContext} from "@/lib/standalone/public-context";
+import {getStandalonePublicContext} from "@/lib/independent-public-context";
 import {SiteNav} from "@/components/site-nav";
 import {SiteFooter} from "@/components/site-footer";
 import {PropertyCard} from "@/components/property-card";

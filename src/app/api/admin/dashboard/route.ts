@@ -1,7 +1,7 @@
-import {isStandaloneMode} from "@/lib/standalone/mode";
+import {isStandaloneMode} from "@/lib/installation-mode";
 import {NextResponse} from "next/server";
-import {currentStandaloneAdmin} from "@/lib/standalone/auth";
-import {listStandaloneAdminProperties,listStandaloneLeads,listStandaloneAgents,listStandaloneAgenda,getStandaloneSiteConfig} from "@/lib/standalone/repositories";
+import {currentStandaloneAdmin} from "@/lib/independent-auth";
+import {listStandaloneAdminProperties,listStandaloneLeads,listStandaloneAgents,listStandaloneAgenda,getStandaloneSiteConfig} from "@/lib/independent-repositories";
 
 /**
  * Integration endpoint for new-install standalone dashboard.

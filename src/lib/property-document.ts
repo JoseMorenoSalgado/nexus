@@ -2,7 +2,7 @@ import "server-only";
 import {readFile,stat} from "node:fs/promises";
 import {join} from "node:path";
 import {PDFDocument,PDFName} from "pdf-lib";
-import {isStandaloneMode} from "@/lib/standalone/mode";
+import {isStandaloneMode} from "@/lib/installation-mode";
 import {configDir} from "@/lib/server-config";
 
 export const MAX_CUSTOM_PDF_BYTES=10*1024*1024;

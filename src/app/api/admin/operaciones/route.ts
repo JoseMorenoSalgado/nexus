@@ -1,10 +1,10 @@
 import {readJsonObjectLimited,RequestPayloadError} from "@/lib/limited-json";
 import {createStandalonePropertyWithReference} from "@/lib/property-reference";
 import {validPublicMutationOrigin} from "@/lib/public-request-origin";
-import {isStandaloneMode} from "@/lib/standalone/mode";
+import {isStandaloneMode} from "@/lib/installation-mode";
 import {NextResponse} from "next/server";
-import {currentStandaloneAdmin} from "@/lib/standalone/auth";
-import {standalonePrisma} from "@/lib/standalone/db";
+import {currentStandaloneAdmin} from "@/lib/independent-auth";
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {canEditProperties,canManageLeads,canManageUsers} from "@/lib/roles";
 import {hashPassword} from "@/lib/auth";
 export const dynamic="force-dynamic";
@@ -20,7 +20,7 @@ export async function POST(request:Request){
  try{body=await readJsonObjectLimited(request,65536);}
  catch(error){return error instanceof RequestPayloadError?fail(error.status,error.message):fail(400,"Datos inválidos");}
  const action=text(body.action,40);
- const db=standalonePrisma();
+ const db=getStandalonePrisma();
  const requestId=crypto.randomUUID();
  try{
   if(action==="property.create"||action==="property.update"||action==="property.delete"||action==="property.photo.add"||action==="property.photo.delete"){

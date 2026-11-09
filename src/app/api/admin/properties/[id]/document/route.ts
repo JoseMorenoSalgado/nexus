@@ -1,5 +1,5 @@
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
-import {isStandaloneMode} from "@/lib/standalone/mode";
+import {isStandaloneMode} from "@/lib/installation-mode";
 import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {randomUUID} from "node:crypto";
 import {mkdir,rename,unlink,writeFile} from "node:fs/promises";

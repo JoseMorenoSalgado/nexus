@@ -1,5 +1,5 @@
 import "server-only";
-import {getStandaloneModules} from "@/lib/standalone/modules";
+import {getStandaloneModules} from "@/lib/independent-modules";
 import {type Prisma} from "@prisma/client";
 import {prisma} from "@/lib/prisma";
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
