@@ -1,14 +1,19 @@
 import {ImageIcon,Palette,Save} from "lucide-react";
 import {SiteCustomizerNav} from "@/components/site-customizer-nav";
 import {requireRole} from "@/lib/auth";
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
+import {isStandaloneMode} from "@/lib/standalone/mode";
 import {prisma} from "@/lib/prisma";
 import {hasSiteAsset} from "@/lib/site-assets";
 import {SiteAssetManager} from "@/components/site-asset-manager";
 export const dynamic="force-dynamic";
 export default async function SiteIdentity({searchParams}:{searchParams:Promise<{saved?:string;error?:string}>}){
  const admin=await requireRole(["admin","editor"]);
+ const standalone=isStandaloneMode();
+ const select={tagline:true,primaryColor:true,whatsapp:true,contactEmail:true} as const;
  const [tenant,hasHero,hasLogo,q]=await Promise.all([
-  prisma.tenant.findUniqueOrThrow({where:{id:admin.tenantId},select:{tagline:true,primaryColor:true,whatsapp:true,contactEmail:true}}),
+  standalone?getStandalonePrisma().siteConfig.findUniqueOrThrow({where:{id:"main"},select}):
+   prisma.tenant.findUniqueOrThrow({where:{id:admin.tenantId},select}),
   hasSiteAsset(admin.tenantId,"hero"),hasSiteAsset(admin.tenantId,"logo"),searchParams
  ]);
  const canEdit=admin.roles.some(r=>["admin","editor"].includes(r));
@@ -16,7 +21,7 @@ export default async function SiteIdentity({searchParams}:{searchParams:Promise<
   <div className="admin-heading"><div>
    <h1>Identidad visual</h1><p>Logotipo, imagen de portada, lema y colores de tu organización.</p></div>
   </div>
-  <SiteCustomizerNav current="identity"/>
+  {!standalone&&<SiteCustomizerNav current="identity"/>}
   {q.saved&&<p className="property-success" role="status">Identidad visual guardada correctamente.</p>}
   {q.error&&<p className="admin-error" role="alert">No se pudieron guardar los cambios. Elige un color oscuro que contraste con texto blanco.</p>}
   <section className="admin-panel site-editor-images">

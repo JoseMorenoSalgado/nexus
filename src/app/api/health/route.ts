@@ -1,6 +1,8 @@
+import {isStandaloneMode} from "@/lib/standalone/mode";
 import {NextResponse} from "next/server";
 import {hasDatabaseConfig} from "@/lib/server-config";
 import {prisma} from "@/lib/prisma";
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -11,17 +13,30 @@ function schemaError(error: unknown): boolean {
   return error.code === "P2021" || error.code === "P2022";
 }
 
-/**
- * Read-only readiness check. SELECT 1 alone is not enough: a freshly-created
- * SQL database can accept connections while Domain (required by every public
- * page) and the other CMS tables are absent.
- *
- * Do not attempt migrations, seed data or change installation state here.
- */
+/** Read-only readiness check for the active database architecture. */
 export async function GET() {
   try {
     if (!hasDatabaseConfig()) {
       return NextResponse.json({status: "unavailable", reason: "not_configured"}, {status: 503, headers});
+    }
+    if (isStandaloneMode()) {
+      const db = getStandalonePrisma();
+      await db.$queryRaw`SELECT 1`;
+      const [config] = await Promise.all([
+        db.siteConfig.findUnique({where: {id: "main"}, select: {id: true}}),
+        db.sitePage.findFirst({select: {id: true, published: true}}),
+        db.property.findFirst(),
+        db.photo.findFirst(),
+        db.adminUser.findFirst({select: {id: true, active: true, role: true}}),
+        db.adminSession.findFirst({select: {id: true, tokenHash: true, expiresAt: true}}),
+        db.lead.findFirst(),
+        db.leadCrm.findFirst(),
+        db.propertySequence.findFirst()
+      ]);
+      if (!config) {
+        return NextResponse.json({status: "unavailable", reason: "installation_incomplete"}, {status: 503, headers});
+      }
+      return NextResponse.json({status: "ok", mode: "standalone"}, {headers});
     }
     await prisma.$queryRaw`SELECT 1`;
     await Promise.all([
@@ -34,7 +49,6 @@ export async function GET() {
     return NextResponse.json({status: "ok"}, {headers});
   } catch (error) {
     const reason = schemaError(error) ? "schema_incomplete" : "database_unavailable";
-    // Log only the error class and generic readiness reason, never SQL URLs.
     console.error("[health] readiness failed:", reason, error instanceof Error ? error.name : "unknown");
     return NextResponse.json({status: "unavailable", reason}, {status: 503, headers});
   }

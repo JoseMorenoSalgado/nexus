@@ -1,4 +1,5 @@
 import "server-only";
+import {hasSiteAsset} from "@/lib/site-assets";
 import {standalonePrisma} from "@/lib/standalone/db";
 import type {PublicProperty,PublicTenant} from "@/lib/demo";
 
@@ -25,7 +26,7 @@ export async function getStandalonePublicContext(options:{loadProperties?:boolea
  return {
   tenant:{
    id:config.id,name:config.name,tagline:config.tagline||"",
-   whatsapp:config.whatsapp||"",logoUrl:config.logoUrl||"",
+   whatsapp:config.whatsapp||"",logoUrl:await hasSiteAsset("main","logo")?"/api/site-media/logo":config.logoUrl||"",
    contactEmail:config.contactEmail||"",primaryColor:config.primaryColor
   },
   properties:props.map(p=>({

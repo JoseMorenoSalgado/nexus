@@ -3,6 +3,7 @@ import {currentAdmin} from "@/lib/auth";
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {validMutationOrigin} from "@/lib/admin-property-request";
 import {readJsonObjectLimited,RequestPayloadError} from "@/lib/limited-json";
+import {parseLeadContact} from "@/lib/lead-contact";
 import {parseRoles} from "@/lib/roles";
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
@@ -40,14 +41,11 @@ export async function POST(req:NextRequest){
  catch(e){return NextResponse.json({error:e instanceof RequestPayloadError?e.message:"Datos inválidos"},{status:e instanceof RequestPayloadError?e.status:400});}
  const permitted=["name","phone","email","message","source","propertyId","assignedAgentId","consent"];
  if(Object.keys(body).some(k=>!permitted.includes(k)))return NextResponse.json({error:"Campos inválidos"},{status:400});
- const name=typeof body.name==="string"?body.name.trim():"";
- const phone=typeof body.phone==="string"?body.phone.trim():"";
- const email=typeof body.email==="string"?body.email.trim():"";
- const message=typeof body.message==="string"?body.message.trim():"";
+ const contact=parseLeadContact(body);
  const source=typeof body.source==="string"?body.source.trim():"manual";
  const propertyId=typeof body.propertyId==="string"?body.propertyId.trim():"";
  const assigned=typeof body.assignedAgentId==="string"?body.assignedAgentId.trim():"";
- if(name.length<2||name.length>120||!/^[+\d() -]{7,30}$/.test(phone)||email.length>180||(email&&!/^\S+@\S+\.\S+$/.test(email))||message.length>2000||source.length<1||source.length>80||body.consent!==true)return NextResponse.json({error:"Revisa los datos y confirma el consentimiento"},{status:400});
+ if(!contact||source.length<1||source.length>80||body.consent!==true)return NextResponse.json({error:"Revisa los datos y confirma el consentimiento"},{status:400});
  if(assigned&&!manager)return NextResponse.json({error:"No puedes asignar otro agente"},{status:403});
  const db=getStandalonePrisma();
  try{
@@ -59,7 +57,7 @@ export async function POST(req:NextRequest){
    const agent=await db.adminUser.findFirst({where:{id:agentId,active:true},select:{role:true}});
    if(!agent||!parseRoles(agent.role).includes("agente"))return NextResponse.json({error:"Agente no válido"},{status:400});
   }
-  const lead=await db.lead.create({data:{name,phone,email:email||null,message:message||null,source,propertyId:property?.id||null,assignedAgentId:agentId,consent:true},select:{id:true}});
+  const lead=await db.lead.create({data:{...contact,source,propertyId:property?.id||null,assignedAgentId:agentId,consent:true},select:{id:true}});
   return NextResponse.json({id:lead.id,ok:true},{status:201,headers:{"Cache-Control":"no-store"}});
  }catch(e){
   console.error("[standalone-crm] create lead",e instanceof Error?e.name:"unknown");

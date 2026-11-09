@@ -1,3 +1,5 @@
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
+import {isStandaloneMode} from "@/lib/standalone/mode";
 import {hasDatabaseConfig} from "@/lib/server-config";
 import {NextResponse,type NextRequest} from "next/server";
 import {prisma} from "@/lib/prisma";
@@ -23,6 +25,17 @@ export async function GET(req:NextRequest,{params}:{params:Promise<{slug:string}
     description:demo.description,city:demo.city,neighborhood:demo.neighborhood,type:demo.type,
     operation:demo.operation,price:demo.price,bedrooms:demo.bedrooms,bathrooms:demo.bathrooms,
     areaM2:demo.areaM2,photos:[]};
+  }
+ }else if(isStandaloneMode()){
+  const db=getStandalonePrisma();
+  const [record,site]=await Promise.all([
+   db.property.findUnique({where:{slug,published:true},include:{photos:{orderBy:{sortOrder:"asc"},take:15}}}),
+   db.siteConfig.findUnique({where:{id:"main"},select:{name:true,primaryColor:true}})
+  ]);
+  if(record&&site){
+   property={...record,tenantId:"main",price:Number(record.price),photos:record.photos.map(({id,url})=>({id,url}))};
+   tenantName=site.name;
+   primaryColor=site.primaryColor;
   }
  }else{
   let tenant:Awaited<ReturnType<typeof tenantFromHost>>=null;
@@ -50,7 +63,7 @@ export async function GET(req:NextRequest,{params}:{params:Promise<{slug:string}
  if(!property)return NextResponse.json({error:"Propiedad no encontrada"},{status:404});
  const scheme=req.headers.get("x-forwarded-proto")==="https"?"https":
   req.headers.get("x-forwarded-proto")==="http"?"http":req.nextUrl.protocol.replace(":","");
- const publicUrl=new URL("/propiedades/"+encodeURIComponent(property.slug),scheme+"://"+hostname).toString();
+ const publicUrl=new URL("/propiedades/"+encodeURIComponent(property.slug),(isStandaloneMode()&&process.env.SITE_URL)||scheme+"://"+hostname).toString();
  const {bytes}=await buildPropertyPdf(property,{mode,photoIds:selected,tenantName,primaryColor,publicUrl});
  const filename="nexus-"+property.refCode.replace(/[^A-Za-z0-9-]/g,"")+
   (mode==="resumida"?"-resumida":"-ampliada")+".pdf";

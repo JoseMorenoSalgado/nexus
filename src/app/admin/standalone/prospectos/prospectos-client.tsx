@@ -83,6 +83,22 @@ export default function ProspectosClient({agents,canAssign,properties}:{agents:A
        </select>
       </label>}
      </div>
+     <details style={{marginTop:12}}>
+      <summary>Editar datos de contacto</summary>
+      <form className="admin-form" onSubmit={event=>{
+       event.preventDefault();
+       const fields=new FormData(event.currentTarget);
+       void update(lead.id,{contact:Object.fromEntries(fields)});
+      }}>
+       <div className="admin-form-grid">
+        <label>Nombre completo<input name="name" defaultValue={lead.name} required minLength={2} maxLength={120}/></label>
+        <label>Teléfono<input name="phone" type="tel" defaultValue={lead.phone} required minLength={7} maxLength={30}/></label>
+       </div>
+       <label>Correo electrónico<input name="email" type="email" defaultValue={lead.email||""} maxLength={180}/></label>
+       <label>Observaciones<textarea name="message" defaultValue={lead.message||""} maxLength={2000}/></label>
+       <button type="submit" className="btn btn-red" disabled={saving===lead.id}>Guardar datos de contacto</button>
+      </form>
+     </details>
      <button type="button" aria-expanded={expanded===lead.id} onClick={()=>void showHistory(lead.id)} style={{marginTop:12}}>{expanded===lead.id?"Ocultar historial":"Ver historial"}</button>
      {expanded===lead.id&&history[lead.id]&&<div aria-label={"Historial de "+lead.name}>
       <h3>Notas de seguimiento</h3>

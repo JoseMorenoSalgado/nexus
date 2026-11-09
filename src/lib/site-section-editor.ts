@@ -1,4 +1,6 @@
 import "server-only";
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
+import {isStandaloneMode} from "@/lib/standalone/mode";
 import {prisma} from "@/lib/prisma";
 import {getSiteSettings,parseSiteSettings,saveSiteSettings,SiteSettingsError,validateBrandContact,type SiteSettings} from "@/lib/site-settings";
 
@@ -38,7 +40,8 @@ export async function savePartialSiteSection(tenantId:string,section:Exclude<Sit
   }
  }
  if(section==="propiedades"&&patch.featuredIds?.length){
-  const found=await prisma.property.count({where:{tenantId,id:{in:patch.featuredIds},published:true}});
+  const where={id:{in:patch.featuredIds},published:true};
+  const found=isStandaloneMode()?await getStandalonePrisma().property.count({where}):await prisma.property.count({where:{...where,tenantId}});
   if(found!==patch.featuredIds.length)throw new SiteSettingsError("Las propiedades destacadas deben estar publicadas.");
  }
  // Restore the persisted values of every OTHER section, instead of overwriting them
@@ -47,8 +50,10 @@ export async function savePartialSiteSection(tenantId:string,section:Exclude<Sit
  await saveSiteSettings(tenantId,merged);
 }
 export async function savePartialBrand(tenantId:string,section:"contacto"|"identidad",form:FormData){
- const existing=await prisma.tenant.findUniqueOrThrow({where:{id:tenantId},
-  select:{name:true,tagline:true,contactEmail:true,whatsapp:true,primaryColor:true}});
+ const select={name:true,tagline:true,contactEmail:true,whatsapp:true,primaryColor:true} as const;
+ const db=isStandaloneMode()?getStandalonePrisma():null;
+ const existing=db?await db.siteConfig.findUniqueOrThrow({where:{id:"main"},select}):
+  await prisma.tenant.findUniqueOrThrow({where:{id:tenantId},select});
  const completed=new FormData();
  completed.set("tagline",section==="identidad"?(String(form.get("tagline")??"")):existing.tagline||"");
  completed.set("primaryColor",section==="identidad"?(String(form.get("primaryColor")??"")):existing.primaryColor);
@@ -56,10 +61,10 @@ export async function savePartialBrand(tenantId:string,section:"contacto"|"ident
  completed.set("whatsapp",section==="contacto"||form.has("whatsapp")?(String(form.get("whatsapp")??"")):existing.whatsapp||"");
  const legacyLocalCode=existing.name.trim().toLowerCase()==="nexus real estate"?"505":undefined;
  const brand=validateBrandContact(completed,{legacyLocalCode});
- if(section==="identidad")await prisma.tenant.update({where:{id:tenantId},
-  data:{tagline:brand.tagline,primaryColor:brand.primaryColor,
-   ...(form.has("contactEmail")?{contactEmail:brand.contactEmail}:{}),
-   ...(form.has("whatsapp")?{whatsapp:brand.whatsapp}:{})}});
- else await prisma.tenant.update({where:{id:tenantId},
-  data:{contactEmail:brand.contactEmail,whatsapp:brand.whatsapp}});
+ const data=section==="identidad"?{tagline:brand.tagline,primaryColor:brand.primaryColor,
+  ...(form.has("contactEmail")?{contactEmail:brand.contactEmail}:{}),
+  ...(form.has("whatsapp")?{whatsapp:brand.whatsapp}:{})}:
+  {contactEmail:brand.contactEmail,whatsapp:brand.whatsapp};
+ if(db)await db.siteConfig.update({where:{id:"main"},data});
+ else await prisma.tenant.update({where:{id:tenantId},data});
 }

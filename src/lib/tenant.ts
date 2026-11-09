@@ -61,7 +61,7 @@ export async function getPublicContext(options:{loadProperties?:boolean}={}):Pro
    const rank=(id:string)=>{const i=settings.featuredIds.indexOf(id);return i===-1?999:i;};
    return rank(a.id)-rank(b.id)||Number(b.featured)-Number(a.featured);
   });
-  return {tenant:{id:"main",name:site.name,tagline:site.tagline||"",whatsapp:site.whatsapp||"",logoUrl:site.logoUrl||"",contactEmail:site.contactEmail||"",primaryColor:site.primaryColor||"#CB2027"},demo:false,settings,heroImage:false,properties:prioritized.map(p=>({
+  return {tenant:{id:"main",name:site.name,tagline:site.tagline||"",whatsapp:site.whatsapp||"",logoUrl:await hasSiteAsset("main","logo")?"/api/site-media/logo":site.logoUrl||"",contactEmail:site.contactEmail||"",primaryColor:site.primaryColor||"#CB2027"},demo:false,settings,heroImage:await hasSiteAsset("main","hero"),properties:prioritized.map(p=>({
    id:p.id,slug:p.slug,refCode:p.refCode,title:p.title,description:p.description,city:p.city,neighborhood:p.neighborhood||"",type:p.type,
    operation:p.operation==="alquiler"?"alquiler" as const:"venta" as const,price:Number(p.price),
    bedrooms:p.bedrooms||0,bathrooms:p.bathrooms||0,areaM2:p.areaM2||0,image:p.photos[0]?.url||"",photos:p.photos.map(x=>x.url)

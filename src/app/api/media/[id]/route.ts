@@ -12,11 +12,11 @@ export async function GET(req:NextRequest,{params}:{params:Promise<{id:string}>}
  const {id}=await params;
  if(!isPhotoId(id))return new NextResponse(null,{status:404});
  if(process.env.NEXUS_STANDALONE==="true"){
-  const photo=await getStandalonePrisma().photo.findUnique({where:{id},select:{id:true,url:true,property:{select:{published:true}}}});
+  const photo=await getStandalonePrisma().photo.findUnique({where:{id},select:{id:true,url:true,property:{select:{published:true,assignedAgentId:true}}}});
   if(!photo||photo.url!=="/api/media/"+id)return new NextResponse(null,{status:404});
   if(!photo.property.published){
    const admin=await currentAdmin();
-   if(!admin)return new NextResponse(null,{status:404});
+   if(!admin||(!admin.roles.some(role=>role==="admin"||role==="editor")&&photo.property.assignedAgentId!==admin.userId))return new NextResponse(null,{status:404});
   }
   const requested=req.nextUrl.searchParams.get("variant");
   const variant:MediaVariant|null=requested==="card"||requested==="thumb"?requested:null;
@@ -28,7 +28,7 @@ export async function GET(req:NextRequest,{params}:{params:Promise<{id:string}>}
    }):await readFile(mediaFilePath("main",id));
    return new NextResponse(new Uint8Array(buffer),{headers:{
     "Content-Type":"image/webp","X-Content-Type-Options":"nosniff",
-    "Cache-Control":"private, max-age=3600, must-revalidate","Content-Disposition":"inline"
+    "Cache-Control":"private, no-cache","Content-Disposition":"inline"
    }});
   }catch{return new NextResponse(null,{status:404});}
  }

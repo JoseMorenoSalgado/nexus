@@ -6,12 +6,11 @@ import {standalonePrismaSchemaFor,type DatabaseEngine} from "@/lib/db-provider";
 import {PrismaClient as StandalonePrismaClient} from "@/generated/standalone-postgres";
 import {isTemplateKey,type SiteTemplateKey} from "@/lib/site-template-registry";
 import {normalizeEnabledModules,type ModuleKey} from "@/lib/tenant-modules-registry";
-import {prismaFor} from "@/lib/prisma";
+import {installerOriginAllowed} from "@/lib/installer-origin";
 import {buildInstallerDatabaseUrl} from "@/lib/installer-db-url";
 import {hashPassword} from "@/lib/auth";
 import {installerAvailable,takeInstallLock,saveInstallation,configDir} from "@/lib/server-config";
 import {clearInstallerSession,INSTALLER_SESSION_COOKIE} from "@/lib/installer-session";
-import {normalizeSiteHost} from "@/lib/preview";
 import {mkdirSync,accessSync,constants} from "node:fs";
 import {readJsonObjectLimited,RequestPayloadError} from "@/lib/limited-json";
 
@@ -46,7 +45,7 @@ function validate(input:Form){
  return {institution,institutionEmail,adminName,adminEmail,adminPassword,url,engine,templateKey,modules};
 }
 function databaseError(error:unknown,engine:DatabaseEngine){
- const code=typeof error==="object"&&error&&"code" in error?String(error.code):"";
+ const code=typeof error==="object"&&error?(("code" in error&&String(error.code))||("errorCode" in error&&String(error.errorCode))||""):"";
  if(code==="P1000")return "Usuario o contraseña incorrectos.";
  if(code==="P1001")return "No se pudo conectar al servidor SQL. Comprueba host, puerto y acceso a la base de datos desde Enhance.";
  if(code==="P1003")return "La base de datos no existe. Créala primero desde el panel de bases de datos de Enhance.";
@@ -60,43 +59,13 @@ function databaseError(error:unknown,engine:DatabaseEngine){
 export async function POST(req:NextRequest){
  if(!installerAvailable())return response("Esta instalación ya está configurada.",409);
 
- const origin=req.headers.get("origin"),host=req.headers.get("host")||"";
- if(!origin||!host)return response("Origen de instalación no válido.",403);
- try{
-  const parsed=new URL(origin);
-  const directHost=host.trim().toLowerCase();
-  const hostname=directHost.startsWith("[")?directHost.slice(1).split("]")[0]:directHost.split(":")[0];
-  const internalHost=hostname==="localhost"||hostname==="127.0.0.1"||hostname==="0.0.0.0"||
-   hostname.startsWith("10.")||hostname.startsWith("192.168.")||/^172\.(1[6-9]|2[0-9]|3[01])\./.test(hostname);
-  const forwardedHost=req.headers.get("x-forwarded-host")?.split(",")[0]?.trim().toLowerCase();
-  const sameHost=parsed.host.toLowerCase()===directHost||
-   (internalHost&&Boolean(forwardedHost)&&parsed.host.toLowerCase()===forwardedHost);
-  const browserSameOrigin=req.headers.get("sec-fetch-site")==="same-origin"&&parsed.protocol==="https:"&&process.env.NODE_ENV==="production";
-  if(!["http:","https:"].includes(parsed.protocol)||(!sameHost&&!browserSameOrigin))return response("Origen no autorizado.",403);
- }catch{return response("Origen no válido.",403);}
+ if(!installerOriginAllowed(req))return response("Origen de instalación no autorizado.",403);
  if(Number(req.headers.get("content-length")||"0")>15000)return response("Solicitud demasiado grande.",413);
  let input:Form;
  try{input=await readJsonObjectLimited(req,15000) as unknown as Form;}
  catch(error){return response(error instanceof RequestPayloadError?error.message:"Solicitud inválida.",error instanceof RequestPayloadError?error.status:400);}
  let data:ReturnType<typeof validate>;
  try{data=validate(input);}catch(e){return response(e instanceof Error?e.message:"Datos incompletos.");}
- // Pin the tenant domain to the public HTTPS URL, not Enhance's upstream Host.
- // A proxy may forward an internal hostname even when the browser uses the real site.
- let domain:string;
- try {
-  const configured=(process.env.SITE_URL||process.env.APP_URL||process.env.NEXT_PUBLIC_SITE_URL||"").trim();
-  if(configured){
-   const url=new URL(configured);
-   if(url.protocol!=="https:"||url.username||url.password||url.pathname!=="/"||url.search||url.hash)
-    return response("SITE_URL debe ser la URL pública HTTPS sin ruta.",400);
-   domain=normalizeSiteHost(url.hostname);
-   if(new URL(origin).hostname.toLowerCase()!==domain)
-    return response("El dominio de instalación no coincide con SITE_URL.",403);
-  }else{
-   domain=normalizeSiteHost(new URL(origin).hostname);
-  }
- }catch{return response("Dominio de instalación inválido.",400);}
- if(!/^[a-z0-9][a-z0-9.-]*$/.test(domain))return response("Dominio de instalación inválido.",400);
  let release:undefined|(()=>void);
  try{
   release=takeInstallLock();
@@ -117,7 +86,7 @@ export async function POST(req:NextRequest){
   accessSync(configDir(),constants.W_OK);
   // The public installer must never initialize a legacy tenant schema for PostgreSQL.
   if(process.env.NEXUS_STANDALONE!=="true")return response("Configura NEXUS_STANDALONE=true en Enhance y reinicia la aplicación antes de instalar.",422);
-  const probe=prismaFor(data.url);
+  const probe=new StandalonePrismaClient({datasources:{db:{url:data.url}}});
   try{
    const tables=data.engine==="postgresql"
     ? await probe.$queryRaw<Array<{n:bigint}>>`SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`

@@ -1,3 +1,5 @@
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
+import {isStandaloneMode} from "@/lib/standalone/mode";
 import {NextRequest,NextResponse} from "next/server";
 import {tenantFromHost} from "@/lib/tenant";
 import {prisma} from "@/lib/prisma";
@@ -10,6 +12,11 @@ export const dynamic="force-dynamic";
 
 export async function GET(req:NextRequest,{params}:{params:Promise<{slug:string}>}){
  const {slug}=await params;
+ if(isStandaloneMode()){
+  const property=await getStandalonePrisma().property.findUnique({where:{slug,published:true},select:{id:true,refCode:true}});
+  const pdf=property?await readCustomPdf("main",property.id):null;
+  return property&&pdf?pdfDownloadResponse(pdf,"ficha-"+property.refCode+"-personalizada.pdf"):new NextResponse(null,{status:404});
+ }
  const tenant=await tenantFromHost(req.headers.get("host")||"");
  if(!tenant)return new NextResponse(null,{status:404});
  if((await getSiteTemplate(tenant.tenantId)).key!=="real-estate"||!await tenantModuleEnabled(tenant.tenantId,"properties"))return new NextResponse(null,{status:404});

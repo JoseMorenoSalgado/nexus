@@ -1,3 +1,5 @@
+import {isStandaloneMode} from "@/lib/standalone/mode";
+import {validPublicMutationOrigin} from "@/lib/public-request-origin";
 
 import { randomBytes, createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
@@ -51,6 +53,8 @@ export async function POST(req: NextRequest) {
     return fail(req, "solicitud");
   }
 
+  if (isStandaloneMode() && !validPublicMutationOrigin(req.headers)) return fail(req, "origen");
+
   let email: string;
   let password: string;
   let captchaToken: string;
@@ -82,7 +86,7 @@ export async function POST(req: NextRequest) {
 
   try {
     // Each deployment owns exactly one organization; do not trust proxy Host for tenant routing.
-    if (process.env.NEXUS_STANDALONE === "true") {
+    if (isStandaloneMode()) {
       const db = getStandalonePrisma();
       const hostname = new URL(process.env.SITE_URL || process.env.APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost").hostname;
       const key = createHash("sha256").update("standalone:" + email).digest("hex");

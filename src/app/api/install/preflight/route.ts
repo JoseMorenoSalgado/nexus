@@ -2,7 +2,7 @@ import {NextRequest,NextResponse} from "next/server";
 import {randomUUID} from "node:crypto";
 import {installerAvailable} from "@/lib/server-config";
 import {buildInstallerDatabaseUrl} from "@/lib/installer-db-url";
-import {prismaFor} from "@/lib/prisma";
+import {PrismaClient} from "@/generated/standalone-postgres";
 import {readJsonObjectLimited} from "@/lib/limited-json";
 
 export const runtime="nodejs";
@@ -26,7 +26,7 @@ export async function POST(req:NextRequest){
  try{url=buildInstallerDatabaseUrl({engine:"postgresql",host,port,dbName:name,dbUser:user,dbPassword:password});add("format","Configuración de conexión",true,"Formato válido");}
  catch(e){add("format","Configuración de conexión",false,e instanceof Error?e.message:"Datos inválidos");return NextResponse.json({ready:false,checks},{headers:{"Cache-Control":"no-store"}});}
  const diagnosticId="NEXUS-DB-"+randomUUID().slice(0,8).toUpperCase();
- const prisma=prismaFor(url);
+ const prisma=new PrismaClient({datasources:{db:{url}}});
  try{
   await prisma.$connect();
   add("connection","Conexión y autenticación",true,"PostgreSQL aceptó las credenciales");
@@ -38,7 +38,7 @@ export async function POST(req:NextRequest){
   const tables=await prisma.$queryRaw<Array<{table_name:string}>>`SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'`;
   add("tables","Esquema de instalación",tables.length===0,tables.length===0?"Base de datos vacía":`Se encontraron ${tables.length} tablas; utiliza una base vacía`);
  }catch(e){
-  const code=typeof e==="object"&&e&&"code" in e?String(e.code):"UNKNOWN";
+  const code=typeof e==="object"&&e?(("code" in e&&String(e.code))||("errorCode" in e&&String(e.errorCode))||"UNKNOWN"):"UNKNOWN";
   const safeCode=/^P\d{4}$/.test(code)?code:"UNKNOWN";
   console.error("[installer] PostgreSQL connection diagnostic",{diagnosticId,code:safeCode,stage:checks.length?checks[checks.length-1].key:"connect"});
   const message:Record<string,string>={P1000:"Credenciales rechazadas por PostgreSQL",P1001:"Servidor inaccesible: revisa host, puerto o socket",P1002:"Tiempo de conexión agotado",P1003:"La base de datos no existe",P1010:"Acceso denegado al usuario",P2010:"Consulta SQL rechazada; revisa permisos"};

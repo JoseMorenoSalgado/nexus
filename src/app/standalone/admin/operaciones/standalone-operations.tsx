@@ -10,7 +10,7 @@ const field=(name:string,label:string,type="text",required=true)=>({name,label,t
 const fields:Record<Kind,ReturnType<typeof field>[]> ={
  "property.create":[field("title","Título"),field("slug","URL (slug)"),field("city","Ciudad"),field("neighborhood","Sector","text",false),field("type","Tipo"),field("operation","Operación: venta o alquiler"),field("price","Precio","number"),field("bedrooms","Habitaciones","number",false),field("bathrooms","Baños","number",false),field("areaM2","Área m²","number",false),field("description","Descripción","text",false)],
  "property.update":[field("title","Título"),field("city","Ciudad"),field("neighborhood","Sector","text",false),field("type","Tipo"),field("operation","Operación: venta o alquiler"),field("price","Precio","number"),field("bedrooms","Habitaciones","number",false),field("bathrooms","Baños","number",false),field("areaM2","Área m²","number",false),field("description","Descripción","text",false)],
- "property.delete":[],
+ "property.delete":[field("confirmation","Escribe la referencia para confirmar")],
  "property.photo.add":[field("url","URL HTTPS de fotografía"),field("alt","Descripción de fotografía","text",false)],
  "property.photo.delete":[],
  "lead.create":[field("name","Nombre"),field("phone","Teléfono"),field("email","Correo","email",false)],
