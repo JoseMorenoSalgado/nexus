@@ -215,6 +215,7 @@ export async function checkPropertiesInBrowser({app,canonical,db,adminEmail,agen
    assert.ok((await map.boundingBox()).width<=width,"Map overflow at "+width+"px");
   }
   await open(page,"/propiedades");
+  await responsive(page);
   await page.locator('a[href="'+detail+'"]').first().click();
   await page.getByRole("heading",{name:editedTitle,exact:true}).waitFor();
   await responsive(page);

@@ -3,11 +3,11 @@ import {uploadPropertyFile} from "@/lib/property-upload-client";
 import {PROPERTY_FILE_LIMIT_MB,PROPERTY_FILE_MAX_BYTES} from "@/lib/property-upload-limits";
 import {readAdminJson} from "@/lib/admin-json-response";
 import {useRef,useState} from "react";
-import {useRouter} from "next/navigation";
 import {FileCheck2,FileUp,Download,Trash2} from "lucide-react";
 
-export function PropertyDocumentManager({propertyId,hasDocument,canEdit}:{propertyId:string;hasDocument:boolean;canEdit:boolean}){
- const router=useRouter(),input=useRef<HTMLInputElement>(null);
+export function PropertyDocumentManager({propertyId,hasDocument:initialHasDocument,canEdit}:{propertyId:string;hasDocument:boolean;canEdit:boolean}){
+ const input=useRef<HTMLInputElement>(null);
+ const [hasDocument,setHasDocument]=useState(initialHasDocument);
  const [progress,setProgress]=useState<number|null>(null);
  const [busy,setBusy]=useState(false),[error,setError]=useState(""),[success,setSuccess]=useState("");
  const endpoint="/api/admin/properties/"+encodeURIComponent(propertyId)+"/document";
@@ -22,7 +22,7 @@ export function PropertyDocumentManager({propertyId,hasDocument,canEdit}:{proper
    setProgress(0);
    await uploadPropertyFile(endpoint,file,setProgress);
    setSuccess("PDF personalizado guardado. Ya puedes descargarlo desde esta ficha.");
-   router.refresh();
+   setHasDocument(true);
   }catch(cause){setError(cause instanceof Error?cause.message:"Error de conexión.")}
   finally{setProgress(null);setBusy(false);if(input.current)input.current.value="";}
  }
@@ -33,7 +33,7 @@ export function PropertyDocumentManager({propertyId,hasDocument,canEdit}:{proper
    const response=await fetch(endpoint+"?action=remove",{method:"POST",credentials:"same-origin",cache:"no-store"});
    await readAdminJson(response,"No se pudo eliminar el PDF");
    setSuccess("PDF personalizado eliminado. La ficha automática sigue disponible.");
-   router.refresh();
+   setHasDocument(false);
   }catch(cause){setError(cause instanceof Error?cause.message:"Error de conexión.")}
   finally{setBusy(false);}
  }
