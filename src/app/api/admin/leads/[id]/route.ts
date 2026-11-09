@@ -1,5 +1,6 @@
 import {NextRequest,NextResponse} from "next/server";
 import {currentAdmin} from "@/lib/auth";
+import {parseLeadContact} from "@/lib/lead-contact";
 import {parseRoles} from "@/lib/roles";
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {validMutationOrigin} from "@/lib/admin-property-request";
@@ -16,8 +17,11 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
  let body:Record<string,unknown>;
  try{body=await readJsonObjectLimited(req,8192);}
  catch(e){return error(e instanceof RequestPayloadError?e.message:"Datos inválidos",e instanceof RequestPayloadError?e.status:400);}
- const allowed=["status","nextContactAt","note","assignedAgentId"];
+ const allowed=["status","nextContactAt","note","assignedAgentId","contact"];
  if(Object.keys(body).some(k=>!allowed.includes(k))||!Object.keys(body).length)return error("Campos inválidos",400);
+ const rawContact=body.contact;
+ const contact=rawContact&&typeof rawContact==="object"&&!Array.isArray(rawContact)?parseLeadContact(rawContact as Record<string,unknown>):null;
+ if("contact" in body&&!contact)return error("Revisa los datos de contacto",400);
  const {id}=await params;
  if("assignedAgentId" in body&&!isAdmin)return error("Solo un administrador puede asignar prospectos",403);
  if("assignedAgentId" in body&&(body.assignedAgentId!==null&&(typeof body.assignedAgentId!=="string"||!body.assignedAgentId.trim())))return error("Agente inválido",400);
@@ -54,6 +58,7 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
      await tx.leadAssignmentHistory.create({data:{leadId:id,fromAgentId:visible.assignedAgentId,fromAgentName:visible.assignedAgent?.name??null,toAgentId:target?.id??null,toAgentName:target?.name??null,changedByName:admin.name}});
     }
    }
+   if(contact)await tx.lead.update({where:{id},data:contact});
    if(status!==undefined||nextContactAt!==undefined)await tx.leadCrm.upsert({where:{leadId:id},create:{leadId:id,...(status!==undefined?{status}:{}),...(nextContactAt!==undefined?{nextContactAt}:{})},update:{...(status!==undefined?{status}:{}),...(nextContactAt!==undefined?{nextContactAt}:{})}});
    if(note!==undefined)await tx.leadNote.create({data:{leadId:id,authorName:admin.name,body:note}});
   },{isolationLevel:"Serializable"});

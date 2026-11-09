@@ -94,6 +94,11 @@ try {
  assert.equal(persistedLead.assignmentHistory.length,1);
  assert.equal(persistedLead.notes.length,1);
  assert.equal((await (await request("/api/admin/leads",{cookie:agentSession})).json()).leads[0].id,lead.id);
+ await request("/api/admin/leads/"+lead.id,{method:"PATCH",cookie:agentSession,json:{contact:{name:"Prospecto editado",phone:"88889999",email:"lead@example.invalid",message:"Contacto actualizado"}}});
+ const editedLead=await db.lead.findUniqueOrThrow({where:{id:lead.id}});
+ assert.equal(editedLead.name,"Prospecto editado");
+ assert.equal(editedLead.phone,"88889999");
+ assert.equal(editedLead.assignedAgentId,agent.id);
 
  const fields = {title:"Casa de aceptación",city:"Managua",neighborhood:"Centro",description:"Propiedad de aceptación funcional",type:"Casa",operation:"venta",price:"250000",bedrooms:"3",bathrooms:"2",areaM2:"160"};
  const created = await Promise.all([fields,{...fields,title:"Casa de prueba concurrente"}].map(form=>request("/api/admin/properties",{method:"POST",cookie:admin,form,status:303})));

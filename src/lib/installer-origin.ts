@@ -16,6 +16,7 @@ export function installerOriginAllowed(req:NextRequest):boolean{
  if(configured){
   try{
    const site=new URL(configured);
+   if(site.username||site.password||site.pathname!=="/"||site.search||site.hash)return false;
    return parsed.origin===site.origin && (site.protocol==="https:"||process.env.NODE_ENV!=="production");
   }catch{return false;}
  }
