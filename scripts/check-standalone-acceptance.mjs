@@ -78,6 +78,26 @@ try {
  assert.match(dashboard,/Actividad del sitio/);
  assert.match(dashboard,/Tipos de propiedades/);
  location(await request("/admin",{status:307}),/^\/admin\/acceso$/);
+ const adminRoutes=[
+  ["/admin/cierres","Cierres comerciales"],
+  ["/admin/cierres/comisiones","Comisiones y abonos"],
+  ["/admin/agenda","Agenda comercial"],
+  ["/admin/notificaciones","Notificaciones comerciales"],
+  ["/admin/reportes?periodo=7","Reportes comerciales"],
+  ["/admin/sistema","Estado técnico independiente"],
+  ["/admin/sistema/diagnostico","Estado técnico independiente"],
+  ["/admin/operaciones","Gestión inmobiliaria"]
+ ];
+ for(const [route,title] of adminRoutes){
+  const page=await (await request(route,{cookie:admin})).text();
+  assert.match(page,/admin-mobile-trigger/);
+  assert.match(page,new RegExp(title));
+  assert.doesNotMatch(page,/href="\/(?:admin\/)?standalone(?:\/|")/);
+ }
+ location(await request("/admin/cierres",{status:307}),/^\/admin\/acceso$/);
+ location(await request("/admin/standalone/cierres/comisiones",{status:307}),/^\/admin\/cierres\/comisiones$/);
+ location(await request("/admin/standalone/reportes?periodo=7",{status:307}),/^\/admin\/reportes\?periodo=7$/);
+ location(await request("/standalone/admin/operaciones",{status:307}),/^\/admin\/operaciones$/);
  assert.match(await (await request("/admin/personalizar/identidad",{cookie:admin})).text(),/Identidad visual/);
  location(await request("/api/admin/site-section",{method:"POST",cookie:admin,form:{
   section:"identidad",tagline:"Nexus de prueba",primaryColor:"#CB2027",whatsapp:"+50588887777",contactEmail:"contact@example.invalid"
@@ -85,6 +105,8 @@ try {
  assert.equal((await db.siteConfig.findUniqueOrThrow({where:{id:"main"}})).whatsapp,"50588887777");
  location(await request("/api/admin/users",{method:"POST",cookie:admin,form:{intent:"create",name:"Agente Prueba",email:agentEmail,password,confirmPassword:password,roles:"agente"},status:303}),/status=creado$/);
  const agent = await db.adminUser.findUniqueOrThrow({where:{email:agentEmail}});
+ assert.match(await (await request("/admin/clientes-agentes/agentes/"+agent.id,{cookie:admin})).text(),/Perfil comercial/);
+ location(await request("/admin/standalone/agentes/"+agent.id,{status:307}),new RegExp("^/admin/clientes-agentes/agentes/"+agent.id+"$"));
  const initialAgentSession = await login(agentEmail);
  location(await request("/api/admin/users",{method:"POST",cookie:admin,form:{intent:"profile",id:agent.id,name:"Agente Editado",email:agentEmail},status:303}),/status=perfil$/);
  assert.equal((await db.adminUser.findUniqueOrThrow({where:{id:agent.id}})).name,"Agente Editado");
@@ -147,10 +169,14 @@ try {
  await request(photo.url,{cookie:agentSession,status:404});
  assert.equal((await request(photo.url,{cookie:admin})).headers.get("content-type"),"image/webp");
  location(await request(edit,{method:"POST",cookie:admin,form:{intent:"publish"},status:303}),/updated=1$/);
- assert.match(await (await request("/",{follow:true})).text(),/Encuentra el lugar/);
- assert.match(await (await request("/propiedades",{follow:true})).text(),new RegExp(title));
- const page = await (await request(detail,{follow:true})).text();
+ assert.match(await (await request("/")).text(),/Encuentra el lugar/);
+ assert.match(await (await request("/propiedades")).text(),new RegExp(title));
+ const page = await (await request(detail)).text();
  assert.match(page,/Casa editada de aceptación/);
+ location(await request("/standalone",{status:307}),/^\/$/);
+ location(await request("/standalone/propiedades?operacion=venta",{status:307}),/^\/propiedades\?operacion=venta$/);
+ assert.equal((await request("/standalone"+detail,{status:307})).headers.get("location"),detail);
+ assert.match(await (await request("/propiedades?operacion=venta")).text(),new RegExp("href=\""+detail+"\""));
  assert.match(page,/wa\.me\/50588887777/);
  assert.match(page,/Enviar consulta/);
  assert.match(await (await request("/contacto")).text(),/Enviar consulta/);

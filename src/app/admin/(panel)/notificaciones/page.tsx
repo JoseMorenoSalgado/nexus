@@ -1,5 +1,5 @@
+import StandaloneNotifications from "@/app/admin/_standalone/notificaciones/page";
 import Link from "next/link";
-import {redirect} from "next/navigation";
 import {AlertTriangle,Bell,CalendarClock,ClipboardList,UserRound,ArrowUpRight,RefreshCw} from "lucide-react";
 import {requireRole} from "@/lib/auth";
 import {commercialNotifications,notificationCategory,notificationCategoryNames,type NotificationCategory} from "@/lib/commercial-notifications";
@@ -11,7 +11,7 @@ const groups:{value:NotificationCategory;Icon:typeof Bell}[]=[
 ];
 export default async function NotificationsPage({searchParams}:{searchParams:Promise<{categoria?:string}>}){
  const user=await requireRole(["admin","editor","agente"]);
- if(process.env.NEXUS_STANDALONE==="true")redirect("/admin/standalone/notificaciones");
+ if(process.env.NEXUS_STANDALONE==="true")return <StandaloneNotifications/>;
  const q=await searchParams;
  const chosen=notificationCategory(q.categoria);
  const snapshot=await commercialNotifications(user,{limit:45,category:chosen});

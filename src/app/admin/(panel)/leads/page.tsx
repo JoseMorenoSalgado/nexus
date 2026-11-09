@@ -1,4 +1,4 @@
-import ProspectosStandalonePage from "@/app/admin/standalone/prospectos/page";
+import ProspectosStandalonePage from "@/app/admin/_standalone/prospectos/page";
 import Link from "next/link";
 import {Building2,CalendarClock,ChevronRight,ClipboardList,Filter,MessageCircle,Search,Users,UserPlus,X} from "lucide-react";
 import {Prisma} from "@prisma/client";

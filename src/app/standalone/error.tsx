@@ -10,7 +10,7 @@ export default function StandaloneError({error,reset}:{error:Error & {digest?:st
   {error.digest&&<p className="mt-3 text-sm">Referencia del error: <code>{error.digest}</code></p>}
   <div className="mt-6 flex flex-wrap gap-4">
    <button type="button" onClick={()=>reset()} className="rounded bg-black px-5 py-3 text-white">Reintentar</button>
-   <a href="/standalone/admin" className="rounded border px-5 py-3">Volver al panel</a>
+   <a href="/admin" className="rounded border px-5 py-3">Volver al panel</a>
   </div>
  </main>;
 }

@@ -75,6 +75,6 @@ export function StandaloneOperations({properties,leads,agents,agenda}:{propertie
   </form>
   {property&&<p className="mt-3"><Link href={`/propiedades/${property.slug}`} target="_blank">Ver ficha pública (solo si está publicada)</Link></p>}
   {createdProperty&&<div className="mt-4 rounded border p-4" role="status"><p>Referencia: <strong>{createdProperty.refCode}</strong></p><p>Estado: <strong>{createdProperty.published?"Publicada":"Borrador"}</strong></p>{createdProperty.published&&<p><Link className="underline" href={`/propiedades/${encodeURIComponent(createdProperty.slug)}`} target="_blank">Abrir ficha pública de esta propiedad</Link></p>}</div>}
-  {message&&<div className="mt-4" role="status"><p>{message}</p>{message.startsWith("Operación guardada")&&<a className="mt-2 inline-block underline" href="/standalone/admin/operaciones">Actualizar listado de propiedades</a>}</div>}
+  {message&&<div className="mt-4" role="status"><p>{message}</p>{message.startsWith("Operación guardada")&&<a className="mt-2 inline-block underline" href="/admin/operaciones">Actualizar listado de propiedades</a>}</div>}
  </section>;
 }
