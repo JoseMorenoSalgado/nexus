@@ -15,9 +15,9 @@
 | ID | Criterio | Peso | Estado | Evidencia pendiente |
 | --- | --- | ---: | --- | --- |
 | NEX-01 | Instalador independiente crea esquema y datos iniciales sin Tenant/Domain | 15% | Pendiente de validar | Instalación nueva reproducible y prueba de login |
-| NEX-02 | API /api/health valida esquema independiente y SiteConfig | 10% | En código (PR #97) | CI + HTTP 200 y prueba de esquema incompleto |
+| NEX-02 | API /api/health valida esquema independiente y SiteConfig | 10% | Probado en CI (PR #97) | HTTP 200 en instalación real y prueba de esquema incompleto |
 | NEX-03 | Una sola configuración de modo independiente en rutas activas | 10% | Pendiente | Auditoría de rutas + pruebas de acceso |
-| NEX-04 | Cliente Prisma independiente compartido sin conexiones duplicadas | 5% | En código (PR #97) | Compilación y prueba de integración |
+| NEX-04 | Cliente Prisma independiente compartido sin conexiones duplicadas | 5% | Probado en CI (PR #97) | Prueba de integración de conexiones |
 | NEX-05 | Usuarios/agentes: crear, editar, listar, roles, login | 10% | Pendiente | Pruebas CRUD y autorización |
 | NEX-06 | Prospectos: crear, editar, listar y asignar | 10% | Pendiente | Pruebas CRUD y autorización |
 | NEX-07 | Propiedades: crear, editar, imágenes, publicar y consultar | 15% | Pendiente | Pruebas CRUD y publicación |
@@ -28,13 +28,13 @@
 
 **Aceptación validada: 0/100 (0%) — línea base provisional por falta de evidencias de aceptación, no estimación del porcentaje de software desarrollado.**
 
-**Implementación registrada en este plan: 2/10 criterios con cambios de código (NEX-02 y NEX-04), todavía sin validar.**
+**Implementación registrada: 2/10 criterios con cambios de código (NEX-02 y NEX-04); los tres workflows de CI aprobaron, pero falta validación en instalación real.**
 
 ## Registro de cambios y bloqueos
 
 | Fecha | Referencia | Cambio | Estado |
 | --- | --- | --- | --- |
-| 2026-11-09 | PR #97 | Health standalone + cliente Prisma compartido | Implementado; CI/integración pendientes |
+| 2026-11-09 | PR #97, commit 64ec0be8 | Health standalone + cliente Prisma compartido | Tres workflows CI aprobados; validación en instalación real pendiente |
 
 ### Próximos pasos ordenados
 1. Revisar CI y compilar PR #97; comprobar health en una instalación independiente y caso negativo.
