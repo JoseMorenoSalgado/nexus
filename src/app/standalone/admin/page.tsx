@@ -7,7 +7,7 @@ import {listStandaloneAdminProperties,listStandaloneLeads,listStandaloneAgents,l
 export const dynamic="force-dynamic";
 export default async function StandaloneDashboard(){
  if(!isStandaloneMode())notFound();
- const admin=await requireStandaloneRole(["admin","superadmin","editor","agente"]);
+ const admin=await requireStandaloneRole(["admin","editor"]);
  const [site,properties,leads,agents,agenda]=await Promise.all([getStandaloneSiteConfig(),listStandaloneAdminProperties(),listStandaloneLeads(),listStandaloneAgents(),listStandaloneAgenda()]);
  const metrics=[{title:"Propiedades",count:properties.length,Icon:Building2},{title:"Prospectos",count:leads.length,Icon:Contact},{title:"Agentes",count:agents.length,Icon:Users},{title:"Agenda",count:agenda.length,Icon:CalendarDays}];
  return <main className="admin-panel container" style={{paddingTop:32,paddingBottom:64}}>

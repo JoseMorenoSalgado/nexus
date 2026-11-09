@@ -1,4 +1,5 @@
 import "server-only";
+import {getStandaloneModules} from "@/lib/standalone/modules";
 import {type Prisma} from "@prisma/client";
 import {prisma} from "@/lib/prisma";
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
@@ -16,9 +17,8 @@ function obj(value:unknown):Record<string,unknown>{
 export async function getTenantModules(tenantId:string,sector?:SiteTemplateKey):Promise<ModuleKey[]>{
  const template=sector??(await getSiteTemplate(tenantId)).key;
  if(tenantId==="demo")return defaultEnabledModules(template);
- const row=process.env.NEXUS_STANDALONE==="true"
-  ?await getStandalonePrisma().sitePage.findUnique({where:{slug:SLUG},select:{blocks:true}})
-  :await prisma.sitePage.findUnique({where:{tenantId_slug:{tenantId,slug:SLUG}},select:{blocks:true}});
+ if(process.env.NEXUS_STANDALONE==="true")return getStandaloneModules(template);
+ const row=await prisma.sitePage.findUnique({where:{tenantId_slug:{tenantId,slug:SLUG}},select:{blocks:true}});
  const byTemplate=obj(obj(row?.blocks).byTemplate);
  return normalizeEnabledModules(template,byTemplate[template]);
 }

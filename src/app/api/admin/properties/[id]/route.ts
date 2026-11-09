@@ -7,7 +7,7 @@ import {parseProperty,PropertyFormError} from "@/lib/property-form";
 import {propertyWhere} from "@/lib/agent-scope";
 import {propertyRedirect,validMutationOrigin,propertyEditor,propertyErrorPath} from "@/lib/admin-property-request";
 import {unlink} from "node:fs/promises";
-import {mediaFilePath} from "@/lib/property-media";
+import {mediaFilePath,mediaVariantPath} from "@/lib/property-media";
 import {customPdfPath} from "@/lib/property-document";
 export const runtime="nodejs";
 export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>}){
@@ -40,7 +40,11 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
    else await prisma.property.delete({where:{id:property.id}});
    await Promise.all([
     ...property.photos.filter(p=>p.url==="/api/media/"+p.id).map(async p=>{
-     try{await unlink(mediaFilePath(admin.tenantId,p.id));}catch{/* Stale files can be swept by storage maintenance */ }
+     await Promise.allSettled([
+      unlink(mediaFilePath(admin.tenantId,p.id)),
+      unlink(mediaVariantPath(admin.tenantId,p.id,"card")),
+      unlink(mediaVariantPath(admin.tenantId,p.id,"thumb"))
+     ]);
     }),
     (async()=>{try{await unlink(customPdfPath(admin.tenantId,property.id));}catch{/* Already removed or queued for cleanup */}})()
    ]);
@@ -57,6 +61,7 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
  }catch(error){
   if(error instanceof Error&&error.message==="AGENT_INVALID")return propertyRedirect(propertyErrorPath("datos",id));
   if(error instanceof PropertyFormError)return propertyRedirect(propertyErrorPath(error.code,id));
+  if(error&&typeof error==="object"&&"code" in error&&error.code==="P2003")return propertyRedirect(propertyErrorPath("vinculada",id));
   if(error&&typeof error==="object"&&"code" in error&&error.code==="P2002")return propertyRedirect(propertyErrorPath("duplicado",id));
   console.error("[properties] change failed",error instanceof Error?error.name:"unknown");
   return propertyRedirect(propertyErrorPath("servidor",id));

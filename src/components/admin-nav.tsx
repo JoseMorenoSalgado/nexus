@@ -72,6 +72,7 @@ export function AdminNav({role="admin",roles=[role],userId,userName,notification
   .filter(allowed)
   .map(x=>!realEstate&&x.href==="/admin/leads"?{...x,label:"Consultas"}:x);
  const tools=secondary.filter(x=>realEstate&&(manager||(agent&&x.href==="/admin/notificaciones"))).filter(allowed);
+ if(manager&&standalone)tools.unshift({href:"/admin/personalizar/identidad",label:"Identidad y contacto",Icon:FileText});
  if(manager&&!standalone)tools.unshift({href:"/admin/personalizar/inicio",label:"Mi sitio web",Icon:FileText});
  if(standalone&&has("admin")){tools.push({href:"/admin/clientes-agentes",label:"Equipo y usuarios",Icon:ShieldCheck});tools.push({href:"/admin/sistema",label:"Estado técnico",Icon:Settings});}
  if(has("admin")&&!standalone){

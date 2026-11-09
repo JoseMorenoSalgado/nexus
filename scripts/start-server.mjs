@@ -62,7 +62,9 @@ if (!existsSync(nextCli)) {
 }
 // Explicit, opt-in, idempotent repair for a misregistered Enhance proxy domain.
 // Never run a database mutation merely because a new deployment started.
-if (process.env.NEXUS_REPAIR_PUBLIC_DOMAIN === 'true') {
+if (process.env.NEXUS_REPAIR_PUBLIC_DOMAIN === 'true' && process.env.NEXUS_STANDALONE === 'true') {
+  console.warn('Legacy domain repair is disabled for standalone Nexus.');
+} else if (process.env.NEXUS_REPAIR_PUBLIC_DOMAIN === 'true') {
   if (!process.env.SITE_URL || !process.env.ADMIN_EMAIL) {
     console.error('Domain repair requires SITE_URL and ADMIN_EMAIL.');
     process.exit(1);

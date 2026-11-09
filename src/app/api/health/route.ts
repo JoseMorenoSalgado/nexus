@@ -1,3 +1,4 @@
+import {isStandaloneMode} from "@/lib/standalone/mode";
 import {NextResponse} from "next/server";
 import {hasDatabaseConfig} from "@/lib/server-config";
 import {prisma} from "@/lib/prisma";
@@ -18,14 +19,19 @@ export async function GET() {
     if (!hasDatabaseConfig()) {
       return NextResponse.json({status: "unavailable", reason: "not_configured"}, {status: 503, headers});
     }
-    if (process.env.NEXUS_STANDALONE === "true") {
+    if (isStandaloneMode()) {
       const db = getStandalonePrisma();
       await db.$queryRaw`SELECT 1`;
       const [config] = await Promise.all([
         db.siteConfig.findUnique({where: {id: "main"}, select: {id: true}}),
         db.sitePage.findFirst({select: {id: true, published: true}}),
-        db.property.findFirst({select: {id: true, published: true}}),
-        db.adminUser.findFirst({select: {id: true, active: true}})
+        db.property.findFirst(),
+        db.photo.findFirst(),
+        db.adminUser.findFirst({select: {id: true, active: true, role: true}}),
+        db.adminSession.findFirst({select: {id: true, tokenHash: true, expiresAt: true}}),
+        db.lead.findFirst(),
+        db.leadCrm.findFirst(),
+        db.propertySequence.findFirst()
       ]);
       if (!config) {
         return NextResponse.json({status: "unavailable", reason: "installation_incomplete"}, {status: 503, headers});

@@ -1,4 +1,6 @@
 import "server-only";
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
+import {isStandaloneMode} from "@/lib/standalone/mode";
 import {prisma} from "@/lib/prisma";
 import {type Prisma} from "@prisma/client";
 import {type PageSection,normalizePageSections} from "@/lib/page-sections";
@@ -12,7 +14,7 @@ export function isBuiltinPageSlug(slug:string):slug is BuiltinPageSlug{
 }
 function storageSlug(slug:BuiltinPageSlug){return "site-extras-"+slug;}
 export async function readExtraSections(tenantId:string,slug:BuiltinPageSlug):Promise<PageSection[]>{
- const record=await prisma.sitePage.findUnique({
+ const record=isStandaloneMode()?await getStandalonePrisma().sitePage.findUnique({where:{slug:storageSlug(slug)},select:{blocks:true}}):await prisma.sitePage.findUnique({
   where:{tenantId_slug:{tenantId,slug:storageSlug(slug)}},select:{blocks:true}
  });
  const data=record?.blocks&&typeof record.blocks==="object"&&!Array.isArray(record.blocks)
@@ -21,6 +23,12 @@ export async function readExtraSections(tenantId:string,slug:BuiltinPageSlug):Pr
 }
 export async function saveExtraSections(tenantId:string,slug:BuiltinPageSlug,sections:PageSection[]){
  const payload={sections} as Prisma.InputJsonValue;
+ if(isStandaloneMode()){
+  await getStandalonePrisma().sitePage.upsert({where:{slug:storageSlug(slug)},
+   create:{slug:storageSlug(slug),title:"Secciones adicionales: "+slug,blocks:payload,published:true},
+   update:{blocks:payload,published:true}});
+  return;
+ }
  await prisma.sitePage.upsert({where:{tenantId_slug:{tenantId,slug:storageSlug(slug)}},
   create:{tenantId,slug:storageSlug(slug),title:"Secciones adicionales: "+slug,blocks:payload,published:true},
   update:{blocks:payload,published:true}});

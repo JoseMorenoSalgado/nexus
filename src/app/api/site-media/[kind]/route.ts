@@ -1,3 +1,5 @@
+import {isStandaloneMode} from "@/lib/standalone/mode";
+import {publicPageHostname} from "@/lib/public-request-origin";
 import {NextRequest,NextResponse} from "next/server";
 import {tenantFromHost} from "@/lib/tenant";
 import {isSiteAssetKind,readSiteAsset} from "@/lib/site-assets";
@@ -7,13 +9,14 @@ export const dynamic="force-dynamic";
 export async function GET(req:NextRequest,{params}:{params:Promise<{kind:string}>}){
  const {kind}=await params;
  if(!isSiteAssetKind(kind))return new NextResponse(null,{status:404});
- const tenant=await tenantFromHost(req.headers.get("host")||"");
- if(!tenant)return new NextResponse(null,{status:404});
+ const siteId=isStandaloneMode()?(publicPageHostname(req.headers)?"main":null):
+  (await tenantFromHost(req.headers.get("host")||""))?.tenantId;
+ if(!siteId)return new NextResponse(null,{status:404});
  const publishedSlug=kind==="about-photo"?"nosotros":kind.startsWith("hero-")?kind.slice(5):null;
  if(publishedSlug&&(!["propiedades","nosotros","servicios","contacto","asesoria-empresarial"].includes(publishedSlug)
-    ||!await builtinPagePublic(tenant.tenantId,publishedSlug as "propiedades"|"nosotros"|"servicios"|"contacto"|"asesoria-empresarial")))
+    ||!await builtinPagePublic(siteId,publishedSlug as "propiedades"|"nosotros"|"servicios"|"contacto"|"asesoria-empresarial")))
   return new NextResponse(null,{status:404});
- const bytes=await readSiteAsset(tenant.tenantId,kind);
+ const bytes=await readSiteAsset(siteId,kind);
  if(!bytes)return new NextResponse(null,{status:404});
  return new NextResponse(new Uint8Array(bytes),{headers:{
   "Content-Type":"image/webp","X-Content-Type-Options":"nosniff",

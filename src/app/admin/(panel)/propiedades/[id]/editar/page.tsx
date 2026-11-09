@@ -18,6 +18,7 @@ const errors:Record<string,string>={
  precio:"El precio no es válido.",
  duplicado:"Ya existe una propiedad con la misma referencia.",
  origen:"No se pudo verificar el origen del formulario.",
+ vinculada:"La propiedad tiene registros comerciales vinculados. Puedes despublicarla.",
  confirmacion:"Para eliminar el inmueble debes confirmar su referencia. Solo un administrador puede hacerlo.",
  servidor:"No fue posible guardar los cambios. Revisa los registros del servidor."
 };

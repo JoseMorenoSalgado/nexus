@@ -2,6 +2,7 @@ import "server-only";
 import {readFile,stat} from "node:fs/promises";
 import {join} from "node:path";
 import {PDFDocument,PDFName} from "pdf-lib";
+import {isStandaloneMode} from "@/lib/standalone/mode";
 import {configDir} from "@/lib/server-config";
 
 export const MAX_CUSTOM_PDF_BYTES=10*1024*1024;
@@ -10,7 +11,7 @@ const tenantKey=/^[a-z0-9]{10,64}$/;
 const propertyKey=/^[a-z0-9]{10,64}$/;
 
 export function customPdfPath(tenantId:string,propertyId:string){
- if(!tenantKey.test(tenantId)||!propertyKey.test(propertyId))throw new Error("Identificador de documento inválido");
+ if(!(tenantKey.test(tenantId)||(isStandaloneMode()&&tenantId==="main"))||!propertyKey.test(propertyId))throw new Error("Identificador de documento inválido");
  return join(configDir(),"property-documents",tenantId,propertyId+".pdf");
 }
 

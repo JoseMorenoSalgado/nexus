@@ -1,3 +1,5 @@
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
+import {isStandaloneMode} from "@/lib/standalone/mode";
 import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {randomUUID} from "node:crypto";
 import {mkdir,rename,unlink,writeFile} from "node:fs/promises";
@@ -14,6 +16,12 @@ const fail=(message:string,status:number)=>NextResponse.json({error:message},{st
 
 async function identify(id:string){
  const admin=await propertyEditor();
+ if(isStandaloneMode()){
+  const property=await getStandalonePrisma().property.findFirst({
+   where:{id,...(!admin.canManageAll?{assignedAgentId:admin.userId}:{})},select:{id:true,refCode:true}
+  });
+  return {admin,property};
+ }
  if(!await tenantModuleEnabled(admin.tenantId,"properties"))return {admin,property:null,disabled:true};
  const property=await prisma.property.findFirst({where:{id,...propertyWhere(admin)},select:{id:true,refCode:true}});
  return {admin,property};
@@ -60,8 +68,7 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
   await mkdir(dirname(target),{recursive:true,mode:0o700});
   await writeFile(temp,safe,{flag:"wx",mode:0o600});
   // Do not leave an orphaned document for a property removed during processing.
-  const stillExists=await prisma.property.findFirst({where:{id:property.id,...propertyWhere(admin)},select:{id:true}});
-  if(!stillExists)return fail("El inmueble ya no existe.",404);
+  if(!(await identify(id)).property)return fail("El inmueble ya no existe.",404);
   await rename(temp,target);
   return NextResponse.json({ok:true},{headers:{"Cache-Control":"no-store"}});
  }catch(error){

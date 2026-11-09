@@ -12,9 +12,8 @@ export const dynamic="force-dynamic";
 export default async function DashboardLayout({children}:{children:React.ReactNode}){
  const admin=await requireAdmin();
  if(process.env.NEXUS_STANDALONE==="true"){
-  const config=await getStandalonePrisma().siteConfig.findUnique({where:{id:"main"}});
-  const name=config?.name||"Nexus Real Estate";
-  return <div className="admin-shell"><aside className="admin-sidebar"><Link href="/admin" className="brand"><span className="brand-icon"><img src={config?.logoUrl||"/brand/nexus-icon.webp"} alt=""/></span><span><strong>NEXUS</strong><small>REAL ESTATE</small></span></Link><AdminNav role={admin.role} roles={admin.roles} userId={admin.userId} userName={admin.name} notificationCount={0} templateKey="real-estate" enabledModules={["properties"]} standalone/></aside><div className="admin-main"><div className="admin-body">{children}</div></div></div>;
+  const [config,hasLogo]=await Promise.all([getStandalonePrisma().siteConfig.findUnique({where:{id:"main"}}),hasSiteAsset("main","logo")]);
+  return <div className="admin-shell"><aside className="admin-sidebar"><Link href="/admin" className="brand"><span className="brand-icon"><img src={hasLogo?"/api/site-media/logo":config?.logoUrl||"/brand/nexus-icon.webp"} alt=""/></span><span><strong>NEXUS</strong><small>REAL ESTATE</small></span></Link><AdminNav role={admin.role} roles={admin.roles} userId={admin.userId} userName={admin.name} notificationCount={0} templateKey="real-estate" enabledModules={["properties"]} standalone/></aside><div className="admin-main"><div className="admin-body">{children}</div></div></div>;
  }
 
  const template=await getSiteTemplate(admin.tenantId);

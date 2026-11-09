@@ -1,3 +1,5 @@
+import {readJsonObjectLimited,RequestPayloadError} from "@/lib/limited-json";
+import {createStandalonePropertyWithReference} from "@/lib/property-reference";
 import {validPublicMutationOrigin} from "@/lib/public-request-origin";
 import {isStandaloneMode} from "@/lib/standalone/mode";
 import {NextResponse} from "next/server";
@@ -13,7 +15,10 @@ export async function POST(request:Request){
  if(!validPublicMutationOrigin(request.headers))return fail(403,"Invalid request origin");
  const admin=await currentStandaloneAdmin();
  if(!admin)return fail(401,"Unauthorized");
- const body:Record<string,unknown>=await request.json().catch(()=>({}));
+ if(!admin.roles.some(role=>role==="admin"||role==="editor"))return fail(403,"Sin permisos");
+ let body:Record<string,unknown>;
+ try{body=await readJsonObjectLimited(request,65536);}
+ catch(error){return error instanceof RequestPayloadError?fail(error.status,error.message):fail(400,"Datos inválidos");}
  const action=text(body.action,40);
  const db=standalonePrisma();
  const requestId=crypto.randomUUID();
@@ -21,10 +26,12 @@ export async function POST(request:Request){
   if(action==="property.create"||action==="property.update"||action==="property.delete"||action==="property.photo.add"||action==="property.photo.delete"){
    if(!canEditProperties(JSON.stringify(admin.roles)))return fail(403,"Forbidden");
    if(action==="property.delete"){
+    if(!admin.roles.includes("admin"))return fail(403,"Sin permisos");
     const id=text(body.id,80);
-    const linked=await db.property.findUnique({where:{id},select:{_count:{select:{closings:true}}}});
+    const linked=await db.property.findUnique({where:{id},select:{refCode:true,_count:{select:{closings:true}}}});
     if(!linked)return fail(404,"Not found");
     if(linked._count.closings)return fail(409,"Cannot delete property with closings");
+    if(body.confirmation!==linked.refCode)return fail(400,"Confirma la referencia de la propiedad.");
     await db.property.delete({where:{id}});
     return NextResponse.json({ok:true});
    }
@@ -62,10 +69,7 @@ export async function POST(request:Request){
    if(!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug))return fail(400,"Invalid slug");
    const duplicate=await db.property.findUnique({where:{slug},select:{id:true}});
    if(duplicate)return fail(409,"Ya existe una propiedad con esa URL. Utiliza un slug diferente.");
-   const property=await db.$transaction(async tx=>{
-    const seq=await tx.propertySequence.update({where:{id:"main"},data:{nextNumber:{increment:1}}});
-    return tx.property.create({data:{...data,slug,refCode:seq.prefix+"-"+String(seq.nextNumber).padStart(5,"0")}});
-   });
+   const property=await createStandalonePropertyWithReference(data,slug);
    console.info("[standalone.property.create] saved",{requestId,propertyId:property.id,published:property.published});
    return NextResponse.json({ok:true,requestId,property:{id:property.id,slug:property.slug,refCode:property.refCode,published:property.published}},{status:201});
   }
@@ -116,14 +120,15 @@ export async function POST(request:Request){
   if(action==="agent.create"){
    if(!canManageUsers(JSON.stringify(admin.roles)))return fail(403,"Forbidden");
    const name=text(body.name,180),email=text(body.email,254).toLowerCase(),password=String(body.password||"");
-   if(!name||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||password.length<12||password.length>1024)return fail(400,"Invalid agent");
+   if(!name||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||password.length<12||password.length>256||!/[a-z]/i.test(password)||!/\d/.test(password))return fail(400,"Invalid agent");
    const item=await db.adminUser.create({data:{name,email,passwordHash:hashPassword(password),role:"agente"},select:{id:true,name:true,email:true,role:true}});
    return NextResponse.json({item},{status:201});
   }
   return fail(400,"Unknown action");
  }catch(error){
   const code=error&&typeof error==="object"&&"code" in error?String(error.code):"unknown";
-  console.error("[standalone.manage] write failure",{requestId,action,code,error});
+  console.error("[standalone.manage] write failure",{requestId,action,code});
+  if(code==="P2003")return fail(409,"La operación está bloqueada por registros relacionados.");
   if(code==="P2002")return NextResponse.json({error:"Ya existe un registro con ese identificador. Verifica la URL de la propiedad.",requestId},{status:409});
   if(code==="P2025")return NextResponse.json({error:"Falta un registro necesario para completar la operación. Revisa la configuración inicial.",requestId},{status:409});
   return NextResponse.json({error:"No se pudo completar la operación. Comunica la referencia al soporte.",requestId},{status:500});

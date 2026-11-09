@@ -1,3 +1,5 @@
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
+import {isStandaloneMode} from "@/lib/standalone/mode";
 import {createHash} from "node:crypto";
 import {NextRequest,NextResponse} from "next/server";
 import {prisma} from "@/lib/prisma";
@@ -19,9 +21,9 @@ export async function POST(req:NextRequest){
   httpOnly:true,secure:process.env.NODE_ENV==="production",sameSite:"lax"});
  if(token&&/^[a-f0-9]{64}$/.test(token)){
   try{
-   await prisma.adminSession.deleteMany({where:{
-    tokenHash:createHash("sha256").update(token).digest("hex")
-   }});
+   const where={tokenHash:createHash("sha256").update(token).digest("hex")};
+   if(isStandaloneMode())await getStandalonePrisma().adminSession.deleteMany({where});
+   else await prisma.adminSession.deleteMany({where});
   }catch(error){
    console.error("[admin-logout] session revocation failed",error instanceof Error?error.name:"unknown");
   }

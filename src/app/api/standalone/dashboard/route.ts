@@ -1,3 +1,4 @@
+import {isStandaloneMode} from "@/lib/standalone/mode";
 import {NextResponse} from "next/server";
 import {currentStandaloneAdmin} from "@/lib/standalone/auth";
 import {listStandaloneAdminProperties,listStandaloneLeads,listStandaloneAgents,listStandaloneAgenda,getStandaloneSiteConfig} from "@/lib/standalone/repositories";
@@ -9,7 +10,7 @@ import {listStandaloneAdminProperties,listStandaloneLeads,listStandaloneAgents,l
  */
 export const dynamic="force-dynamic";
 export async function GET(request:Request){
- if(process.env.NEXUS_STANDALONE_MODE!=="true")return new Response(null,{status:404});
+ if(!isStandaloneMode())return new Response(null,{status:404});
  const admin=await currentStandaloneAdmin();
  if(!admin)return NextResponse.json({error:"Unauthorized"},{status:401});
  if(!admin.roles.some(role=>["admin","superadmin"].includes(role)))return NextResponse.json({error:"Forbidden"},{status:403});

@@ -4,7 +4,7 @@
 import {readdir,readFile} from "node:fs/promises";
 import {join,relative} from "node:path";
 const root=process.cwd();
-const roots=["src/app/admin/standalone","src/app/api/admin/standalone","src/lib/prisma-standalone.ts","src/lib/property-reference.ts","src/lib/property-agent.ts","src/lib/standalone","src/app/standalone"];
+const roots=["src/app/admin/standalone","src/app/api/admin/standalone","src/app/api/standalone","src/lib/prisma-standalone.ts","src/lib/property-reference.ts","src/lib/property-agent.ts","src/lib/standalone","src/app/standalone"];
 const violations=[];
 let files=0;
 async function walk(dir){
@@ -21,7 +21,7 @@ async function walk(dir){
    const line=lines[i];
    const reasons=[];
    if(/\btenantId\b|\b(?:getTenant|resolveTenant|requireTenant|currentTenant|tenantModuleEnabled|singleInstallationTenantId)\b/.test(line))reasons.push("tenant context");
-   if(/from\s*["']@\/lib\/(?:prisma|tenant[^"']*|single-installation|commercial-schema|closing-schema|commission-schema|crm-schema)["']/.test(line))reasons.push("legacy tenant service import");
+   if(/from\s*["']@\/lib\/(?:prisma|tenant(?!-modules-registry["'])[^"']*|single-installation|commercial-schema|closing-schema|commission-schema|crm-schema)["']/.test(line))reasons.push("legacy tenant service import");
    if(/\b(?:db|prisma)\.(?:tenant|domain)\b/.test(line))reasons.push("tenant/domain database access");
    if(reasons.length)violations.push({file:relative(root,path),line:i+1,reasons});
   }
