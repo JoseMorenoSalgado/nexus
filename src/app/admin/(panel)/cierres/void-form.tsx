@@ -13,13 +13,13 @@ export default function VoidClosingForm({id}:{id:string}){
   }catch{setError("No se pudo conectar con el servidor");}finally{setBusy(false);}
  }
  return <div>
-  {!open?<button type="button" onClick={()=>setOpen(true)}>Anular cierre</button>:
-  <form onSubmit={submit}>
+  {!open?<button className="btn wizard-back" type="button" onClick={()=>setOpen(true)}>Anular cierre</button>:
+  <form onSubmit={submit} className="admin-form commercial-entry-form">
    <input type="hidden" name="intent" value="void" readOnly/>
    <label>Motivo de anulación<textarea name="reason" minLength={10} maxLength={1000} required placeholder="Explique por qué se anula este cierre"/></label>
-   {error&&<p role="alert">{error}</p>}
-   <button type="submit" disabled={busy}>{busy?"Anulando…":"Confirmar anulación"}</button>
-   <button type="button" onClick={()=>setOpen(false)} disabled={busy}>Cancelar</button>
+   {error&&<p role="alert" className="admin-error">{error}</p>}
+   <button className="btn btn-danger" type="submit" disabled={busy}>{busy?"Anulando…":"Confirmar anulación"}</button>
+   <button className="btn wizard-back" type="button" onClick={()=>setOpen(false)} disabled={busy}>Cancelar</button>
   </form>}
  </div>;
 }

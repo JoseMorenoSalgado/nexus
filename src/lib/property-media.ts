@@ -7,6 +7,9 @@ export const MAX_IMAGE_BYTES=8*1024*1024;
 export function isPhotoId(id:string){
  return /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/.test(id);
 }
+export function isStoredPropertyPhoto({id,url}:{id:string;url:string}){
+ return isPhotoId(id)&&url==="/api/media/"+id;
+}
 export function mediaFilePath(tenantId:string,id:string){
  const validSiteId=/^[a-z0-9]{10,50}$/.test(tenantId)||(process.env.NEXUS_STANDALONE==="true"&&tenantId==="main");
  if(!validSiteId||!isPhotoId(id))throw new Error("Identificador de archivo inválido");

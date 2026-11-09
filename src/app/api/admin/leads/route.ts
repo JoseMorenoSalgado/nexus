@@ -16,7 +16,12 @@ export async function GET(req:NextRequest){
  if(!allowed)return NextResponse.json({error:"Sin permisos"},{status:403});
  const raw=Number(req.nextUrl.searchParams.get("page")||"1");
  const page=Number.isSafeInteger(raw)&&raw>=1&&raw<=10000?raw:1;
- const where=admin.roles.includes("admin")||admin.roles.includes("editor")?{}:{assignedAgentId:admin.userId};
+ const query=(req.nextUrl.searchParams.get("q")||"").trim().slice(0,80);
+ const scope=admin.roles.includes("admin")||admin.roles.includes("editor")?{}:{assignedAgentId:admin.userId};
+ const where=query?{...scope,OR:[
+  {name:{contains:query,mode:"insensitive" as const}},
+  {property:{is:{refCode:{contains:query,mode:"insensitive" as const}}}}
+ ]}:scope;
  const db=getStandalonePrisma();
  const [total,leads]=await Promise.all([
   db.lead.count({where}),

@@ -1,3 +1,4 @@
+import ProspectosStandalonePage from "../independent-view";
 import Link from "next/link";
 import {ArrowLeft,UserPlus} from "lucide-react";
 import {redirect} from "next/navigation";
@@ -21,6 +22,10 @@ const errors:Record<string,string>={
 };
 export default async function CreateLead({searchParams}:{searchParams:Promise<{error?:string;propertyId?:string}>}){
  const admin=await requireRole(["admin","editor","agente"]);
+ if(process.env.NEXUS_STANDALONE==="true"){
+  const {propertyId}=await searchParams;
+  return <ProspectosStandalonePage register propertyId={typeof propertyId==="string"?propertyId:""}/>;
+ }
  const realEstate=(await getSiteTemplate(admin.tenantId)).key==="real-estate";
  if(!await crmTablesReady())redirect("/admin/leads");
  const props=realEstate?await prisma.property.findMany({where:{tenantId:admin.tenantId,...(!managesAllLeads(admin)?{assignedAgentId:admin.userId}:{})},select:{id:true,title:true,refCode:true},orderBy:{createdAt:"desc"},take:200}):[];

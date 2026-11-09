@@ -155,6 +155,9 @@ try {
  const closingLead=await (await request("/api/admin/leads",{method:"POST",cookie:admin,status:201,json:{
   name:"Prospecto financiero",phone:"88881111",propertyId:second.id,consent:true
  }})).json();
+ const byReference=await (await request("/api/admin/leads?q="+encodeURIComponent(second.refCode),{cookie:admin})).json();
+ assert.equal(byReference.total,1);
+ assert.equal(byReference.leads[0].id,closingLead.id);
  const today=new Date().toISOString().slice(0,10);
  const closing=await (await request("/api/admin/cierres",{method:"POST",cookie:admin,status:201,form:{
   leadId:closingLead.id,kind:"venta",amount:"20000",commissionAmount:"100",closedAt:today,notes:"",agentId:""
@@ -171,6 +174,22 @@ try {
  assert.doesNotMatch(await (await request("/admin",{cookie:agentSession})).text(),/Casa de aceptación/);
  assert.match(await (await request("/admin",{cookie:admin})).text(),new RegExp("/admin/propiedades/"+property.id+"/editar"));
  const edit = "/api/admin/properties/"+property.id;
+ const editorUrl="/admin/propiedades/"+property.id+"/editar";
+ const importedPhoto=await db.photo.create({data:{
+  propertyId:property.id,url:"https://example.invalid/foto-importada.jpg",alt:"Fotografía importada",sortOrder:0
+ }});
+ const editor=await (await request(editorUrl,{cookie:admin})).text();
+ assert.match(editor,/Editar propiedad/);
+ assert.match(editor,/Fotografía importada/);
+ const newLeadPage=await (await request("/admin/leads/nuevo?propertyId="+property.id,{cookie:admin})).text();
+ assert.match(newLeadPage,/Registrar nuevo prospecto/);
+ assert.match(newLeadPage,new RegExp('value="'+property.id+'" selected'));
+ const reportsPage=await (await request("/admin/reportes",{cookie:admin})).text();
+ assert.match(reportsPage,/admin-mobile-trigger/);
+ assert.match(reportsPage,/Actividad del sitio web/);
+ assert.doesNotMatch(editor,/NEXT_HTTP_ERROR_FALLBACK|Identificador de archivo inválido/);
+ await request(edit+"/photos/"+importedPhoto.id,{method:"DELETE",cookie:admin});
+ assert.equal(await db.photo.count({where:{id:importedPhoto.id}}),0);
  const detail = "/propiedades/"+property.slug;
  await request(detail,{status:404,follow:true});
  location(await request(edit,{method:"POST",cookie:agentSession,form:{intent:"publish"},status:303}),/error=noexiste$/);
