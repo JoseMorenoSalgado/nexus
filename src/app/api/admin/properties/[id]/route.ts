@@ -61,8 +61,9 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
  }catch(error){
   if(error instanceof Error&&error.message==="AGENT_INVALID")return propertyRedirect(propertyErrorPath("datos",id));
   if(error instanceof PropertyFormError)return propertyRedirect(propertyErrorPath(error.code,id));
-  if(error&&typeof error==="object"&&"code" in error&&error.code==="P2003")return propertyRedirect(propertyErrorPath("vinculada",id));
+  if(error&&typeof error==="object"&&"code" in error&&(error.code==="P2003"||error.code==="P2014"))return propertyRedirect(propertyErrorPath("vinculada",id));
   if(error&&typeof error==="object"&&"code" in error&&error.code==="P2002")return propertyRedirect(propertyErrorPath("duplicado",id));
+  if(error&&typeof error==="object"&&"code" in error&&error.code==="P2025")return propertyRedirect("/admin/propiedades?error=noexiste");
   console.error("[properties] change failed",error instanceof Error?error.name:"unknown");
   return propertyRedirect(propertyErrorPath("servidor",id));
  }
