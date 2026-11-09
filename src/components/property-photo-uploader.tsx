@@ -1,4 +1,6 @@
 "use client";
+import {uploadPropertyFile} from "@/lib/property-upload-client";
+import {PROPERTY_FILE_LIMIT_MB,PROPERTY_FILE_MAX_BYTES} from "@/lib/property-upload-limits";
 import {readAdminJson} from "@/lib/admin-json-response";
 import {useEffect,useRef,useState,type DragEvent} from "react";
 import {useRouter} from "next/navigation";
@@ -8,22 +10,11 @@ type Photo={id:string;url:string;alt:string};
 type Resolution={width:number;height:number};
 type MediaSizes={full:number|null;card:number|null;thumb:number|null};
 const formatSize=(size:number|null)=>size===null?"No disponible":size>=1048576?(size/1048576).toFixed(2)+" MB":(size/1024).toFixed(0)+" KB";
-function photoBase64(file:File):Promise<string>{
- return new Promise((resolve,reject)=>{
-  const reader=new FileReader();
-  reader.onerror=reader.onabort=()=>reject(new Error("No se pudo leer la fotografía "+file.name+"."));
-  reader.onload=()=>{
-   const result=reader.result;
-   if(typeof result==="string"&&result.includes(","))resolve(result.slice(result.indexOf(",")+1));
-   else reject(new Error("No se pudo leer la fotografía "+file.name+"."));
-  };
-  reader.readAsDataURL(file);
- });
-}
 export function PropertyPhotoUploader({propertyId,photos,sizes}:{propertyId:string;photos:Photo[];sizes:Record<string,MediaSizes>}){
  const router=useRouter(),inputRef=useRef<HTMLInputElement>(null);
  const [items,setItems]=useState(photos);
  const [dimensions,setDimensions]=useState<Record<string,Resolution>>({});
+ const [progress,setProgress]=useState<number|null>(null);
  const [busy,setBusy]=useState(false),[error,setError]=useState(""),[success,setSuccess]=useState("");
  const [preview,setPreview]=useState<Photo|null>(null);
  const [dragged,setDragged]=useState<string|null>(null);
@@ -60,17 +51,15 @@ export function PropertyPhotoUploader({propertyId,photos,sizes}:{propertyId:stri
   try{
    let count=0;
    for(const file of Array.from(files)){
-    if(file.size>8*1024*1024){setError("La imagen "+file.name+" supera los 8 MB.");break;}
-    const body=JSON.stringify({image:await photoBase64(file)});
-    const response=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body,credentials:"same-origin",cache:"no-store"});
-    if(response.status===413&&!response.headers.get("content-type")?.includes("application/json"))throw new Error("El servidor rechazó el tamaño de "+file.name+". Prueba con una copia más liviana.");
-    await readAdminJson(response,"No fue posible subir la imagen");
+    if(file.size>PROPERTY_FILE_MAX_BYTES){setError("La imagen "+file.name+" supera los "+PROPERTY_FILE_LIMIT_MB+" MB.");break;}
+    setProgress(0);
+    await uploadPropertyFile(endpoint,file,setProgress);
     count++;
    }
    if(count)setSuccess(count+" fotografía(s) guardada(s).");
    router.refresh();
   }catch(cause){setError(cause instanceof Error?cause.message:"No se pudo enviar la fotografía.");router.refresh();}
-  finally{setBusy(false);if(inputRef.current)inputRef.current.value="";}
+  finally{setProgress(null);setBusy(false);if(inputRef.current)inputRef.current.value="";}
  }
  async function removePhoto(id:string){
   if(busy||!window.confirm("¿Eliminar esta fotografía?"))return;
@@ -84,7 +73,7 @@ export function PropertyPhotoUploader({propertyId,photos,sizes}:{propertyId:stri
  }
  return <div className="property-upload-area">
   <div className="property-photo-toolbar">
-   <label className="property-upload-button"><ImagePlus size={19}/>{busy?"Procesando...":"Añadir fotografías"}
+   <label className="property-upload-button"><ImagePlus size={19}/>{progress!==null?"Subiendo… "+progress+" %":busy?"Procesando...":"Añadir fotografías"}
     <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={busy||items.length>=15} onChange={e=>void addImages(e.target.files)}/>
    </label>
    <span className="property-photo-count">{items.length} de 15 fotografías</span>

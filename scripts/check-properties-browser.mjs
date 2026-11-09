@@ -26,8 +26,8 @@ export async function checkPropertiesInBrowser({app,canonical,db,adminEmail,agen
     outgoing.writeHead(403).end();
     return;
    }
-   // Production nginx returns an HTML 400 for multipart property-photo uploads.
-   if(incoming.method==="POST"&&/^\/api\/admin\/properties\/[^/]+\/photos$/.test(incoming.url)&&
+   // Model the production rejection of multipart files on property upload routes.
+   if(incoming.method==="POST"&&/^\/api\/admin\/properties\/[^/]+\/(?:photos|document)$/.test(incoming.url)&&
     incoming.headers["content-type"]?.startsWith("multipart/form-data")){
     outgoing.writeHead(400,{"Content-Type":"text/html"}).end("<h1>400 Bad Request</h1>");
     return;
@@ -183,6 +183,14 @@ export async function checkPropertiesInBrowser({app,canonical,db,adminEmail,agen
   await preview.getByRole("img").waitFor();
   assert.ok(await preview.getByRole("img").evaluate(image=>image.decode().then(()=>image.naturalWidth>0)));
   await preview.getByRole("button",{name:"Cerrar vista completa"}).click();
+
+  const custom=await PDFDocument.create();
+  custom.addPage().drawText("Ficha personalizada de prueba");
+  await page.locator("#editar-pdf > summary").click();
+  const documentUpload=page.locator('#editar-pdf input[type="file"]');
+  await documentUpload.setInputFiles({name:"ficha.pdf",mimeType:"application/pdf",buffer:Buffer.from(await custom.save())});
+  await page.getByText("PDF personalizado guardado.",{exact:false}).waitFor();
+  await page.getByRole("link",{name:"Descargar PDF",exact:true}).waitFor();
 
   await page.getByRole("link",{name:"← Propiedades"}).click();
   await row.getByRole("button",{name:"Publicar",exact:true}).click();
