@@ -8,7 +8,7 @@ import {redirect} from "next/navigation";
 import {installerAvailable} from "@/lib/server-config";
 
 
-import {normalizeSiteHost} from "@/lib/preview";
+import {publicRequestHostname} from "@/lib/public-request-origin";
 import InstallerForm from "@/components/installer-form";
 import {APP_RELEASE} from "@/lib/release";
 
@@ -17,13 +17,13 @@ import {APP_RELEASE} from "@/lib/release";
 export const dynamic = "force-dynamic";
 export default async function InstallPage({searchParams}:{searchParams:Promise<{estado?:string;paso?:string}>}){
  if (!installerAvailable()) redirect("/admin/acceso");
- const hostname = normalizeSiteHost((await headers()).get("host") || "");
+ const hostname = publicRequestHostname(await headers()) || "";
  const checks:{label:string;ok:boolean;detail:string}[]=[];
  const standalone=process.env.NEXUS_STANDALONE==="true";
  checks.push({label:"Modo independiente",ok:standalone,detail:standalone?"Activado":"Configura NEXUS_STANDALONE=true y reinicia Node.js."});
  const siteUrl=(process.env.SITE_URL||"").trim();
  let urlValid=false;
- try{const u=new URL(siteUrl);urlValid=u.protocol==="https:"&&u.hostname.toLowerCase()===hostname&&u.pathname==="/"&&!u.search&&!u.hash;}catch{}
+ try{const u=new URL(siteUrl);urlValid=u.protocol==="https:"&&u.hostname.toLowerCase()===hostname&&u.pathname==="/"&&!u.search&&!u.hash&&!u.username&&!u.password&&!u.port;}catch{}
  checks.push({label:"Dominio HTTPS",ok:urlValid,detail:urlValid?"Coincide con SITE_URL":"Configura SITE_URL con la dirección HTTPS pública de este dominio."});
  let writable=false;
  try{
