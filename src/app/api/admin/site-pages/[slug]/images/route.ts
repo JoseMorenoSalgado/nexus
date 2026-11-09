@@ -15,7 +15,7 @@ const error=(message:string,status:number)=>NextResponse.json({error:message},{s
 export async function POST(req:NextRequest,{params}:{params:Promise<{slug:string}>}){
  const admin=await requireAdmin();
  if(!admin.roles.some(role=>role==="admin"||role==="editor"))return error("Sin permisos de edición.",403);
- if(!validMutationOrigin(req))return error("Origen no autorizado.",403);
+ if(!validMutationOrigin(req,"/admin/personalizar"))return error("Origen no autorizado.",403);
  const {slug}=await params;
  if(!validCustomSlug(slug))return error("Página inválida.",404);
  const exists=isBuiltinPageSlug(slug)?await builtinPageAvailable(admin.tenantId,slug):Boolean(await getCustomPage(admin.tenantId,slug));

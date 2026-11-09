@@ -11,7 +11,7 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{slug:string
  const {slug}=await params;
  const destination=isBuiltinPageSlug(slug)?"/admin/personalizar/paginas/"+slug:"/admin/personalizar/paginas";
  if(!admin.roles.some(role=>role==="admin"||role==="editor"))return propertyRedirect(destination+"?error=permisos");
- if(!validMutationOrigin(req))return propertyRedirect(destination+"?error=origen");
+ if(!validMutationOrigin(req,"/admin/personalizar"))return propertyRedirect(destination+"?error=origen");
  if(!isBuiltinPageSlug(slug)||!await builtinPageAvailable(admin.tenantId,slug))return propertyRedirect("/admin/personalizar/paginas?error=datos");
  const bytes=Number(req.headers.get("content-length")||0);
  if(!Number.isSafeInteger(bytes)||bytes<1||bytes>25000)return propertyRedirect(destination+"?error=datos");

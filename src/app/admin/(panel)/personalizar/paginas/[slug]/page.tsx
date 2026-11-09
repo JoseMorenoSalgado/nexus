@@ -3,7 +3,9 @@ import {notFound,redirect} from "next/navigation";
 import {ArrowLeft,ExternalLink,Save,Building2} from "lucide-react";
 import {requireRole} from "@/lib/auth";
 import {getCustomPage,textBlocks} from "@/lib/site-pages";
-import {getSiteSettings} from "@/lib/site-settings";
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
+import {isStandaloneMode} from "@/lib/installation-mode";
+import {getSiteContact,getSiteSettings} from "@/lib/site-settings";
 import {prisma} from "@/lib/prisma";
 import {CustomPageEditor} from "@/components/custom-page-editor";
 import {SiteTextInput} from "@/components/site-text-input";
@@ -84,11 +86,12 @@ export default async function EditSitePage({params,searchParams}:{params:Promise
      Las imágenes y los textos de esta sección los puedes actualizar cuando lo necesites.</p>
    </>;
   }
-  const [settings,properties,tenant,pageDefinitions,extraSections]=await Promise.all([
+  const propertyQuery={where:{published:true},select:{id:true,refCode:true,title:true},orderBy:{createdAt:"desc"},take:200} as const;
+ const [settings,properties,tenant,pageDefinitions,extraSections]=await Promise.all([
    getSiteSettings(admin.tenantId),
-   slug==="propiedades"?prisma.property.findMany({where:{tenantId:admin.tenantId,published:true},
-    select:{id:true,refCode:true,title:true},orderBy:{createdAt:"desc"},take:200}):Promise.resolve([]),
-   slug==="contacto"?prisma.tenant.findUniqueOrThrow({where:{id:admin.tenantId},select:{contactEmail:true,whatsapp:true}}):Promise.resolve(null),
+   slug!=="propiedades"?[]:isStandaloneMode()?getStandalonePrisma().property.findMany(propertyQuery):
+    prisma.property.findMany({...propertyQuery,where:{...propertyQuery.where,tenantId:admin.tenantId}}),
+   slug==="contacto"?getSiteContact(admin.tenantId):null,
    getPageDefinitions(admin.tenantId),readExtraSections(admin.tenantId,slug)
   ]);
   const section=sections[slug];

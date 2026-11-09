@@ -123,7 +123,7 @@ async function AgentDashboard({user,standalone=false}:{user:Admin;standalone?:bo
   prisma.lead.count({where:leadWhere(user)})
  ]);
  return <>
-  <div className="admin-heading"><div><h1>Mi espacio comercial</h1><p>Hola, {user.name}. Gestiona las consultas vinculadas a tus inmuebles.</p></div><div className="dashboard-agent-links"><Link href={"/admin/clientes-agentes/agentes/"+encodeURIComponent(user.userId)} className="btn wizard-back">Mi perfil</Link>{!standalone&&<Link className="btn wizard-back" href="/admin/reportes/agentes">Mi rendimiento</Link>}</div></div>
+  <div className="admin-heading"><div><h1>Mi espacio comercial</h1><p>Hola, {user.name}. Gestiona tus propiedades y prospectos.</p></div><div className="dashboard-agent-links"><Link href="/admin/propiedades/nueva" className="btn btn-red"><Plus size={17}/> Nueva propiedad</Link><Link href={"/admin/clientes-agentes/agentes/"+encodeURIComponent(user.userId)} className="btn wizard-back">Mi perfil</Link>{!standalone&&<Link className="btn wizard-back" href="/admin/reportes/agentes">Mi rendimiento</Link>}</div></div>
   {standalone?<StandaloneAlerts scope={scope}/>:<CommercialAlertsPreview user={user}/>}
   <div className="metric-grid">
    <div className="metric-card"><div className="metric-label">Propiedades asignadas <House size={19}/></div><strong>{totalProps}</strong><small>Inmuebles a tu cargo</small></div>

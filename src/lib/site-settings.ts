@@ -51,6 +51,11 @@ export function normalizeSiteSettings(value:unknown):SiteSettings{
  }
  return copy;
 }
+export async function getSiteContact(tenantId:string){
+ const select={contactEmail:true,whatsapp:true,logoUrl:true} as const;
+ if(process.env.NEXUS_STANDALONE==="true")return getStandalonePrisma().siteConfig.findUniqueOrThrow({where:{id:"main"},select});
+ return prisma.tenant.findUniqueOrThrow({where:{id:tenantId},select});
+}
 export async function getSiteSettings(tenantId:string):Promise<SiteSettings>{
  if(process.env.NEXUS_STANDALONE==="true"){
   const page=await getStandalonePrisma().sitePage.findUnique({where:{slug:"home"},select:{blocks:true,published:true}});

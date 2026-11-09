@@ -1,8 +1,11 @@
 import {NextRequest} from "next/server";
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
+import {isStandaloneMode} from "@/lib/installation-mode";
 import {prisma} from "@/lib/prisma";
 import {requireAdmin} from "@/lib/auth";
 import {propertyRedirect,validMutationOrigin} from "@/lib/admin-property-request";
 import {CUSTOM_PAGE_PREFIX,validCustomSlug} from "@/lib/site-pages";
+import {isBuiltinPageSlug} from "@/lib/page-extras";
 import {parseSectionsForm} from "@/lib/page-sections";
 import {type Prisma} from "@prisma/client";
 export const runtime="nodejs";
@@ -10,13 +13,13 @@ function fail(code:string){return propertyRedirect("/admin/personalizar/paginas/
 export async function POST(req:NextRequest){
  const admin=await requireAdmin();
  if(!admin.roles.some(r=>["admin","editor"].includes(r)))return fail("permisos");
- if(!validMutationOrigin(req))return fail("origen");
+ if(!validMutationOrigin(req,"/admin/personalizar"))return fail("origen");
  const len=Number(req.headers.get("content-length")||0);
  if(!Number.isSafeInteger(len)||len<1||len>48000)return fail("datos");
  let form:FormData;
  try{form=await req.formData();}catch{return fail("datos");}
  const title=form.get("title"),slug=form.get("slug"),summary=form.get("summary"),body=form.get("body");
- if(typeof title!=="string"||title.trim().length<3||title.length>90||typeof slug!=="string"||!validCustomSlug(slug)
+ if(typeof title!=="string"||title.trim().length<3||title.length>90||typeof slug!=="string"||!validCustomSlug(slug)||isBuiltinPageSlug(slug)
   ||typeof summary!=="string"||summary.length>240||typeof body!=="string"||body.length>10000)return fail("datos");
  let sections;
  try{sections=parseSectionsForm(form.get("sections"))||[];}
@@ -24,10 +27,10 @@ export async function POST(req:NextRequest){
  if(sections.some(section=>section.type==="image"))return fail("imagenes");
  const published=form.get("published")==="on";
  try{
-  await prisma.sitePage.create({data:{
-   tenantId:admin.tenantId,slug:CUSTOM_PAGE_PREFIX+slug,title:title.trim(),
-   blocks:{summary:summary.trim(),body:body.trim(),sections} as Prisma.InputJsonValue,published
-  }});
+  const data={slug:CUSTOM_PAGE_PREFIX+slug,title:title.trim(),
+   blocks:{summary:summary.trim(),body:body.trim(),sections} as Prisma.InputJsonValue,published};
+  if(isStandaloneMode())await getStandalonePrisma().sitePage.create({data});
+  else await prisma.sitePage.create({data:{...data,tenantId:admin.tenantId}});
   return propertyRedirect("/admin/personalizar/paginas/"+encodeURIComponent(slug)+"?created=1");
  }catch(e){
   if(e&&typeof e==="object"&&"code" in e&&e.code==="P2002")return fail("duplicada");

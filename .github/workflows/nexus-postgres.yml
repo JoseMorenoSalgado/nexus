@@ -131,7 +131,7 @@ jobs:
               return 1
             fi
           }
-          check_page "Standalone homepage" http://127.0.0.1:3000/ "Encuentra el lugar" /tmp/nexus-standalone-home.html
+          check_page "Standalone homepage" http://127.0.0.1:3000/ "El lugar perfecto para" /tmp/nexus-standalone-home.html
           check_page "Standalone catalog" http://127.0.0.1:3000/propiedades "CI published property" /tmp/nexus-standalone-catalog.html
           check_page "Standalone property" http://127.0.0.1:3000/propiedades/ci-public-property "CI published property" /tmp/nexus-standalone-detail.html
           if grep -Fq "CI draft property" /tmp/nexus-standalone-catalog.html; then

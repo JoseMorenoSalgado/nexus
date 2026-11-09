@@ -120,6 +120,52 @@ try {
  assert.match(await (await request("/admin/leads",{cookie:admin})).text(),/Prospectos/);
  console.log("PASS admin and agent login, profile edit, revocation and role separation");
 
+ const cms="/admin/personalizar";
+ assert.match(dashboard,/Mi sitio web/);
+ for(const page of ["inicio","paginas?buscar=uno&buscar=dos","menu","medios","paginas/home","paginas/contacto","paginas/propiedades"]){
+  await request(cms+"/"+page,{cookie:admin});
+ }
+ assert.match(await (await request("/")).text(),/src="\/brand\/nexus-icon\.webp"/);
+ const pageDraft={slug:"guia-de-compra",title:"Guía de compra",summary:"Resumen de prueba",body:"Contenido de prueba del CMS"};
+ const createPage="/api/admin/site-pages";
+ const cmsReferer=canonical.origin+cms+"/paginas/nueva";
+ location(await request(createPage,{method:"POST",cookie:admin,form:pageDraft,origin:"https://untrusted.example",referer:cmsReferer,status:303}),/error=origen$/);
+ location(await request(createPage,{method:"POST",cookie:admin,form:pageDraft,origin:null,referer:cmsReferer,status:303}),/guia-de-compra\?created=1$/);
+ await request("/pagina/guia-de-compra",{status:404});
+ const uploadedImage=new FormData();
+ const img=await sharp({create:{width:120,height:80,channels:3,background:"#234567"}}).png().toBuffer();
+ uploadedImage.set("image",new Blob([img],{type:"image/png"}),"guia.png");
+ const {id:imageId}=await (await request(createPage+"/guia-de-compra/images",{method:"POST",cookie:admin,multipart:uploadedImage})).json();
+ const sections=JSON.stringify([{id:"imagen-guia",type:"image",imageId,alt:"Imagen de la guía",caption:"Vista de prueba"}]);
+ location(await request(createPage+"/guia-de-compra",{method:"POST",cookie:admin,form:{...pageDraft,published:"on",sections},status:303}),/guia-de-compra\?saved=1$/);
+ assert.match(await (await request("/pagina/guia-de-compra")).text(),/Contenido de prueba del CMS/);
+ assert.equal((await request("/api/site-page-images/guia-de-compra/"+imageId)).headers.get("content-type"),"image/webp");
+ assert.match(await (await request(cms+"/medios",{cookie:admin})).text(),new RegExp(imageId));
+ location(await request(createPage+"/guia-de-compra",{method:"POST",cookie:admin,form:{intent:"status"},status:303}),/paginas\?saved=1$/);
+ await request("/pagina/guia-de-compra",{status:404});
+ await request("/api/site-page-images/guia-de-compra/"+imageId,{status:404});
+ const hero={section:"home",heroEyebrow:"Nexus de prueba",heroHeading:"Portada editada en Nexus",heroHighlight:"Compra con confianza",heroDescription:"Texto guardado desde el editor.",heroButton:"Consultar propiedades"};
+ location(await request("/api/admin/site-section",{method:"POST",cookie:admin,form:hero,status:303}),/home\?saved=1$/);
+ assert.match(await (await request("/")).text(),/Portada editada en Nexus/);
+ assert.match(await (await request(cms+"/paginas/home",{cookie:admin})).text(),/Portada editada en Nexus/);
+ location(await request(createPage+"/propiedades",{method:"POST",cookie:admin,form:{intent:"status"},status:303}),/paginas\?saved=1$/);
+ await request("/propiedades",{status:404});
+ location(await request(createPage+"/propiedades",{method:"POST",cookie:admin,form:{published:"on",intent:"status"},status:303}),/paginas\?saved=1$/);
+
+ const register=await (await request("/admin/leads/nuevo",{cookie:agentSession})).text();
+ for(const channel of ["Marketplace","Facebook","Instagram","TikTok","Referido","Cliente"])assert.ok(register.includes(channel),channel);
+ assert.match(register,/Consulta general \(sin propiedad\)/);
+ const prospect={name:"Consulta de inmueble externo",phone:"88884444",source:"marketplace",externalPropertyInterest:"Casa anunciada por un tercero",consent:true};
+ const {id:externalLeadId}=await (await request("/api/admin/leads",{method:"POST",cookie:agentSession,json:prospect,status:201})).json();
+ const external=await db.lead.findUniqueOrThrow({where:{id:externalLeadId}});
+ assert.equal(external.propertyId,null);
+ assert.equal(external.assignedAgentId,agent.id);
+ assert.equal(external.source,"marketplace");
+ assert.equal(external.externalPropertyInterest,prospect.externalPropertyInterest);
+ await request("/api/admin/leads",{method:"POST",cookie:agentSession,json:{...prospect,source:"inventado"},status:400});
+ assert.match(await (await request("/admin/clientes-agentes/agentes/"+agent.id,{cookie:agentSession})).text(),/Nueva propiedad/);
+ console.log("PASS CMS, branding, page images, publication, lead channels and external interest");
+
  const lead = await (await request("/api/admin/leads",{method:"POST",cookie:admin,json:{name:"Prospecto de prueba",phone:"88887777",consent:true},status:201})).json();
  const agentDashboard = await (await request("/admin",{cookie:agentSession})).text();
  assert.match(agentDashboard,/Mi espacio comercial/);
@@ -165,6 +211,9 @@ try {
  const [property,second] = await Promise.all(ids.map(id=>db.property.findUniqueOrThrow({where:{id}})));
  assert.match(property.refCode,/^NIC-\d{6}$/);
  assert.notEqual(property.refCode,second.refCode);
+ const agentCreated=await request("/api/admin/properties",{method:"POST",cookie:agentSession,form:{...fields,title:"Casa registrada por agente"},status:303});
+ const agentPropertyId=location(agentCreated,/\/editar\?created=1$/).split("/")[3];
+ assert.equal((await db.property.findUniqueOrThrow({where:{id:agentPropertyId}})).assignedAgentId,agent.id);
  const nextNumber=(await db.propertySequence.findUniqueOrThrow({where:{id:"main"}})).nextNumber;
  location(await request(referenceSettings,{method:"POST",cookie:admin,form:{prefix:"NRE"},status:303}),/referenceSaved=1$/);
  assert.equal((await db.propertySequence.findUniqueOrThrow({where:{id:"main"}})).nextNumber,nextNumber);
@@ -240,7 +289,7 @@ try {
  await request(photo.url,{cookie:agentSession,status:404});
  assert.equal((await request(photo.url,{cookie:admin})).headers.get("content-type"),"image/webp");
  location(await request(edit,{method:"POST",cookie:admin,form:{intent:"publish"},status:303}),/updated=1$/);
- assert.match(await (await request("/")).text(),/Encuentra el lugar/);
+ assert.match(await (await request("/")).text(),/Portada editada en Nexus/);
  assert.match(await (await request("/propiedades")).text(),new RegExp(title));
  const page = await (await request(detail)).text();
  assert.match(page,/Casa editada de aceptación/);
@@ -258,6 +307,13 @@ try {
  assert.equal(customPdf.headers.get("content-type"),"application/pdf");
  const pdf = await request("/api/propiedades/"+property.slug+"/pdf");
  assert.equal(pdf.headers.get("content-type"),"application/pdf");
+ assert.equal((await PDFDocument.load(await pdf.arrayBuffer())).getPageCount(),1);
+ const longDescription="Primera línea de la propiedad.\n"+("Descripción de la propiedad y sus servicios. ".repeat(55));
+ await db.property.update({where:{id:property.id},data:{description:longDescription}});
+ const extended=await request("/api/propiedades/"+property.slug+"/pdf");
+ assert.equal((await PDFDocument.load(await extended.arrayBuffer())).getPageCount(),2);
+ const summaryPdf=await request("/api/propiedades/"+property.slug+"/pdf?formato=resumida");
+ assert.equal((await PDFDocument.load(await summaryPdf.arrayBuffer())).getPageCount(),1);
  await request(edit+"/document?action=remove",{method:"POST",cookie:admin,origin:"https://untrusted.example",status:403});
  await request(edit+"/document?action=remove",{method:"POST",cookie:admin});
  await request("/api/propiedades/"+property.slug+"/pdf-personalizado",{status:404});

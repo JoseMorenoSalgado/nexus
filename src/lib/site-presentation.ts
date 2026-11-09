@@ -8,7 +8,7 @@ import {type SiteTemplateKey} from "@/lib/site-template-registry";
  */
 export function isNexusBrandName(name:string){
  const normalized=name.trim().toLocaleLowerCase("es").replace(/[^a-z0-9]/g,"");
- return normalized==="nexusrealestate"||normalized==="nexusrealestatenicaragua";
+ return normalized==="nexus"||normalized==="nexusrealestate"||normalized==="nexusrealestatenicaragua";
 }
 export function sitePresentation(tenant:PublicTenant,templateKey:SiteTemplateKey="real-estate"){
  const nexus=templateKey==="real-estate"&&isNexusBrandName(tenant.name);

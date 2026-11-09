@@ -13,7 +13,7 @@ export type PropertyPdfInput={
 type Color={r:number;g:number;b:number};
 const PAGE_W=595.28,PAGE_H=841.89;
 const paper=rgb(1,1,1),ink=rgb(.12,.16,.22),muted=rgb(.37,.41,.46),light=rgb(.95,.96,.97);
-const safe=(value:string)=>value.replace(/[\u2018\u2019]/g,"'").replace(/[\u201c\u201d]/g,'"').replace(/[\u2013\u2014]/g,"-").replace(/[^\x20-\xFF]/g," ").replace(/\s+/g," ").trim();
+const safe=(value:string)=>value.replace(/[\u2018\u2019]/g,"'").replace(/[\u201c\u201d]/g,'"').replace(/[\u2013\u2014]/g,"-").replace(/[^\x20-\x7E\xA0-\xFF]/g," ").replace(/\s+/g," ").trim();
 function brand(raw:string){
  const hex=/^#[0-9a-f]{6}$/i.test(raw)?raw:"#CB2027";
  return rgb(Number.parseInt(hex.slice(1,3),16)/255,Number.parseInt(hex.slice(3,5),16)/255,Number.parseInt(hex.slice(5,7),16)/255);
@@ -95,11 +95,14 @@ export async function buildPropertyPdf(property:PropertyPdfInput,options:{
  const stats=property.type+" · "+(property.operation==="alquiler"?"Alquiler":"Venta")+" · "+
   (property.bedrooms||0)+" hab. · "+(property.bathrooms||0)+" baños · "+(property.areaM2||0)+" m²";
  page.drawText(wrapped(stats,regular,9,490)[0]||"",{x:54,y:580,font:regular,size:9,color:ink});
- await drawPhoto(pdf,page,property.tenantId,photos[0],{x:40,y:284,width:515,height:267},regular);
- page.drawText("DESCRIPCIÓN",{x:40,y:262,size:11,font:bold,color:ink});
- const lines=wrapped(property.description,regular,10,515);
- const page1Lines=lines.slice(0,9);
- drawParagraph(page,page1Lines,40,241,regular,10,9);
+ if(photos.length)await drawPhoto(pdf,page,property.tenantId,photos[0],{x:40,y:284,width:515,height:267},regular);
+ const descriptionY=photos.length?262:544;
+ page.drawText("DESCRIPCIÓN",{x:40,y:descriptionY,size:11,font:bold,color:ink});
+ const lines=property.description.trim().split(/\r?\n/).flatMap(line=>wrapped(line,regular,10,515));
+ const descriptionStart=descriptionY-21;
+ const page1Limit=Math.floor((descriptionStart-140)/14)+1;
+ const page1Lines=lines.slice(0,page1Limit);
+ drawParagraph(page,page1Lines,40,descriptionStart,regular,10,page1Limit);
  footer(page,regular,options.tenantName);
  let remaining=lines.slice(page1Lines.length);
  const extraPhotos=options.mode==="ampliada"?photos.slice(1,5):[];

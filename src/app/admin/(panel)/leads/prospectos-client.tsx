@@ -4,14 +4,14 @@ import Link from "next/link";
 import {useCallback,useEffect,useState} from "react";
 type Agent={id:string;name:string};
 type PropertyOption={id:string;refCode:string;title:string};
-type Lead={id:string;name:string;phone:string;email:string|null;message:string|null;createdAt:string;assignedAgentId:string|null;crm:{status:string;nextContactAt:string|null}|null;property:{title:string;refCode:string}|null};
+type Lead={id:string;name:string;phone:string;email:string|null;message:string|null;source:string;externalPropertyInterest:string|null;createdAt:string;assignedAgentId:string|null;crm:{status:string;nextContactAt:string|null}|null;property:{title:string;refCode:string}|null};
 type History={notes:{id:string;authorName:string;body:string;createdAt:string}[];assignments:{id:string;fromAgentName:string|null;toAgentName:string|null;changedByName:string;createdAt:string}[]};
 const statusOptions=[
  ["nuevo","Nuevo"],["contactado","Contactado"],["seguimiento","En seguimiento"],
  ["calificado","Calificado"],["cerrado","Cerrado"],["descartado","Descartado"]
 ] as const;
-export default function ProspectosClient({agents,canAssign,properties,query,selectedPropertyId,register}:{
- agents:Agent[];canAssign:boolean;properties:PropertyOption[];query:string;selectedPropertyId?:string;register:boolean;
+export default function ProspectosClient({agents,canAssign,properties,channels,query,selectedPropertyId,register}:{
+ agents:Agent[];canAssign:boolean;properties:PropertyOption[];channels:{code:string;name:string;active:boolean}[];query:string;selectedPropertyId?:string;register:boolean;
 }){
  const [leads,setLeads]=useState<Lead[]>([]);
  const [page,setPage]=useState(1);
@@ -22,6 +22,7 @@ export default function ProspectosClient({agents,canAssign,properties,query,sele
  const [history,setHistory]=useState<Record<string,History>>({});
  const [expanded,setExpanded]=useState<string|null>(null);
  const [creating,setCreating]=useState(false);
+ const [registered,setRegistered]=useState(false);
  const refresh=useCallback(async()=>{
   setLoading(true);setError("");
   try{
@@ -49,11 +50,11 @@ export default function ProspectosClient({agents,canAssign,properties,query,sele
   finally{setSaving(null);}
  }
  async function createLead(event:React.FormEvent<HTMLFormElement>){
-  event.preventDefault();setCreating(true);setError("");
+  event.preventDefault();setCreating(true);setError("");setRegistered(false);
   const form=event.currentTarget;
   const fields=new FormData(form);
-  const body={name:String(fields.get("name")||""),phone:String(fields.get("phone")||""),email:String(fields.get("email")||""),message:String(fields.get("message")||""),source:"manual",propertyId:String(fields.get("propertyId")||""),...(canAssign?{assignedAgentId:String(fields.get("assignedAgentId")||"")}:{}),consent:fields.get("consent")==="on"};
-  try{const response=await fetch("/api/admin/leads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});await readAdminJson(response,"No se pudo registrar el prospecto");form.reset();setPage(1);await refresh();}
+  const body={name:String(fields.get("name")||""),phone:String(fields.get("phone")||""),email:String(fields.get("email")||""),message:String(fields.get("message")||""),source:String(fields.get("source")||""),externalPropertyInterest:String(fields.get("externalPropertyInterest")||""),propertyId:String(fields.get("propertyId")||""),...(canAssign?{assignedAgentId:String(fields.get("assignedAgentId")||"")}:{}),consent:fields.get("consent")==="on"};
+  try{const response=await fetch("/api/admin/leads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});await readAdminJson(response,"No se pudo registrar el prospecto");form.reset();setRegistered(true);setPage(1);await refresh();}
   catch(e){setError(e instanceof Error?e.message:"Error al registrar el prospecto");}
   finally{setCreating(false);}
  }
@@ -61,14 +62,20 @@ export default function ProspectosClient({agents,canAssign,properties,query,sele
   <details className="admin-panel crm-create-panel" open={register||undefined}><summary><strong>Registrar nuevo prospecto</strong></summary>
    <form className="admin-form" onSubmit={e=>void createLead(e)}>
     <div className="admin-form-grid"><label>Nombre completo<input name="name" required minLength={2} maxLength={120}/></label><label>Teléfono<input name="phone" type="tel" required minLength={7} maxLength={30}/></label></div>
-    <label>Correo electrónico<input name="email" type="email" maxLength={180}/></label>
-    <label>Propiedad de interés<select name="propertyId" defaultValue={selectedPropertyId||""}><option value="">Consulta general (sin propiedad)</option>{properties.map(p=><option key={p.id} value={p.id}>{p.refCode} · {p.title}</option>)}</select></label>
+    <div className="admin-form-grid">
+     <label>Correo electrónico<input name="email" type="email" maxLength={180}/></label>
+     <label>Canal de entrada<select name="source" defaultValue="manual">{channels.filter(channel=>channel.active).map(channel=><option key={channel.code} value={channel.code}>{channel.name}</option>)}</select></label>
+    </div>
+    <label>Propiedad de interés (opcional)<select name="propertyId" defaultValue={selectedPropertyId||""}><option value="">Consulta general (sin propiedad)</option>{properties.map(p=><option key={p.id} value={p.id}>{p.refCode} · {p.title}</option>)}</select></label>
+    <label>Inmueble externo (opcional)<input name="externalPropertyInterest" maxLength={300} aria-describedby="crm-interest-hint"/></label>
+    <p id="crm-interest-hint" className="property-help">Puedes registrar una consulta general o describir un inmueble externo. Si eliges una propiedad del inventario, deja el inmueble externo vacío.</p>
     {canAssign&&<label>Agente responsable<select name="assignedAgentId" defaultValue=""><option value="">Automático según la propiedad</option>{agents.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></label>}
     <label>Observaciones<textarea name="message" maxLength={2000}/></label>
     <label className="property-check"><input type="checkbox" name="consent" required/> Confirmo que el cliente autorizó el contacto.</label>
     <button className="btn btn-red" type="submit" disabled={creating}>{creating?"Registrando…":"Guardar prospecto"}</button>
    </form>
   </details>
+  {registered&&<p role="status" className="property-success">Prospecto registrado correctamente.</p>}
   <form action="/admin/leads" className="admin-form crm-search-panel admin-panel">
    <label>Buscar prospecto o referencia<input name="q" defaultValue={query} maxLength={80}/></label>
    <button className="btn wizard-back" type="submit">Buscar</button>
@@ -80,6 +87,8 @@ export default function ProspectosClient({agents,canAssign,properties,query,sele
     {leads.map(lead=><article key={lead.id} className="admin-panel crm-prospect-card">
      <h2>{lead.name}</h2>
      <p className="crm-prospect-contact">{lead.phone}{lead.email?" · "+lead.email:""}</p>
+     <p>Canal: {channels.find(channel=>channel.code===lead.source)?.name||lead.source}</p>
+     {lead.externalPropertyInterest&&<p>Inmueble externo: {lead.externalPropertyInterest}</p>}
      {lead.property&&<p>Propiedad: {lead.property.refCode} — {lead.property.title}</p>}
      {lead.message&&<p>{lead.message}</p>}
      <div className="admin-form crm-prospect-fields">
@@ -90,7 +99,9 @@ export default function ProspectosClient({agents,canAssign,properties,query,sele
        </select>
       </label>
       <label>Próximo contacto{" "}<input type="date" aria-label={"Próximo contacto de "+lead.name} value={lead.crm?.nextContactAt?lead.crm.nextContactAt.slice(0,10):""} disabled={saving===lead.id} onChange={e=>void update(lead.id,{nextContactAt:e.target.value||null})}/></label>
-      {canAssign&&<label>Agente responsable{" "}
+      <label>Inmueble externo (opcional)<input name="externalPropertyInterest" maxLength={300} aria-describedby="crm-interest-hint"/></label>
+    <p id="crm-interest-hint" className="property-help">Puedes registrar una consulta general o describir un inmueble externo. Si eliges una propiedad del inventario, deja el inmueble externo vacío.</p>
+    {canAssign&&<label>Agente responsable{" "}
        <select aria-label={"Agente de "+lead.name} value={lead.assignedAgentId||""} disabled={saving===lead.id} onChange={e=>void update(lead.id,{assignedAgentId:e.target.value||null})}>
         <option value="">Sin asignar</option>{agents.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}
        </select>
