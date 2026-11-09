@@ -1,6 +1,6 @@
 /** Run only against a disposable, empty PostgreSQL database and a local Nexus process. */
 import assert from "node:assert/strict";
-import {createHash} from "node:crypto";
+import {createHash,randomUUID} from "node:crypto";
 import sharp from "sharp";
 import {PDFDocument} from "pdf-lib";
 import {PrismaClient} from "../src/generated/standalone-postgres/index.js";
@@ -28,6 +28,21 @@ async function request(path, options = {}){
  const body = json ? JSON.stringify(json) : form ? new URLSearchParams(form) : multipart;
  const response = await fetch(new URL(path,app),{method,headers,body,redirect:follow?"follow":"manual",signal:AbortSignal.timeout(45000)});
  assert.equal(response.status,status,`${method} ${path} (${response.headers.get("location")||"no redirect"})`);
+ return response;
+}
+
+const chunkBytes=4*1024*1024;
+const maximumFileBytes=300*1024*1024;
+const uploadPath=(route,upload,offset,size)=>route+"?"+new URLSearchParams({upload,offset,size});
+async function uploadInParts(route,file,cookie,finalStatus){
+ const upload=randomUUID();
+ let response;
+ for(let offset=0;offset<file.length;offset+=chunkBytes){
+  const end=Math.min(offset+chunkBytes,file.length);
+  response=await request(uploadPath(route,upload,offset,file.length),{
+   method:"POST",cookie,json:{image:file.subarray(offset,end).toString("base64")},status:end===file.length?finalStatus:202
+  });
+ }
  return response;
 }
 
@@ -279,7 +294,23 @@ try {
  logo.set("image",new Blob([image],{type:"image/png"}),"logo.png");
  await request("/api/admin/site-media/logo",{method:"POST",cookie:admin,multipart:logo});
  await request("/api/site-media/logo");
- const photo = await (await request(edit+"/photos",{method:"POST",cookie:admin,multipart,status:201})).json();
+ const photoUpload=edit+"/photos";
+ const jsonPhoto={image:image.toString("base64")};
+ await request(photoUpload,{method:"POST",cookie:admin,origin:"https://untrusted.example",json:jsonPhoto,status:403});
+ await request(photoUpload,{method:"POST",cookie:agentSession,json:jsonPhoto,status:404});
+ await request(photoUpload,{method:"POST",cookie:admin,json:{image:"***="},status:400});
+ await request(photoUpload,{method:"POST",cookie:admin,json:{image:Buffer.alloc(8*1024*1024+1).toString("base64")},status:413});
+ const uploadId=randomUUID();
+ await request(uploadPath(photoUpload,uploadId,0,maximumFileBytes+1),{method:"POST",cookie:admin,json:jsonPhoto,status:413});
+ await request(uploadPath(photoUpload,uploadId,chunkBytes,chunkBytes+image.length),{method:"POST",cookie:admin,json:jsonPhoto,status:409});
+ const largePhoto=await sharp({create:{width:8000,height:6000,channels:3,background:"#37608b"}}).jpeg().toBuffer();
+ const largePhotoSize=process.env.NEXUS_TEST_MAX_UPLOAD==="1"?maximumFileBytes:chunkBytes+100;
+ const paddedPhoto=Buffer.concat([largePhoto,Buffer.alloc(largePhotoSize-largePhoto.length)]);
+ const {id:largePhotoId}=await (await uploadInParts(photoUpload,paddedPhoto,admin,201)).json();
+ await request(photoUpload+"/"+largePhotoId,{method:"POST",cookie:admin});
+ const legacyPhoto=await (await request(photoUpload,{method:"POST",cookie:admin,multipart,status:201})).json();
+ await request(photoUpload+"/"+legacyPhoto.id,{method:"POST",cookie:admin});
+ const photo=await (await request(photoUpload,{method:"POST",cookie:admin,json:jsonPhoto,status:201})).json();
  await request(edit+"/photos/order",{method:"POST",cookie:admin,origin:"https://untrusted.example",json:{photoIds:[photo.id,importedPhoto.id]},status:403});
  await request(edit+"/photos/order",{method:"POST",cookie:admin,json:{photoIds:[photo.id,importedPhoto.id]}});
  assert.equal((await db.photo.findUniqueOrThrow({where:{id:photo.id}})).sortOrder,0);
@@ -303,6 +334,11 @@ try {
  const attachment = new FormData();
  attachment.set("document",new Blob([await document.save()],{type:"application/pdf"}),"ficha.pdf");
  await request(edit+"/document",{method:"POST",cookie:admin,multipart:attachment});
+ const rawDocument=Buffer.from(await document.save());
+ const footer=Buffer.from("\n%%EOF\n");
+ const largePdfSize=process.env.NEXUS_TEST_MAX_UPLOAD==="1"?maximumFileBytes:chunkBytes+100;
+ const largePdf=Buffer.concat([rawDocument,Buffer.from("\n%"),Buffer.alloc(largePdfSize-rawDocument.length-footer.length-2,0x20),footer]);
+ await uploadInParts(edit+"/document",largePdf,admin,200);
  const customPdf = await request("/api/propiedades/"+property.slug+"/pdf-personalizado");
  assert.equal(customPdf.headers.get("content-type"),"application/pdf");
  const pdf = await request("/api/propiedades/"+property.slug+"/pdf");

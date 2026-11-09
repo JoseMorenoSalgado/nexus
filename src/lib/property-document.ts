@@ -1,11 +1,12 @@
 import "server-only";
-import {readFile,stat} from "node:fs/promises";
+import {open,stat} from "node:fs/promises";
+import {Readable} from "node:stream";
 import {join} from "node:path";
 import {PDFDocument,PDFName} from "pdf-lib";
 import {isStandaloneMode} from "@/lib/installation-mode";
 import {configDir} from "@/lib/server-config";
 
-export const MAX_CUSTOM_PDF_BYTES=10*1024*1024;
+import {PROPERTY_FILE_MAX_BYTES} from "@/lib/property-upload-limits";
 export const MAX_CUSTOM_PDF_PAGES=60;
 const tenantKey=/^[a-z0-9]{10,64}$/;
 const propertyKey=/^[a-z0-9]{10,64}$/;
@@ -21,7 +22,10 @@ export async function hasCustomPdf(tenantId:string,propertyId:string){
 }
 
 export async function readCustomPdf(tenantId:string,propertyId:string){
- try{return await readFile(customPdfPath(tenantId,propertyId));}
+ try{
+  const file=await open(customPdfPath(tenantId,propertyId),"r");
+  return Readable.toWeb(file.createReadStream()) as ReadableStream<Uint8Array>;
+ }
  catch{return null;}
 }
 
@@ -31,7 +35,7 @@ export async function readCustomPdf(tenantId:string,propertyId:string){
  * Do not embed or fetch external links while preparing a brochure.
  */
 export async function sanitizePropertyPdf(raw:Uint8Array){
- if(raw.length<100||raw.length>MAX_CUSTOM_PDF_BYTES)throw new Error("SIZE");
+ if(raw.length<100||raw.length>PROPERTY_FILE_MAX_BYTES)throw new Error("SIZE");
  const magic=Buffer.from(raw.subarray(0,8)).toString("latin1");
  if(!magic.startsWith("%PDF-"))throw new Error("FORMAT");
  const trailer=Buffer.from(raw.subarray(Math.max(0,raw.length-2048))).toString("latin1");
@@ -56,13 +60,13 @@ export async function sanitizePropertyPdf(raw:Uint8Array){
  clean.setTitle("Ficha inmobiliaria personalizada");
  clean.setProducer("WebAppECloud");
  const saved=await clean.save({useObjectStreams:true});
- if(saved.byteLength>MAX_CUSTOM_PDF_BYTES)throw new Error("SIZE");
- return Buffer.from(saved);
+ if(saved.byteLength>PROPERTY_FILE_MAX_BYTES)throw new Error("SIZE");
+ return Buffer.from(saved.buffer,saved.byteOffset,saved.byteLength);
 }
 
-export function pdfDownloadResponse(bytes:Uint8Array,filename:string){
+export function pdfDownloadResponse(stream:ReadableStream<Uint8Array>,filename:string){
  const safeFilename=filename.replace(/[^A-Za-z0-9._-]/g,"").slice(0,110)||"ficha.pdf";
- return new Response(new Uint8Array(bytes),{
+ return new Response(stream,{
   status:200,
   headers:{
    "Content-Type":"application/pdf",

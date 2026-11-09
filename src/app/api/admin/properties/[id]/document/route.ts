@@ -2,12 +2,13 @@ import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {isStandaloneMode} from "@/lib/installation-mode";
 import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {randomUUID} from "node:crypto";
-import {mkdir,rename,unlink,writeFile} from "node:fs/promises";
+import {mkdir,readFile,rename,unlink,writeFile} from "node:fs/promises";
 import {dirname} from "node:path";
 import {NextRequest,NextResponse} from "next/server";
 import {prisma} from "@/lib/prisma";
-import {customPdfPath,MAX_CUSTOM_PDF_BYTES,pdfDownloadResponse,readCustomPdf,sanitizePropertyPdf} from "@/lib/property-document";
+import {customPdfPath,pdfDownloadResponse,readCustomPdf,sanitizePropertyPdf} from "@/lib/property-document";
 import {propertyEditor,validMutationOrigin} from "@/lib/admin-property-request";
+import {receivePropertyUpload} from "@/lib/property-upload";
 import {propertyWhere} from "@/lib/agent-scope";
 
 export const runtime="nodejs";
@@ -47,36 +48,46 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
  if(!admin.canEdit)return fail("No tienes permisos para modificar esta propiedad.",403);
  if(!property)return fail("Inmueble no encontrado.",404);
  if(!validMutationOrigin(req))return fail("Origen de solicitud no autorizado.",403);
+ const propertyId=property.id;
+ if(req.nextUrl.searchParams.has("upload")){
+  return receivePropertyUpload(req,{tenantId:admin.tenantId,userId:admin.userId,propertyId,kind:"document"},
+   async path=>saveDocument(await readFile(path)));
+ }
+ const legacyLimit=10*1024*1024;
  const length=Number(req.headers.get("content-length")||0);
- if(!Number.isSafeInteger(length)||length<=0||length>MAX_CUSTOM_PDF_BYTES+1024*1024)return fail("El archivo supera el límite de 10 MB.",413);
+ if(!Number.isSafeInteger(length)||length<=0||length>legacyLimit+1024*1024)return fail("El archivo supera el límite de 10 MB.",413);
  let file:FormDataEntryValue|null;
  try{file=(await req.formData()).get("document");}
  catch{return fail("No se pudo leer el documento.",400);}
  if(!(file instanceof File)||!file.name.toLowerCase().endsWith(".pdf"))return fail("Selecciona un archivo PDF.",415);
- if(file.size<100||file.size>MAX_CUSTOM_PDF_BYTES)return fail("El PDF debe pesar como máximo 10 MB.",413);
+ if(file.size<100||file.size>legacyLimit)return fail("El PDF debe pesar como máximo 10 MB.",413);
  if(!["application/pdf","application/octet-stream",""].includes(file.type))return fail("Solo se permiten archivos PDF.",415);
- let safe:Buffer;
- try{safe=await sanitizePropertyPdf(new Uint8Array(await file.arrayBuffer()));}
- catch(error){
-  const code=error instanceof Error?error.message:"INVALID";
-  if(code==="SIZE")return fail("El PDF supera los 10 MB.",413);
-  if(code==="PAGES")return fail("Máximo 60 páginas por PDF.",422);
-  return fail("El PDF está dañado, protegido o contiene contenido no compatible.",422);
- }
- const target=customPdfPath(admin.tenantId,property.id);
- const temp=target+"."+randomUUID()+".tmp";
- try{
-  await mkdir(dirname(target),{recursive:true,mode:0o700});
-  await writeFile(temp,safe,{flag:"wx",mode:0o600});
-  // Do not leave an orphaned document for a property removed during processing.
-  if(!(await identify(id)).property)return fail("El inmueble ya no existe.",404);
-  await rename(temp,target);
-  return NextResponse.json({ok:true},{headers:{"Cache-Control":"no-store"}});
- }catch(error){
-  console.error("[property-pdf] save error",error instanceof Error?error.name:"unknown");
-  return fail("No fue posible guardar el documento. Comprueba el almacenamiento privado.",500);
- }finally{
-  try{await unlink(temp);}catch{/* File was renamed or already removed. */}
+ return saveDocument(new Uint8Array(await file.arrayBuffer()));
+
+ async function saveDocument(input:Uint8Array){
+  let safe:Buffer;
+  try{safe=await sanitizePropertyPdf(input);}
+  catch(error){
+   const code=error instanceof Error?error.message:"INVALID";
+   if(code==="SIZE")return fail("El PDF procesado supera los 300 MB o está vacío.",413);
+   if(code==="PAGES")return fail("Máximo 60 páginas por PDF.",422);
+   return fail("El PDF está dañado, protegido o contiene contenido no compatible.",422);
+  }
+  const target=customPdfPath(admin.tenantId,propertyId);
+  const temp=target+"."+randomUUID()+".tmp";
+  try{
+   await mkdir(dirname(target),{recursive:true,mode:0o700});
+   await writeFile(temp,safe,{flag:"wx",mode:0o600});
+   // Do not leave an orphaned document for a property removed during processing.
+   if(!(await identify(id)).property)return fail("El inmueble ya no existe.",404);
+   await rename(temp,target);
+   return NextResponse.json({ok:true},{headers:{"Cache-Control":"no-store"}});
+  }catch(error){
+   console.error("[property-pdf] save error",error instanceof Error?error.name:"unknown");
+   return fail("No fue posible guardar el documento. Comprueba el almacenamiento privado.",500);
+  }finally{
+   try{await unlink(temp);}catch{/* File was renamed or already removed. */}
+  }
  }
 }
 

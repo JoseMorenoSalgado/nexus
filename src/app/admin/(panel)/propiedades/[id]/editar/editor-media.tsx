@@ -1,3 +1,4 @@
+import {PROPERTY_FILE_LIMIT_MB} from "@/lib/property-upload-limits";
 import {stat} from "node:fs/promises";
 import {Images} from "lucide-react";
 import {isStoredPropertyPhoto,mediaFilePath,mediaVariantPath} from "@/lib/property-media";
@@ -26,7 +27,7 @@ export default async function EditorMedia({property,photos,siteId}:{
  ]);
  const photoSizes=Object.fromEntries(entries);
  return <>
-  <section id="editar-fotos" className="admin-panel property-photo-panel editor-media-panel"><div className="editor-panel-heading"><Images size={19}/><h2>Fotografías ({photos.length})</h2></div><p>Sube imágenes JPG, PNG o WebP (máximo 8 MB cada una, hasta 15). Se convierten a WebP y se eliminan los metadatos de ubicación.</p>
+  <section id="editar-fotos" className="admin-panel property-photo-panel editor-media-panel"><div className="editor-panel-heading"><Images size={19}/><h2>Fotografías ({photos.length})</h2></div><p>Sube imágenes JPG, PNG o WebP (máximo {PROPERTY_FILE_LIMIT_MB} MB cada una, hasta 15). Se convierten a WebP y se eliminan los metadatos de ubicación.</p>
    <MediaBoundary label="la galería"><PropertyPhotoUploader propertyId={property.id} sizes={photoSizes} photos={photos.map(x=>({id:x.id,url:x.url,alt:x.alt||property.title}))}/></MediaBoundary>
   </section>
   <details id="editar-pdf" className="admin-panel property-photo-panel editor-disclosure editor-pdf-disclosure"><summary><span><strong>Ficha técnica en PDF</strong><small>Descargar ficha o gestionar un PDF corporativo</small></span><span className="editor-chevron" aria-hidden="true">⌄</span></summary><div className="editor-disclosure-body">

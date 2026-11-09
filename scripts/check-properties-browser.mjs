@@ -26,6 +26,12 @@ export async function checkPropertiesInBrowser({app,canonical,db,adminEmail,agen
     outgoing.writeHead(403).end();
     return;
    }
+   // Model the production rejection of multipart files on property upload routes.
+   if(incoming.method==="POST"&&/^\/api\/admin\/properties\/[^/]+\/(?:photos|document)$/.test(incoming.url)&&
+    incoming.headers["content-type"]?.startsWith("multipart/form-data")){
+    outgoing.writeHead(400,{"Content-Type":"text/html"}).end("<h1>400 Bad Request</h1>");
+    return;
+   }
    const upstream=request(new URL(incoming.url,app),{
     method:incoming.method,
     headers:{...incoming.headers,host:app.host,"x-forwarded-host":canonical.host,"x-forwarded-proto":"https"}
@@ -168,6 +174,7 @@ export async function checkPropertiesInBrowser({app,canonical,db,adminEmail,agen
     new URL(response.url()).pathname==="/api/admin/properties/"+property.id+"/photos"),
    upload.setInputFiles({name:"foto.png",mimeType:"image/png",buffer:png})
   ]);
+  assert.equal(uploadResponse.request().headers()["content-type"],"application/json");
   assert.equal(uploadResponse.status(),201,await uploadResponse.text());
   await page.getByText("1 de 15 fotografías").waitFor();
   const photo=await db.photo.findFirstOrThrow({where:{propertyId:property.id}});
@@ -176,6 +183,14 @@ export async function checkPropertiesInBrowser({app,canonical,db,adminEmail,agen
   await preview.getByRole("img").waitFor();
   assert.ok(await preview.getByRole("img").evaluate(image=>image.decode().then(()=>image.naturalWidth>0)));
   await preview.getByRole("button",{name:"Cerrar vista completa"}).click();
+
+  const custom=await PDFDocument.create();
+  custom.addPage().drawText("Ficha personalizada de prueba");
+  await page.locator("#editar-pdf > summary").click();
+  const documentUpload=page.locator('#editar-pdf input[type="file"]');
+  await documentUpload.setInputFiles({name:"ficha.pdf",mimeType:"application/pdf",buffer:Buffer.from(await custom.save())});
+  await page.getByText("PDF personalizado guardado.",{exact:false}).waitFor();
+  await page.getByRole("link",{name:"Descargar PDF",exact:true}).waitFor();
 
   await page.getByRole("link",{name:"← Propiedades"}).click();
   await row.getByRole("button",{name:"Publicar",exact:true}).click();
