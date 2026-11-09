@@ -1,5 +1,5 @@
+import StandaloneReports from "./independent-view";
 import Link from "next/link";
-import {redirect} from "next/navigation";
 import {ArrowUpRight,BarChart3,CalendarClock,Download,Eye,House,MessageCircle,Users,CheckCircle2,HandCoins} from "lucide-react";
 import {requireRole} from "@/lib/auth";
 import {generateReport,resolveReportPeriod} from "@/lib/real-estate-reports";
@@ -14,7 +14,7 @@ function Metric({label,value,hint,Icon}:{label:string;value:string;hint:string;I
 }
 export default async function Reports({searchParams}:{searchParams:Promise<{periodo?:string}>}){
  const admin=await requireRole(["admin","editor"]);
- if(process.env.NEXUS_STANDALONE==="true")redirect("/admin/standalone/reportes");
+ if(process.env.NEXUS_STANDALONE==="true")return <StandaloneReports searchParams={searchParams}/>;
  const {periodo}=await searchParams;
  const days=resolveReportPeriod(periodo);
  const report=await generateReport(admin.tenantId,days);

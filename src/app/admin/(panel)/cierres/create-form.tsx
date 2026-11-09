@@ -7,7 +7,7 @@ export default function CreateClosingForm({leads}:{leads:Lead[]}){
  async function submit(e:React.FormEvent<HTMLFormElement>){
   e.preventDefault();setError("");setBusy(true);
   try{
-   const res=await fetch("/api/admin/standalone/cierres",{method:"POST",body:new FormData(e.currentTarget),credentials:"same-origin"});
+   const res=await fetch("/api/admin/cierres",{method:"POST",body:new FormData(e.currentTarget),credentials:"same-origin"});
    const data=await res.json();
    if(!res.ok){setError(data.error||"No se pudo registrar");return;}
    router.refresh();e.currentTarget.reset();

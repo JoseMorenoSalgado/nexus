@@ -1,5 +1,5 @@
+import StandaloneAgenda from "./independent-view";
 import Link from "next/link";
-import {redirect} from "next/navigation";
 import {CalendarDays,CalendarClock,CheckCircle2,AlertTriangle,ArrowUpRight,PhoneCall,MapPin} from "lucide-react";
 import {requireRole} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
@@ -25,7 +25,7 @@ const pad=(n:number)=>String(n).padStart(2,"0");
 type Search={mes?:string;vista?:string;fecha?:string;agente?:string;estado?:string;tipo?:string;lead?:string;created?:string;updated?:string;activated?:string;error?:string;mail?:string};
 export default async function CommercialAgenda({searchParams}:{searchParams:Promise<Search>}){
  const user=await requireRole(["admin","editor","agente"]);
- if(process.env.NEXUS_STANDALONE==="true")redirect("/admin/standalone/agenda");
+ if(process.env.NEXUS_STANDALONE==="true")return <StandaloneAgenda/>;
  const q=await searchParams;
  if(!await agendaTableReady())return <section className="agenda-dashboard"><div className="admin-heading"><div><h1>Agenda comercial</h1><p>Programa llamadas, visitas y reuniones relacionadas con tus prospectos.</p></div></div><div className="admin-panel"><h2>Activar agenda comercial</h2><p>La agenda necesita activar su tabla o incorporar el campo opcional de videoconferencia. Se conservarán los prospectos, propiedades y reuniones existentes.</p>{q.error&&<p role="alert" className="admin-error">{errors[q.error]||errors.activacion}</p>}{user.roles.includes("admin")?<form action="/api/admin/agenda/activate" method="post"><button type="submit" className="btn btn-red">Activar agenda</button></form>:<p className="property-help">Un administrador de esta empresa debe activar la agenda antes de usarla.</p>}</div></section>;
  const emailReady=await smtpReadyForTenant(user.tenantId);

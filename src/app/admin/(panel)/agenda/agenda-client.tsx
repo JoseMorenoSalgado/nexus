@@ -11,7 +11,7 @@ export default function AgendaClient(){
  const [updating,setUpdating]=useState<string|null>(null);
  const load=useCallback(async()=>{
   setLoading(true);
-  try{const response=await fetch("/api/admin/standalone/agenda",{cache:"no-store"});const data=await response.json();if(!response.ok)throw new Error(data.error||"No se pudo cargar la agenda");setEvents(data.events);setLeads(data.leads);}catch(e){setError(e instanceof Error?e.message:"Error de conexión");}finally{setLoading(false);}
+  try{const response=await fetch("/api/admin/agenda",{cache:"no-store"});const data=await response.json();if(!response.ok)throw new Error(data.error||"No se pudo cargar la agenda");setEvents(data.events);setLeads(data.leads);}catch(e){setError(e instanceof Error?e.message:"Error de conexión");}finally{setLoading(false);}
  },[]);
  useEffect(()=>{void load();},[load]);
  async function create(e:FormEvent<HTMLFormElement>){
@@ -20,11 +20,11 @@ export default function AgendaClient(){
   const date=String(fields.get("startsAt")||"");
   if(!date||Number.isNaN(new Date(date).getTime())){setError("Selecciona una fecha válida");setSaving(false);return;}
   const body={leadId:String(fields.get("leadId")||""),title:String(fields.get("title")||""),type:String(fields.get("type")||"llamada"),startsAt:new Date(date).toISOString(),durationMinutes:Number(fields.get("durationMinutes")||60),location:String(fields.get("location")||"")};
-  try{const response=await fetch("/api/admin/standalone/agenda",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw new Error(data.error||"No se pudo programar");form.reset();await load();}catch(e){setError(e instanceof Error?e.message:"Error al guardar");}finally{setSaving(false);}
+  try{const response=await fetch("/api/admin/agenda",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw new Error(data.error||"No se pudo programar");form.reset();await load();}catch(e){setError(e instanceof Error?e.message:"Error al guardar");}finally{setSaving(false);}
  }
  async function updateEvent(id:string,body:Record<string,unknown>){
   setUpdating(id);setError("");
-  try{const response=await fetch("/api/admin/standalone/agenda/"+encodeURIComponent(id),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw new Error(data.error||"No se pudo actualizar la actividad");await load();}
+  try{const response=await fetch("/api/admin/agenda/"+encodeURIComponent(id),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw new Error(data.error||"No se pudo actualizar la actividad");await load();}
   catch(e){setError(e instanceof Error?e.message:"Error al actualizar");}
   finally{setUpdating(null);}
  }

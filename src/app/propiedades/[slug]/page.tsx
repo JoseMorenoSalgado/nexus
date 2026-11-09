@@ -1,4 +1,4 @@
-import {redirect} from "next/navigation";
+import StandaloneProperty from "./independent-view";
 import Link from "next/link";
 import {ArrowLeft,ArrowUpRight,MapPin,BedDouble,Bath,Maximize2,Download,FileText,Home,MessageCircle,ShieldCheck,Check} from "lucide-react";
 import {getPublicContext} from "@/lib/tenant";
@@ -19,8 +19,8 @@ import {WhatsAppButton} from "@/components/traffic-events";
 export const dynamic="force-dynamic";
 
 export default async function Detail({params}:{params:Promise<{slug:string}>}){
+ if(process.env.NEXUS_STANDALONE==="true")return <StandaloneProperty params={params}/>;
  const {slug}=await params;
- if(process.env.NEXUS_STANDALONE==="true")redirect("/standalone/propiedades/"+encodeURIComponent(slug));
  const {tenant,properties:demoProperties,demo}=await getPublicContext({loadProperties:false});
  if((await getSiteTemplate(tenant.id)).key!=="real-estate"||!await tenantModuleEnabled(tenant.id,"properties"))notFound();
  await assertPagePublished(tenant.id,demo,"propiedades");

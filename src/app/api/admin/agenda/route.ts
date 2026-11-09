@@ -1,3 +1,5 @@
+import {isStandaloneMode} from "@/lib/standalone/mode";
+import {GET as getIndependentAgenda,POST as postIndependent} from "./independent-handler";
 import {NextRequest} from "next/server";
 import {prisma} from "@/lib/prisma";
 import {requireAdmin} from "@/lib/auth";
@@ -7,8 +9,11 @@ import {AGENDA_DURATIONS,isAgendaType,parseAgendaStartsAt,parseMeetingUrl} from 
 import {propertyRedirect,validMutationOrigin} from "@/lib/admin-property-request";
 import {notifyAgendaEmail} from "@/lib/smtp-notifications";
 export const runtime="nodejs";
+export const dynamic="force-dynamic";
+export async function GET(){return getIndependentAgenda();}
 const back=(code:string)=>propertyRedirect("/admin/agenda?error="+encodeURIComponent(code));
 export async function POST(req:NextRequest){
+ if(isStandaloneMode())return postIndependent(req);
  const user=await requireAdmin();
  if(!await tenantModuleEnabled(user.tenantId,"agenda"))return new Response("Módulo desactivado",{status:403});
  if(!user.roles.some(r=>["admin","editor","agente"].includes(r)))return back("permisos");

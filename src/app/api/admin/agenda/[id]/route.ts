@@ -1,3 +1,4 @@
+export {PATCH} from "./independent-handler";
 import {NextRequest} from "next/server";
 import {prisma} from "@/lib/prisma";
 import {requireAdmin} from "@/lib/auth";

@@ -7,7 +7,7 @@ export default function PaymentForm({closings}:{closings:Closing[]}){
  async function submit(e:React.FormEvent<HTMLFormElement>){
   e.preventDefault();const form=e.currentTarget;setError("");setBusy(true);
   try{
-   const response=await fetch("/api/admin/standalone/comisiones",{method:"POST",body:new FormData(form),credentials:"same-origin"});
+   const response=await fetch("/api/admin/comisiones",{method:"POST",body:new FormData(form),credentials:"same-origin"});
    const result=await response.json();
    if(!response.ok){setError(result.error||"No se pudo registrar el pago");return;}
    form.reset();router.refresh();

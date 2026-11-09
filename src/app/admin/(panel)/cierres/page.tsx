@@ -1,5 +1,5 @@
+import StandaloneClosings from "./independent-view";
 import Link from "next/link";
-import {redirect} from "next/navigation";
 import {ArrowUpRight,CheckCircle2,FileDown,FileText,HandCoins,House,ShieldCheck,TrendingUp,Undo2} from "lucide-react";
 import {requireRole} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
@@ -22,7 +22,7 @@ const errors:Record<string,string>={
 const dt=(d:Date)=>d.toLocaleDateString("es-NI",{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"});
 export default async function Closings({searchParams}:{searchParams:Promise<{periodo?:string;agente?:string;tipo?:string;estado?:string;lead?:string;activated?:string;created?:string;voided?:string;error?:string}>}){
  const user=await requireRole(["admin","editor","agente"]);
- if(process.env.NEXUS_STANDALONE==="true")redirect("/admin/standalone/cierres");
+ if(process.env.NEXUS_STANDALONE==="true")return <StandaloneClosings/>;
  const q=await searchParams;
  const all=managesAllLeads(user),admin=user.roles.includes("admin");
  const ready=await closingTableReady();
