@@ -1,4 +1,4 @@
-import {isStandaloneMode} from "@/lib/standalone/mode";
+import {isStandaloneMode} from "@/lib/installation-mode";
 import {validPublicMutationOrigin} from "@/lib/public-request-origin";
 import {hasDatabaseConfig} from "@/lib/server-config";
 import {NextResponse,type NextRequest} from "next/server";

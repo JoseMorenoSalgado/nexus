@@ -1,6 +1,6 @@
 import "server-only";
 import {hasSiteAsset} from "@/lib/site-assets";
-import {standalonePrisma} from "@/lib/standalone/db";
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import type {PublicProperty,PublicTenant} from "@/lib/demo";
 
 /**
@@ -11,7 +11,7 @@ import type {PublicProperty,PublicTenant} from "@/lib/demo";
 export async function getStandalonePublicContext(options:{loadProperties?:boolean}={}):Promise<{
  tenant:PublicTenant;properties:PublicProperty[];demo:false
 }|null>{
- const db=standalonePrisma();
+ const db=getStandalonePrisma();
  const config=await db.siteConfig.findUnique({where:{id:"main"}});
  if(!config)return null;
  const props=options.loadProperties===false?[]:await db.property.findMany({

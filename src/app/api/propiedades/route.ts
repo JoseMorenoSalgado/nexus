@@ -1,6 +1,6 @@
-import {isStandaloneMode} from "@/lib/standalone/mode";
+import {isStandaloneMode} from "@/lib/installation-mode";
 import {NextResponse} from "next/server";
-import {getStandalonePublicContext} from "@/lib/standalone/public-context";
+import {getStandalonePublicContext} from "@/lib/independent-public-context";
 import {isAllowedPublicHost} from "@/lib/public-site/host-match";
 import {publicPageHostname} from "@/lib/public-request-origin";
 

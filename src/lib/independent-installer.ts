@@ -1,7 +1,7 @@
 import "server-only";
-import {standalonePrisma} from "@/lib/standalone/db";
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {PrismaClient} from "@/generated/standalone-postgres";
-import {hashStandalonePassword} from "@/lib/standalone/auth";
+import {hashPassword} from "@/lib/auth";
 
 /**
  * Called only after a FRESH PostgreSQL database has been initialized with
@@ -17,7 +17,7 @@ export async function initializeStandaloneSite(input:{
  if(!name||!adminName||!/^\S+@\S+\.\S+$/.test(email)||input.adminPassword.length<12){
   throw new Error("Invalid standalone installation details");
  }
- const db=databaseUrlOverride?new PrismaClient({datasources:{db:{url:databaseUrlOverride}}}):standalonePrisma();
+ const db=databaseUrlOverride?new PrismaClient({datasources:{db:{url:databaseUrlOverride}}}):getStandalonePrisma();
  try{return await db.$transaction(async tx=>{
   const [existingSite,adminCount]=await Promise.all([
    tx.siteConfig.count(),tx.adminUser.count()
@@ -28,7 +28,7 @@ export async function initializeStandaloneSite(input:{
    whatsapp:input.whatsapp?.trim()||null
   }});
   const admin=await tx.adminUser.create({data:{
-   name:adminName,email,passwordHash:hashStandalonePassword(input.adminPassword),
+   name:adminName,email,passwordHash:hashPassword(input.adminPassword),
    role:"admin",active:true
   }});
   await tx.propertySequence.create({data:{id:"main"}});

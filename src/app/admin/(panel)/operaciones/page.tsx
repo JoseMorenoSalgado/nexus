@@ -1,7 +1,7 @@
-import {isStandaloneMode} from "@/lib/standalone/mode";
+import {isStandaloneMode} from "@/lib/installation-mode";
 import {notFound} from "next/navigation";
-import {requireStandaloneRole} from "@/lib/standalone/auth";
-import {listStandaloneAdminProperties,listStandaloneLeads,listStandaloneAgents,listStandaloneAgenda} from "@/lib/standalone/repositories";
+import {requireStandaloneRole} from "@/lib/independent-auth";
+import {listStandaloneAdminProperties,listStandaloneLeads,listStandaloneAgents,listStandaloneAgenda} from "@/lib/independent-repositories";
 import {StandaloneOperations} from "./standalone-operations";
 export const dynamic="force-dynamic";
 export default async function Operations(){

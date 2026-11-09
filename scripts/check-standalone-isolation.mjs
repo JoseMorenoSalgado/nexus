@@ -4,8 +4,14 @@
 import {readdir,readFile} from "node:fs/promises";
 import {join,relative} from "node:path";
 const root=process.cwd();
-const roots=["src/app/admin/(panel)/operaciones","src/lib/prisma-standalone.ts","src/lib/property-reference.ts","src/lib/property-agent.ts","src/lib/standalone"];
+const roots=["src/app/admin/(panel)/operaciones","src/lib/prisma-standalone.ts","src/lib/property-reference.ts","src/lib/property-agent.ts"];
 const independentFiles=[
+ "src/lib/independent-auth.ts",
+ "src/lib/independent-installer.ts",
+ "src/lib/installation-mode.ts",
+ "src/lib/independent-modules.ts",
+ "src/lib/independent-public-context.ts",
+ "src/lib/independent-repositories.ts",
  "src/app/admin/(panel)/agenda/agenda-client.tsx",
  "src/app/admin/(panel)/agenda/independent-view.tsx",
  "src/app/admin/(panel)/clientes-agentes/agentes/[id]/independent-view.tsx",

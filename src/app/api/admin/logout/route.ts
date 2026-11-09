@@ -1,5 +1,5 @@
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
-import {isStandaloneMode} from "@/lib/standalone/mode";
+import {isStandaloneMode} from "@/lib/installation-mode";
 import {createHash} from "node:crypto";
 import {NextRequest,NextResponse} from "next/server";
 import {prisma} from "@/lib/prisma";

@@ -1,5 +1,5 @@
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
-import {isStandaloneMode} from "@/lib/standalone/mode";
+import {isStandaloneMode} from "@/lib/installation-mode";
 import {NextRequest,NextResponse} from "next/server";
 import {tenantFromHost} from "@/lib/tenant";
 import {prisma} from "@/lib/prisma";

@@ -1,4 +1,4 @@
-import {isStandaloneMode} from "@/lib/standalone/mode";
+import {isStandaloneMode} from "@/lib/installation-mode";
 import {GET as getIndependentAgenda,POST as postIndependent} from "./independent-handler";
 import {NextRequest} from "next/server";
 import {prisma} from "@/lib/prisma";
