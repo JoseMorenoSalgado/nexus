@@ -1,3 +1,5 @@
+import {isStandaloneMode} from "@/lib/installation-mode";
+import {PATCH as updateIndependentActivity} from "./independent-handler";
 export {PATCH} from "./independent-handler";
 import {NextRequest} from "next/server";
 import {prisma} from "@/lib/prisma";
@@ -9,6 +11,7 @@ import {notifyAgendaEmail} from "@/lib/smtp-notifications";
 export const runtime="nodejs";
 const back=(code:string)=>propertyRedirect("/admin/agenda?error="+encodeURIComponent(code));
 export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>}){
+ if(isStandaloneMode())return updateIndependentActivity(req,{params});
  const {id}=await params;
  const user=await requireAdmin();
  if(!await tenantModuleEnabled(user.tenantId,"agenda"))return new Response("Módulo desactivado",{status:403});

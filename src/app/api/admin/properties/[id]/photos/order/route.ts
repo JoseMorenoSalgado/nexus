@@ -44,3 +44,5 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
   return error("No se pudo guardar el orden.",500);
  }
 }
+
+export {PATCH as POST};

@@ -18,8 +18,9 @@ const agentEmail = "agent-acceptance@example.invalid";
 const password = "Nexus-Acceptance-12345";
 
 async function request(path, options = {}){
- const {method = "GET", origin = canonical.origin, cookie, json, form, multipart, status = 200, follow = false} = options;
+ const {method = "GET", origin = canonical.origin, cookie, json, form, multipart, status = 200, follow = false, rsc = false} = options;
  const headers = new Headers({"X-Forwarded-Host":canonical.host,"X-Forwarded-Proto":"https"});
+ if(rsc)headers.set("RSC","1");
  if(method !== "GET") headers.set("Origin",origin);
  if(cookie) headers.set("Cookie",cookie);
  if(json) headers.set("Content-Type","application/json");
@@ -126,15 +127,15 @@ try {
  const managerDashboard = await (await request("/admin",{cookie:admin})).text();
  assert.match(managerDashboard,/Centro de actividades/);
  assert.match(managerDashboard,/Prospecto de prueba/);
- await request("/api/admin/leads/"+lead.id,{method:"PATCH",cookie:agentSession,json:{status:"contactado"},status:404});
- await request("/api/admin/leads/"+lead.id,{method:"PATCH",cookie:admin,json:{assignedAgentId:agent.id,status:"seguimiento",note:"Nota de prueba"}});
+ await request("/api/admin/leads/"+lead.id,{method:"POST",cookie:agentSession,json:{status:"contactado"},status:404});
+ await request("/api/admin/leads/"+lead.id,{method:"POST",cookie:admin,json:{assignedAgentId:agent.id,status:"seguimiento",note:"Nota de prueba"}});
  const persistedLead = await db.lead.findUniqueOrThrow({where:{id:lead.id},include:{crm:true,assignmentHistory:true,notes:true}});
  assert.equal(persistedLead.assignedAgentId,agent.id);
  assert.equal(persistedLead.crm.status,"seguimiento");
  assert.equal(persistedLead.assignmentHistory.length,1);
  assert.equal(persistedLead.notes.length,1);
  assert.equal((await (await request("/api/admin/leads",{cookie:agentSession})).json()).leads[0].id,lead.id);
- await request("/api/admin/leads/"+lead.id,{method:"PATCH",cookie:agentSession,json:{contact:{name:"Prospecto editado",phone:"88889999",email:"lead@example.invalid",message:"Contacto actualizado"}}});
+ await request("/api/admin/leads/"+lead.id,{method:"POST",cookie:agentSession,json:{contact:{name:"Prospecto editado",phone:"88889999",email:"lead@example.invalid",message:"Contacto actualizado"}}});
  const editedLead=await db.lead.findUniqueOrThrow({where:{id:lead.id}});
  assert.equal(editedLead.name,"Prospecto editado");
  assert.equal(editedLead.phone,"88889999");
@@ -142,7 +143,7 @@ try {
  const appointment=await (await request("/api/admin/agenda",{method:"POST",cookie:agentSession,status:201,json:{
   leadId:lead.id,title:"Llamada de prueba",type:"llamada",startsAt:new Date().toISOString(),durationMinutes:30
  }})).json();
- await request("/api/admin/agenda/"+appointment.id,{method:"PATCH",cookie:agentSession,json:{status:"realizada"}});
+ await request("/api/admin/agenda/"+appointment.id,{method:"POST",cookie:agentSession,json:{status:"realizada"}});
  assert.equal((await db.agendaEvent.findUniqueOrThrow({where:{id:appointment.id}})).status,"realizada");
  assert.match(await (await request("/admin",{cookie:agentSession})).text(),/Prospecto editado/);
 
@@ -188,8 +189,13 @@ try {
  assert.match(reportsPage,/admin-mobile-trigger/);
  assert.match(reportsPage,/Actividad del sitio web/);
  assert.doesNotMatch(editor,/NEXT_HTTP_ERROR_FALLBACK|Identificador de archivo inválido/);
- await request(edit+"/photos/"+importedPhoto.id,{method:"DELETE",cookie:admin});
- assert.equal(await db.photo.count({where:{id:importedPhoto.id}}),0);
+ const editorFlight=await request(editorUrl,{cookie:admin,rsc:true});
+ assert.match(editorFlight.headers.get("content-type")||"",/text\/x-component/);
+ const editorPayload=await editorFlight.text();
+ assert.match(editorPayload,/Editar propiedad/);
+ assert.match(editorPayload,/Fotografía importada/);
+ assert.doesNotMatch(editorPayload,/NEXT_HTTP_ERROR_FALLBACK|Identificador de archivo inválido/);
+ await request(editorUrl,{cookie:agentSession,status:404});
  const detail = "/propiedades/"+property.slug;
  await request(detail,{status:404,follow:true});
  location(await request(edit,{method:"POST",cookie:agentSession,form:{intent:"publish"},status:303}),/error=noexiste$/);
@@ -206,6 +212,11 @@ try {
  await request("/api/admin/site-media/logo",{method:"POST",cookie:admin,multipart:logo});
  await request("/api/site-media/logo");
  const photo = await (await request(edit+"/photos",{method:"POST",cookie:admin,multipart,status:201})).json();
+ await request(edit+"/photos/order",{method:"POST",cookie:admin,origin:"https://untrusted.example",json:{photoIds:[photo.id,importedPhoto.id]},status:403});
+ await request(edit+"/photos/order",{method:"POST",cookie:admin,json:{photoIds:[photo.id,importedPhoto.id]}});
+ assert.equal((await db.photo.findUniqueOrThrow({where:{id:photo.id}})).sortOrder,0);
+ await request(edit+"/photos/"+importedPhoto.id,{method:"POST",cookie:admin});
+ assert.equal(await db.photo.count({where:{id:importedPhoto.id}}),0);
  await request(photo.url,{status:404});
  await request(photo.url,{cookie:agentSession,status:404});
  assert.equal((await request(photo.url,{cookie:admin})).headers.get("content-type"),"image/webp");
@@ -228,6 +239,9 @@ try {
  assert.equal(customPdf.headers.get("content-type"),"application/pdf");
  const pdf = await request("/api/propiedades/"+property.slug+"/pdf");
  assert.equal(pdf.headers.get("content-type"),"application/pdf");
+ await request(edit+"/document?action=remove",{method:"POST",cookie:admin,origin:"https://untrusted.example",status:403});
+ await request(edit+"/document?action=remove",{method:"POST",cookie:admin});
+ await request("/api/propiedades/"+property.slug+"/pdf-personalizado",{status:404});
  const inquiry = {name:"Contacto de prueba",phone:"88885555",propertyId:property.id,consent:"yes"};
  await request("/api/leads",{method:"POST",json:inquiry,origin:"https://untrusted.example",status:403});
  await request("/api/leads",{method:"POST",json:inquiry,status:201});

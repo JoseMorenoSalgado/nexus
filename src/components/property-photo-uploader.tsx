@@ -1,4 +1,5 @@
 "use client";
+import {readAdminJson} from "@/lib/admin-json-response";
 import {useEffect,useRef,useState,type DragEvent} from "react";
 import {useRouter} from "next/navigation";
 import {ArrowLeft,ArrowRight,Eye,ImagePlus,Star,Trash2} from "lucide-react";
@@ -21,9 +22,8 @@ export function PropertyPhotoUploader({propertyId,photos,sizes}:{propertyId:stri
   if(busy)return;
   setBusy(true);setError("");setSuccess("");
   try{
-   const response=await fetch(endpoint+"/order",{method:"PATCH",credentials:"same-origin",cache:"no-store",headers:{"Content-Type":"application/json"},body:JSON.stringify({photoIds:next.map(p=>p.id)})});
-   const data=await response.json();
-   if(!response.ok)throw Error(data.error||"No se pudo guardar el orden.");
+   const response=await fetch(endpoint+"/order",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"Content-Type":"application/json"},body:JSON.stringify({photoIds:next.map(p=>p.id)})});
+   await readAdminJson(response,"No se pudo guardar el orden");
    setItems(next);setSuccess("Orden y portada actualizados.");router.refresh();
   }catch(e){setError(e instanceof Error?e.message:"Error de conexión.");}
   finally{setBusy(false);}
@@ -50,22 +50,20 @@ export function PropertyPhotoUploader({propertyId,photos,sizes}:{propertyId:stri
     if(file.size>8*1024*1024){setError("La imagen "+file.name+" supera los 8 MB.");break;}
     const body=new FormData();body.append("photo",file);
     const response=await fetch(endpoint,{method:"POST",body,credentials:"same-origin",cache:"no-store"});
-    const data=await response.json();
-    if(!response.ok){setError(data.error||"No fue posible subir la imagen.");break;}
+    await readAdminJson(response,"No fue posible subir la imagen");
     count++;
    }
    if(count)setSuccess(count+" fotografía(s) guardada(s).");
    router.refresh();
-  }catch{setError("No se pudo enviar la fotografía. Revisa la conexión.");}
+  }catch(cause){setError(cause instanceof Error?cause.message:"No se pudo enviar la fotografía.");router.refresh();}
   finally{setBusy(false);if(inputRef.current)inputRef.current.value="";}
  }
  async function removePhoto(id:string){
   if(busy||!window.confirm("¿Eliminar esta fotografía?"))return;
   setBusy(true);setError("");setSuccess("");
   try{
-   const response=await fetch(endpoint+"/"+encodeURIComponent(id),{method:"DELETE",credentials:"same-origin",cache:"no-store"});
-   const data=await response.json();
-   if(!response.ok)throw Error(data.error||"No se pudo eliminar.");
+   const response=await fetch(endpoint+"/"+encodeURIComponent(id),{method:"POST",credentials:"same-origin",cache:"no-store"});
+   await readAdminJson(response,"No se pudo eliminar la fotografía");
    setItems(prev=>prev.filter(p=>p.id!==id));setSuccess("Fotografía eliminada.");router.refresh();
   }catch(e){setError(e instanceof Error?e.message:"Error de conexión.");}
   finally{setBusy(false);}

@@ -1,4 +1,5 @@
 "use client";
+import {readAdminJson} from "@/lib/admin-json-response";
 import Link from "next/link";
 import {useCallback,useEffect,useState} from "react";
 type Agent={id:string;name:string};
@@ -25,8 +26,7 @@ export default function ProspectosClient({agents,canAssign,properties,query,sele
   setLoading(true);setError("");
   try{
    const response=await fetch("/api/admin/leads?"+new URLSearchParams({page:String(page),q:query}),{cache:"no-store"});
-   const data=await response.json();
-   if(!response.ok)throw new Error(data.error||"No se pudieron cargar los prospectos");
+   const data=await readAdminJson<{leads:Lead[];total:number}>(response,"No se pudieron cargar los prospectos");
    setLeads(Array.isArray(data.leads)?data.leads:[]);setTotal(Number.isFinite(data.total)?data.total:0);
   }catch(e){setError(e instanceof Error?e.message:"Error de conexión");}
   finally{setLoading(false);}
@@ -35,16 +35,15 @@ export default function ProspectosClient({agents,canAssign,properties,query,sele
  async function showHistory(id:string){
   if(expanded===id){setExpanded(null);return;}
   setError("");
-  try{const response=await fetch("/api/admin/leads/"+encodeURIComponent(id)+"/history",{cache:"no-store"});const data=await response.json();if(!response.ok)throw new Error(data.error||"No se pudo cargar el historial");setHistory(prev=>({...prev,[id]:data}));setExpanded(id);}catch(e){setError(e instanceof Error?e.message:"Error al cargar historial");}
+  try{const response=await fetch("/api/admin/leads/"+encodeURIComponent(id)+"/history",{cache:"no-store"});const data=await readAdminJson<History>(response,"No se pudo cargar el historial");setHistory(prev=>({...prev,[id]:data}));setExpanded(id);}catch(e){setError(e instanceof Error?e.message:"Error al cargar historial");}
  }
  async function update(id:string,body:Record<string,unknown>){
   setSaving(id);setError("");
   try{
-   const response=await fetch("/api/admin/leads/"+encodeURIComponent(id),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-   const data=await response.json();
-   if(!response.ok)throw new Error(data.error||"No se pudo guardar");
+   const response=await fetch("/api/admin/leads/"+encodeURIComponent(id),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+   await readAdminJson(response,"No se pudo guardar el prospecto");
    await refresh();
-   if(expanded===id){const response=await fetch("/api/admin/leads/"+encodeURIComponent(id)+"/history",{cache:"no-store"});if(response.ok){const data=await response.json();setHistory(prev=>({...prev,[id]:data}));}}
+   if(expanded===id){const response=await fetch("/api/admin/leads/"+encodeURIComponent(id)+"/history",{cache:"no-store"});if(response.ok){const data=await readAdminJson<History>(response,"No se pudo actualizar el historial");setHistory(prev=>({...prev,[id]:data}));}}
    return true;
   }catch(e){setError(e instanceof Error?e.message:"Error al guardar");return false;}
   finally{setSaving(null);}
@@ -54,7 +53,7 @@ export default function ProspectosClient({agents,canAssign,properties,query,sele
   const form=event.currentTarget;
   const fields=new FormData(form);
   const body={name:String(fields.get("name")||""),phone:String(fields.get("phone")||""),email:String(fields.get("email")||""),message:String(fields.get("message")||""),source:"manual",propertyId:String(fields.get("propertyId")||""),...(canAssign?{assignedAgentId:String(fields.get("assignedAgentId")||"")}:{}),consent:fields.get("consent")==="on"};
-  try{const response=await fetch("/api/admin/leads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw new Error(data.error||"No se pudo registrar el prospecto");form.reset();setPage(1);await refresh();}
+  try{const response=await fetch("/api/admin/leads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});await readAdminJson(response,"No se pudo registrar el prospecto");form.reset();setPage(1);await refresh();}
   catch(e){setError(e instanceof Error?e.message:"Error al registrar el prospecto");}
   finally{setCreating(false);}
  }
