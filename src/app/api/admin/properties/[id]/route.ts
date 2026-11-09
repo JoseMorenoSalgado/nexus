@@ -36,8 +36,10 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
   }
   if(intent==="delete"){
    if(!admin.canDelete||form.get("confirmation")!==property.refCode)return propertyRedirect(propertyErrorPath("confirmacion",id));
-   if(standaloneDb)await standaloneDb.property.delete({where:{id:property.id}});
-   else await prisma.property.delete({where:{id:property.id}});
+   const deleted=standaloneDb
+    ?await standaloneDb.property.deleteMany({where:standaloneScope})
+    :await prisma.property.deleteMany({where:{id:property.id,...propertyWhere(admin)}});
+   if(!deleted.count)return propertyRedirect("/admin/propiedades?error=permisos");
    await Promise.all([
     ...property.photos.filter(isStoredPropertyPhoto).map(async p=>{
      await Promise.allSettled([
