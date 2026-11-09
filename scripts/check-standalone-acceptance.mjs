@@ -150,6 +150,9 @@ try {
  assert.match(await (await request(cms+"/paginas/home",{cookie:admin})).text(),/Portada editada en Nexus/);
  location(await request(createPage+"/propiedades",{method:"POST",cookie:admin,form:{intent:"status"},status:303}),/paginas\?saved=1$/);
  await request("/propiedades",{status:404});
+ const homeWithoutCatalogue=await (await request("/")).text();
+ assert.match(homeWithoutCatalogue,/Preguntas frecuentes/);
+ assert.doesNotMatch(homeWithoutCatalogue,/href="\/propiedades"/);
  location(await request(createPage+"/propiedades",{method:"POST",cookie:admin,form:{published:"on",intent:"status"},status:303}),/paginas\?saved=1$/);
 
  const register=await (await request("/admin/leads/nuevo",{cookie:agentSession})).text();

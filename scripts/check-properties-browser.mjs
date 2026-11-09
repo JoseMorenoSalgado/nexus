@@ -108,10 +108,25 @@ export async function checkPropertiesInBrowser({app,canonical,db,adminEmail,agen
    const logo=page.locator("header .nexus-brand img");
    assert.ok(await logo.evaluate(image=>image.decode().then(()=>image.naturalWidth>0)),path+" logo");
    await responsive(page);
+   if(path==="/"){
+    const guide=page.getByRole("region",{name:"Antes de dar el siguiente paso"});
+    await page.getByRole("link",{name:"Quiero ofrecer mi propiedad"}).click();
+    assert.equal(new URL(page.url()).hash,"#para-propietarios");
+    assert.equal(await guide.getByRole("link",{name:"Consultar sobre mi propiedad"}).getAttribute("href"),"/contacto");
+    const question=guide.locator("summary").first();
+    const answer=guide.locator("details").first().locator("p");
+    assert.equal(await answer.isVisible(),false);
+    await question.focus();
+    await question.press("Enter");
+    assert.equal(await answer.isVisible(),true);
+    await question.press("Enter");
+    assert.equal(await answer.isVisible(),false);
+   }
    if(path==="/"&&process.env.NEXUS_TEST_SCREENSHOT_DIR){
     for(const width of [375,1440]){
      await page.setViewportSize({width,height:900});
-     await page.screenshot({path:join(process.env.NEXUS_TEST_SCREENSHOT_DIR,"nexus-home-"+width+".png")});
+     await page.evaluate(()=>window.scrollTo(0,0));
+     await page.screenshot({path:join(process.env.NEXUS_TEST_SCREENSHOT_DIR,"nexus-home-"+width+".png"),fullPage:true});
     }
    }
   }
