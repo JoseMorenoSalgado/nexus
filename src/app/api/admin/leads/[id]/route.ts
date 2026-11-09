@@ -71,3 +71,6 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
   return error("No se pudo actualizar el prospecto",500);
  }
 }
+
+// Enhance forwards POST where the reverse proxy blocks PATCH.
+export {PATCH as POST};

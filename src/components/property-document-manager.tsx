@@ -1,4 +1,5 @@
 "use client";
+import {readAdminJson} from "@/lib/admin-json-response";
 import {useRef,useState} from "react";
 import {useRouter} from "next/navigation";
 import {FileCheck2,FileUp,Download,Trash2} from "lucide-react";
@@ -17,8 +18,7 @@ export function PropertyDocumentManager({propertyId,hasDocument,canEdit}:{proper
   try{
    const data=new FormData();data.append("document",file);
    const response=await fetch(endpoint,{method:"POST",body:data,credentials:"same-origin",cache:"no-store"});
-   const result=await response.json();
-   if(!response.ok)throw new Error(result.error||"No se pudo guardar el PDF.");
+   await readAdminJson(response,"No se pudo guardar el PDF");
    setSuccess("PDF personalizado guardado. Ya puedes descargarlo desde esta ficha.");
    router.refresh();
   }catch(cause){setError(cause instanceof Error?cause.message:"Error de conexión.")}
@@ -28,9 +28,8 @@ export function PropertyDocumentManager({propertyId,hasDocument,canEdit}:{proper
   if(busy||!window.confirm("¿Eliminar el PDF personalizado? La ficha automática continuará disponible."))return;
   setBusy(true);setError("");setSuccess("");
   try{
-   const response=await fetch(endpoint,{method:"DELETE",credentials:"same-origin",cache:"no-store"});
-   const result=await response.json();
-   if(!response.ok)throw new Error(result.error||"No se pudo eliminar el PDF.");
+   const response=await fetch(endpoint+"?action=remove",{method:"POST",credentials:"same-origin",cache:"no-store"});
+   await readAdminJson(response,"No se pudo eliminar el PDF");
    setSuccess("PDF personalizado eliminado. La ficha automática sigue disponible.");
    router.refresh();
   }catch(cause){setError(cause instanceof Error?cause.message:"Error de conexión.")}

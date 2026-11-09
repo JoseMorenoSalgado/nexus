@@ -29,3 +29,5 @@ export async function DELETE(req:NextRequest,{params}:{params:Promise<{id:string
  }
  return NextResponse.json({ok:true},{headers:{"Cache-Control":"no-store"}});
 }
+
+export {DELETE as POST};

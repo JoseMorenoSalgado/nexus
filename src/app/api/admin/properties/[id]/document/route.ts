@@ -39,6 +39,7 @@ export async function GET(_req:NextRequest,{params}:{params:Promise<{id:string}>
 }
 
 export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>}){
+ if(req.nextUrl.searchParams.get("action")==="remove")return DELETE(req,{params});
  const {id}=await params;
  const resolved=await identify(id);
  if("disabled" in resolved)return fail("Módulo desactivado",403);
