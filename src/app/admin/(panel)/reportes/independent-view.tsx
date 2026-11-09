@@ -1,3 +1,5 @@
+import {Download} from "lucide-react";
+import {reportPeriod} from "@/lib/report-period";
 import Link from "next/link";
 import {notFound} from "next/navigation";
 import {requireRole} from "@/lib/auth";
@@ -8,8 +10,7 @@ export default async function StandaloneReports({searchParams}:{searchParams:Pro
  if(process.env.NEXUS_STANDALONE!=="true")notFound();
  await requireRole(["admin","editor"]);
  const {periodo}=await searchParams;
- const days=[7,30,90].includes(Number(periodo))?Number(periodo):30;
- const from=new Date();from.setUTCHours(0,0,0,0);from.setUTCDate(from.getUTCDate()-(days-1));
+ const {days,from}=reportPeriod(periodo);
  const db=getStandalonePrisma();
  const [properties,published,leads,webLeads,events,overdue,closings,views,propertyViews,whatsapp,statuses,sources]=await Promise.all([
   db.property.count(),db.property.count({where:{published:true}}),
@@ -37,6 +38,14 @@ export default async function StandaloneReports({searchParams}:{searchParams:Pro
   <div className="admin-heading"><div><h1>Reportes comerciales</h1><p>Consulta el inventario, el seguimiento comercial y la actividad del sitio.</p></div></div>
   <nav className="reports-periods" aria-label="Período de estadísticas">{[7,30,90].map(d=><Link key={d} href={"/admin/reportes?periodo="+d} aria-current={days===d?"page":undefined} className={days===d?"selected":""}>{d} días</Link>)}</nav>
   <p className="report-period-description">Desde {from.toISOString().slice(0,10)} · Fechas UTC. Los totales de propiedades corresponden al inventario actual.</p>
+  <section className="admin-panel">
+   <h2>Descargar en Excel</h2>
+   <p>Propiedades del inventario actual y prospectos registrados en los últimos {days} días.</p>
+   <div className="admin-context-actions">
+    <a className="btn wizard-back" href="/api/admin/reportes/excel?tipo=propiedades"><Download size={16}/> Propiedades (.xlsx)</a>
+    <a className="btn wizard-back" href={"/api/admin/reportes/excel?tipo=prospectos&periodo="+days}><Download size={16}/> Prospectos (.xlsx)</a>
+   </div>
+  </section>
   {metricGroups.map(group=><section className="report-overview" key={group.title}>
    <h2>{group.title}</h2>
    <div className="report-kpis">{group.items.map(([label,value])=><div className="report-kpi" key={label}>

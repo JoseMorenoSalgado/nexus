@@ -7,6 +7,7 @@ import {parseRoles} from "@/lib/roles";
 import {AdminPropertyFields} from "@/components/admin-property-fields";
 export const dynamic="force-dynamic";
 const errors:Record<string,string>={
+ ubicacion:"Ingresa ambas coordenadas válidas con hasta seis decimales, o deja vacíos los tres campos.",
  datos:"Revisa los campos obligatorios y los valores numéricos.",
  precio:"El precio debe ser mayor que cero y tener como máximo dos decimales.",
  duplicado:"Ya existe una propiedad con esa referencia o dirección de enlace.",
@@ -23,7 +24,7 @@ export default async function NewProperty({searchParams}:{searchParams:Promise<{
   {!admin.roles.some(r=>["admin","editor","agente"].includes(r))?<p className="panel-notice">Tu cuenta no tiene permiso para crear propiedades.</p>:
   <form className="admin-form property-editor" method="post" action="/api/admin/properties">
    {error&&<div className="admin-error" role="alert">{errors[error]||errors.servidor}</div>}
-   <AdminPropertyFields agents={agents} allowAssignment={admin.roles.some(r=>r==="admin"||r==="editor")}/>
+   <AdminPropertyFields mapLocation={process.env.NEXUS_STANDALONE==="true"?null:undefined} agents={agents} allowAssignment={admin.roles.some(r=>r==="admin"||r==="editor")}/>
    <div className="property-editor-actions"><button className="btn btn-red" type="submit"><Plus size={17}/> Crear propiedad y añadir fotos</button><Link className="btn wizard-back" href="/admin/propiedades">Cancelar</Link></div>
   </form>}
  </>;

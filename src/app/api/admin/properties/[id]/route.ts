@@ -9,6 +9,7 @@ import {propertyRedirect,validMutationOrigin,propertyEditor,propertyErrorPath,MA
 import {unlink} from "node:fs/promises";
 import {isStoredPropertyPhoto,mediaFilePath,mediaVariantPath} from "@/lib/property-media";
 import {customPdfPath} from "@/lib/property-document";
+import {parsePropertyLocation,savePropertyLocation} from "@/lib/property-map";
 export const runtime="nodejs";
 export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>}){
  const {id}=await params;
@@ -40,7 +41,11 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
    if(!admin.canDelete||form.get("confirmation")!==property.refCode)return propertyRedirect(propertyErrorPath("confirmacion",id));
    const confirmed={refCode:property.refCode};
    const deleted=standaloneDb
-    ?await standaloneDb.property.deleteMany({where:{...standaloneScope,...confirmed,closings:{none:{}}}})
+    ?await standaloneDb.$transaction(async tx=>{
+     const result=await tx.property.deleteMany({where:{...standaloneScope,...confirmed,closings:{none:{}}}});
+     if(result.count)await savePropertyLocation(tx,id,null);
+     return result;
+    })
     :await prisma.property.deleteMany({where:{...legacyScope,...confirmed,closings:{none:{}}}});
    if(!deleted.count){
     const linked=standaloneDb
@@ -64,7 +69,11 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
   const data=parseProperty(form);
   const assignedAgentId=admin.canManageAll?await validateAssignedAgent(admin.tenantId,form.get("assignedAgentId")):property.assignedAgentId;
   const changed=standaloneDb
-   ?await standaloneDb.property.updateMany({where:standaloneScope,data:{...data,assignedAgentId}})
+   ?await standaloneDb.$transaction(async tx=>{
+    const result=await tx.property.updateMany({where:standaloneScope,data:{...data,assignedAgentId}});
+    if(result.count)await savePropertyLocation(tx,id,parsePropertyLocation(form));
+    return result;
+   })
    :await prisma.property.updateMany({where:legacyScope,data:{...data,assignedAgentId}});
   if(!changed.count)return propertyRedirect("/admin/propiedades?error=permisos");
   return propertyRedirect("/admin/propiedades/"+encodeURIComponent(id)+"/editar?saved=1");

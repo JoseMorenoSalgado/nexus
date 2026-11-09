@@ -8,6 +8,8 @@ import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import type {Prisma} from "@/generated/standalone-postgres";
 import {parseRoles} from "@/lib/roles";
 
+import {getPropertyLocation} from "@/lib/property-map";
+
 const select={
  id:true,slug:true,refCode:true,title:true,city:true,neighborhood:true,
  type:true,operation:true,price:true,bedrooms:true,bathrooms:true,areaM2:true,
@@ -33,6 +35,7 @@ export async function loadPropertyEditor(id:string){
  const {photos,...fields}=property;
  return {
   property:{...fields,price:Number(fields.price)},photos,agents,canAssign,
-  canDelete:admin.roles.includes("admin"),siteId:admin.tenantId
+  canDelete:admin.roles.includes("admin"),siteId:admin.tenantId,
+  mapLocation:db?await getPropertyLocation(id):undefined
  };
 }

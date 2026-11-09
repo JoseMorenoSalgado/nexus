@@ -1,3 +1,5 @@
+import type {PropertyLocation} from "@/lib/property-map";
+
 type Data={
  refCode:string;title:string;city:string;neighborhood:string|null;type:string;operation:string;
  price:number;bedrooms:number|null;bathrooms:number|null;areaM2:number|null;
@@ -7,7 +9,7 @@ type Data={
 /** The initial view keeps all required fields visible for native form validation.
  * Only optional commercial/promotion settings live in a disclosure.
  */
-export function AdminPropertyFields({property,agents=[],allowAssignment=true}:{property?:Data;agents?:{id:string;name:string;email:string}[];allowAssignment?:boolean}){
+export function AdminPropertyFields({property,agents=[],allowAssignment=true,mapLocation}:{property?:Data;agents?:{id:string;name:string;email:string}[];allowAssignment?:boolean;mapLocation?:PropertyLocation|null}){
  const value=(key:keyof Data,fallback:string|number=""):string|number=>{
   const x=property?.[key];
   return typeof x==="string"||typeof x==="number"?x:fallback;
@@ -44,6 +46,15 @@ export function AdminPropertyFields({property,agents=[],allowAssignment=true}:{p
    <label className="property-check"><input type="checkbox" name="published" defaultChecked={Boolean(property?.published)}/> Publicar en la página web</label>
    <p className="property-help">Si queda en borrador, no aparecerá en el catálogo ni se podrá descargar su ficha pública.</p>
   </section>
+  {mapLocation!==undefined&&<section className="property-form-section" aria-labelledby="property-map-heading">
+   <h2 id="property-map-heading">Ubicación en el mapa público</h2>
+   <p className="property-help">Copia la latitud y longitud desde tu mapa. Puedes indicar un punto aproximado y dejar la dirección vacía para mostrar la zona y ciudad. Al borrar los tres campos se retira el marcador.</p>
+   <div className="admin-form-grid">
+    <label>Latitud<input name="mapLatitude" inputMode="decimal" maxLength={11} defaultValue={mapLocation?.latitude} placeholder="12.136389"/></label>
+    <label>Longitud<input name="mapLongitude" inputMode="decimal" maxLength={11} defaultValue={mapLocation?.longitude} placeholder="-86.251389"/></label>
+   </div>
+   <label>Dirección pública<input name="mapAddress" maxLength={180} defaultValue={mapLocation?.address} placeholder="Sector o punto de referencia"/></label>
+  </section>}
   <details className="editor-disclosure property-form-section">
    <summary><span><strong>Más opciones</strong><small>Agente responsable y propiedad destacada</small></span><span className="editor-chevron" aria-hidden="true">⌄</span></summary>
    <div className="editor-disclosure-body">

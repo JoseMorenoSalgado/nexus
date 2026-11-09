@@ -67,6 +67,8 @@ export async function checkPropertiesInBrowser({app,canonical,db,adminEmail,agen
   const context=await browser.newContext({ignoreHTTPSErrors:true,viewport:{width:1440,height:900},reducedMotion:"reduce"});
   // Prevent the test browser from making requests beyond its ephemeral HTTPS proxy.
   await context.route("**/*",route=>new URL(route.request().url()).origin===canonical.origin?route.continue():route.abort());
+  const tile=await sharp({create:{width:256,height:256,channels:3,background:"#dce8db"}}).png().toBuffer();
+  await context.route("https://tile.openstreetmap.org/**",route=>route.fulfill({contentType:"image/png",body:tile}));
   const page=await context.newPage();
   page.setDefaultTimeout(12000);
   function observe(tab){
@@ -140,6 +142,9 @@ export async function checkPropertiesInBrowser({app,canonical,db,adminEmail,agen
   await page.getByLabel("Título de la propiedad").fill(title);
   await page.getByLabel("Descripción").fill("Descripción inmobiliaria para la prueba en navegador.");
   await page.getByLabel("Precio en USD").fill("172500.50");
+  await page.getByLabel("Latitud").fill("12.136389");
+  await page.getByLabel("Longitud").fill("-86.251389");
+  await page.getByLabel("Dirección pública").fill("Dirección Playwright en Managua");
   await page.locator("form.property-editor summary").getByText("Más opciones",{exact:true}).click();
   const agent=await db.adminUser.findUniqueOrThrow({where:{email:agentEmail}});
   await page.getByLabel("Agente responsable").selectOption(agent.id);
@@ -196,7 +201,21 @@ export async function checkPropertiesInBrowser({app,canonical,db,adminEmail,agen
   await row.getByRole("button",{name:"Publicar",exact:true}).click();
   await page.waitForURL(/\?updated=1$/);
   assert.equal((await db.property.findUniqueOrThrow({where:{id:property.id}})).published,true);
+  await open(page,"/");
+  const map=page.getByRole("region",{name:"Mapa interactivo de propiedades"});
+  await map.scrollIntoViewIfNeeded();
+  const marker=map.getByTitle(editedTitle,{exact:true});
+  await marker.focus();
+  await marker.press("Enter");
+  const popup=map.locator(".leaflet-popup");
+  await popup.getByText("Dirección Playwright en Managua",{exact:true}).waitFor();
+  assert.equal(await popup.getByRole("link",{name:"Ver ficha"}).getAttribute("href"),detail);
+  for(const width of [375,768,1024,1440]){
+   await page.setViewportSize({width,height:900});
+   assert.ok((await map.boundingBox()).width<=width,"Map overflow at "+width+"px");
+  }
   await open(page,"/propiedades");
+  await responsive(page);
   await page.locator('a[href="'+detail+'"]').first().click();
   await page.getByRole("heading",{name:editedTitle,exact:true}).waitFor();
   await responsive(page);
