@@ -1,3 +1,4 @@
+import {validPublicMutationOrigin} from "@/lib/public-request-origin";
 import {isStandaloneMode} from "@/lib/standalone/mode";
 import {NextResponse} from "next/server";
 import {currentStandaloneAdmin} from "@/lib/standalone/auth";
@@ -7,16 +8,9 @@ import {hashPassword} from "@/lib/auth";
 export const dynamic="force-dynamic";
 const fail=(status:number,message:string)=>NextResponse.json({error:message},{status});
 const text=(value:unknown,max=300)=>typeof value==="string"?value.trim().slice(0,max):"";
-function validOrigin(request:Request){
- try{
-  const expected=new URL(process.env.SITE_URL||"");
-  const origin=new URL(request.headers.get("origin")||"");
-  return expected.protocol==="https:"&&origin.origin===expected.origin;
- }catch{return false;}
-}
 export async function POST(request:Request){
  if(!isStandaloneMode())return new Response(null,{status:404});
- if(!validOrigin(request))return fail(403,"Invalid request origin");
+ if(!validPublicMutationOrigin(request.headers))return fail(403,"Invalid request origin");
  const admin=await currentStandaloneAdmin();
  if(!admin)return fail(401,"Unauthorized");
  const body:Record<string,unknown>=await request.json().catch(()=>({}));
@@ -122,7 +116,7 @@ export async function POST(request:Request){
   if(action==="agent.create"){
    if(!canManageUsers(JSON.stringify(admin.roles)))return fail(403,"Forbidden");
    const name=text(body.name,180),email=text(body.email,254).toLowerCase(),password=String(body.password||"");
-   if(!name||!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)||password.length<12||password.length>1024)return fail(400,"Invalid agent");
+   if(!name||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||password.length<12||password.length>1024)return fail(400,"Invalid agent");
    const item=await db.adminUser.create({data:{name,email,passwordHash:hashPassword(password),role:"agente"},select:{id:true,name:true,email:true,role:true}});
    return NextResponse.json({item},{status:201});
   }
