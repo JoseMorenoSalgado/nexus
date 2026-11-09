@@ -57,7 +57,7 @@ jobs:
           exit 1
 
   fresh-standalone:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     services:
       postgres:
         image: postgres:16
@@ -207,8 +207,9 @@ jobs:
           node --import tsx scripts/verify-standalone-http-mutations.ts
       - name: Install Chromium for the property browser checks
         run: |
-          npm install --no-save --no-package-lock --no-audit --no-fund playwright@1.56.1
-          npx playwright install --with-deps chromium
+          npm install --prefix "$RUNNER_TEMP/nexus-playwright" --no-save --no-package-lock --no-audit --no-fund playwright@1.56.1
+          ln -s "$RUNNER_TEMP/nexus-playwright/node_modules/playwright" node_modules/playwright
+          node node_modules/playwright/cli.js install --with-deps chromium
       - name: Verify install and acceptance flows against a separate PostgreSQL database
         run: |
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'CREATE DATABASE nexus_acceptance'
