@@ -1,4 +1,4 @@
-import StandaloneSystem from "@/app/admin/_standalone/sistema/page";
+import StandaloneSystem from "./independent-view";
 import Link from "next/link";
 import {Database,ShieldCheck,CheckCircle2,AlertTriangle,ArrowLeft} from "lucide-react";
 import {requireRole} from "@/lib/auth";

@@ -1,4 +1,4 @@
-import StandaloneProperty from "@/app/_standalone/propiedades/[slug]/page";
+import StandaloneProperty from "./independent-view";
 import Link from "next/link";
 import {ArrowLeft,ArrowUpRight,MapPin,BedDouble,Bath,Maximize2,Download,FileText,Home,MessageCircle,ShieldCheck,Check} from "lucide-react";
 import {getPublicContext} from "@/lib/tenant";

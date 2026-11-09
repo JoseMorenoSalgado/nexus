@@ -1,4 +1,4 @@
-import StandaloneCatalog from "@/app/_standalone/propiedades/page";
+import StandaloneCatalog from "./independent-view";
 import Link from "next/link";
 import type {Metadata} from "next";
 import {ArrowUpRight,Search,SlidersHorizontal,Building2,X} from "lucide-react";

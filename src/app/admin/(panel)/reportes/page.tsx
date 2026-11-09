@@ -1,4 +1,4 @@
-import StandaloneReports from "@/app/admin/_standalone/reportes/page";
+import StandaloneReports from "./independent-view";
 import Link from "next/link";
 import {ArrowUpRight,BarChart3,CalendarClock,Download,Eye,House,MessageCircle,Users,CheckCircle2,HandCoins} from "lucide-react";
 import {requireRole} from "@/lib/auth";

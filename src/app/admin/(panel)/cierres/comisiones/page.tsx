@@ -1,4 +1,4 @@
-import StandaloneCommissions from "@/app/admin/_standalone/cierres/comisiones/page";
+import StandaloneCommissions from "./independent-view";
 import Link from "next/link";
 import {Banknote,FileText,HandCoins,ShieldCheck,Wallet,ArrowLeft,AlertCircle} from "lucide-react";
 import {requireRole} from "@/lib/auth";

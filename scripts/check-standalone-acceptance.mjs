@@ -65,11 +65,9 @@ try {
  assert.equal(legacy.length,0);
  console.log("PASS installer, canonical origin, repeat protection and PostgreSQL health");
 
- location(await request("/standalone/acceso",{status:307}),/^\/admin\/acceso$/);
  location(await request("/api/admin/session",{method:"POST",origin:"https://untrusted.example",form:{email:adminEmail,password},status:303}),/error=origen$/);
  const admin = await login(adminEmail);
- location(await request("/standalone/admin",{cookie:admin,status:307}),/^\/admin$/);
- const dashboard = await (await request("/standalone/admin",{cookie:admin,follow:true})).text();
+ const dashboard = await (await request("/admin",{cookie:admin})).text();
  assert.match(dashboard,/admin-mobile-trigger/);
  assert.match(dashboard,/Menú de administración/);
  assert.match(dashboard,/Propiedades recientes/);
@@ -94,10 +92,14 @@ try {
   assert.match(page,new RegExp(title));
   assert.doesNotMatch(page,/href="\/(?:admin\/)?standalone(?:\/|")/);
  }
+ for(const route of ["/standalone","/standalone/admin","/standalone/propiedades","/admin/standalone/cierres"]){
+  await request(route,{cookie:admin,status:404});
+ }
+ assert.deepEqual(await (await request("/api/admin/agenda",{cookie:admin})).json(),{events:[],leads:[]});
+ await request("/api/admin/cierres",{method:"POST",cookie:admin,origin:"https://untrusted.example",form:{},status:403});
+ await request("/api/admin/comisiones",{method:"POST",cookie:admin,origin:"https://untrusted.example",form:{},status:403});
+ await request("/api/admin/dashboard",{cookie:admin});
  location(await request("/admin/cierres",{status:307}),/^\/admin\/acceso$/);
- location(await request("/admin/standalone/cierres/comisiones",{status:307}),/^\/admin\/cierres\/comisiones$/);
- location(await request("/admin/standalone/reportes?periodo=7",{status:307}),/^\/admin\/reportes\?periodo=7$/);
- location(await request("/standalone/admin/operaciones",{status:307}),/^\/admin\/operaciones$/);
  assert.match(await (await request("/admin/personalizar/identidad",{cookie:admin})).text(),/Identidad visual/);
  location(await request("/api/admin/site-section",{method:"POST",cookie:admin,form:{
   section:"identidad",tagline:"Nexus de prueba",primaryColor:"#CB2027",whatsapp:"+50588887777",contactEmail:"contact@example.invalid"
@@ -106,14 +108,13 @@ try {
  location(await request("/api/admin/users",{method:"POST",cookie:admin,form:{intent:"create",name:"Agente Prueba",email:agentEmail,password,confirmPassword:password,roles:"agente"},status:303}),/status=creado$/);
  const agent = await db.adminUser.findUniqueOrThrow({where:{email:agentEmail}});
  assert.match(await (await request("/admin/clientes-agentes/agentes/"+agent.id,{cookie:admin})).text(),/Perfil comercial/);
- location(await request("/admin/standalone/agentes/"+agent.id,{status:307}),new RegExp("^/admin/clientes-agentes/agentes/"+agent.id+"$"));
  const initialAgentSession = await login(agentEmail);
  location(await request("/api/admin/users",{method:"POST",cookie:admin,form:{intent:"profile",id:agent.id,name:"Agente Editado",email:agentEmail},status:303}),/status=perfil$/);
  assert.equal((await db.adminUser.findUniqueOrThrow({where:{id:agent.id}})).name,"Agente Editado");
  location(await request("/api/admin/session",{cookie:initialAgentSession,status:303}),/error=sesion$/);
  const agentSession = await login(agentEmail);
  await request("/api/admin/users",{method:"POST",cookie:agentSession,form:{intent:"toggle",id:agent.id},status:403});
- await request("/api/standalone/manage",{method:"POST",cookie:agentSession,json:{action:"property.delete",id:"any"},status:403});
+ await request("/api/admin/operaciones",{method:"POST",cookie:agentSession,json:{action:"property.delete",id:"any"},status:403});
  assert.match(await (await request("/admin/leads",{cookie:admin})).text(),/Prospectos/);
  console.log("PASS admin and agent login, profile edit, revocation and role separation");
 
@@ -138,6 +139,11 @@ try {
  assert.equal(editedLead.name,"Prospecto editado");
  assert.equal(editedLead.phone,"88889999");
  assert.equal(editedLead.assignedAgentId,agent.id);
+ const appointment=await (await request("/api/admin/agenda",{method:"POST",cookie:agentSession,status:201,json:{
+  leadId:lead.id,title:"Llamada de prueba",type:"llamada",startsAt:new Date().toISOString(),durationMinutes:30
+ }})).json();
+ await request("/api/admin/agenda/"+appointment.id,{method:"PATCH",cookie:agentSession,json:{status:"realizada"}});
+ assert.equal((await db.agendaEvent.findUniqueOrThrow({where:{id:appointment.id}})).status,"realizada");
  assert.match(await (await request("/admin",{cookie:agentSession})).text(),/Prospecto editado/);
 
  const fields = {title:"Casa de aceptación",city:"Managua",neighborhood:"Centro",description:"Propiedad de aceptación funcional",type:"Casa",operation:"venta",price:"250000",bedrooms:"3",bathrooms:"2",areaM2:"160"};
@@ -146,6 +152,22 @@ try {
  const [property,second] = await Promise.all(ids.map(id=>db.property.findUniqueOrThrow({where:{id}})));
  assert.match(property.refCode,/^NRE-\d{6}$/);
  assert.notEqual(property.refCode,second.refCode);
+ const closingLead=await (await request("/api/admin/leads",{method:"POST",cookie:admin,status:201,json:{
+  name:"Prospecto financiero",phone:"88881111",propertyId:second.id,consent:true
+ }})).json();
+ const today=new Date().toISOString().slice(0,10);
+ const closing=await (await request("/api/admin/cierres",{method:"POST",cookie:admin,status:201,form:{
+  leadId:closingLead.id,kind:"venta",amount:"20000",commissionAmount:"100",closedAt:today,notes:"",agentId:""
+ }})).json();
+ await request("/api/admin/comisiones",{method:"POST",cookie:admin,status:201,form:{
+  closingId:closing.id,amount:"25",paidAt:today,method:"transferencia",reference:"",notes:""
+ }});
+ const payment=await db.commissionPayment.findFirstOrThrow({where:{closingId:closing.id}});
+ const voidForm={intent:"void",reason:"Anulación de la prueba"};
+ await request("/api/admin/cierres/"+closing.id,{method:"POST",cookie:admin,form:voidForm,status:409});
+ await request("/api/admin/comisiones/"+payment.id,{method:"POST",cookie:admin,form:voidForm});
+ await request("/api/admin/cierres/"+closing.id,{method:"POST",cookie:admin,form:voidForm});
+ assert.equal((await db.commercialClosing.findUniqueOrThrow({where:{id:closing.id}})).status,"anulado");
  assert.doesNotMatch(await (await request("/admin",{cookie:agentSession})).text(),/Casa de aceptación/);
  assert.match(await (await request("/admin",{cookie:admin})).text(),new RegExp("/admin/propiedades/"+property.id+"/editar"));
  const edit = "/api/admin/properties/"+property.id;
@@ -173,9 +195,6 @@ try {
  assert.match(await (await request("/propiedades")).text(),new RegExp(title));
  const page = await (await request(detail)).text();
  assert.match(page,/Casa editada de aceptación/);
- location(await request("/standalone",{status:307}),/^\/$/);
- location(await request("/standalone/propiedades?operacion=venta",{status:307}),/^\/propiedades\?operacion=venta$/);
- assert.equal((await request("/standalone"+detail,{status:307})).headers.get("location"),detail);
  assert.match(await (await request("/propiedades?operacion=venta")).text(),new RegExp("href=\""+detail+"\""));
  assert.match(page,/wa\.me\/50588887777/);
  assert.match(page,/Enviar consulta/);

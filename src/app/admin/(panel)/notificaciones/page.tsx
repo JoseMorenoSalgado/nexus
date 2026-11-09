@@ -1,4 +1,4 @@
-import StandaloneNotifications from "@/app/admin/_standalone/notificaciones/page";
+import StandaloneNotifications from "./independent-view";
 import Link from "next/link";
 import {AlertTriangle,Bell,CalendarClock,ClipboardList,UserRound,ArrowUpRight,RefreshCw} from "lucide-react";
 import {requireRole} from "@/lib/auth";

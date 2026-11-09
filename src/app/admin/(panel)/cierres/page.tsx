@@ -1,4 +1,4 @@
-import StandaloneClosings from "@/app/admin/_standalone/cierres/page";
+import StandaloneClosings from "./independent-view";
 import Link from "next/link";
 import {ArrowUpRight,CheckCircle2,FileDown,FileText,HandCoins,House,ShieldCheck,TrendingUp,Undo2} from "lucide-react";
 import {requireRole} from "@/lib/auth";

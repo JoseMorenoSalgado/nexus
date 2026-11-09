@@ -9,21 +9,6 @@ const nextConfig = {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 86400,
   },
-  async redirects() {
-    return [
-      ["/standalone", "/"],
-      ["/standalone/propiedades/:path*", "/propiedades/:path*"],
-      ["/standalone/admin/operaciones", "/admin/operaciones"],
-      ["/admin/standalone", "/admin"],
-      ["/admin/standalone/agenda", "/admin/agenda"],
-      ["/admin/standalone/agentes/:id", "/admin/clientes-agentes/agentes/:id"],
-      ["/admin/standalone/cierres/:path*", "/admin/cierres/:path*"],
-      ["/admin/standalone/notificaciones", "/admin/notificaciones"],
-      ["/admin/standalone/prospectos", "/admin/leads"],
-      ["/admin/standalone/reportes", "/admin/reportes"],
-      ["/admin/standalone/sistema", "/admin/sistema"]
-    ].map(([source, destination]) => ({source, destination, permanent: false}));
-  },
   async headers() {
     return [
     {source:"/admin/:path*",headers:[

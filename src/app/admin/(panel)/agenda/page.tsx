@@ -1,4 +1,4 @@
-import StandaloneAgenda from "@/app/admin/_standalone/agenda/page";
+import StandaloneAgenda from "./independent-view";
 import Link from "next/link";
 import {CalendarDays,CalendarClock,CheckCircle2,AlertTriangle,ArrowUpRight,PhoneCall,MapPin} from "lucide-react";
 import {requireRole} from "@/lib/auth";

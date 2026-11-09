@@ -1,3 +1,4 @@
+import {POST as postIndependent} from "./independent-handler";
 import {NextRequest} from "next/server";
 import {prisma} from "@/lib/prisma";
 import {requireAdmin} from "@/lib/auth";
@@ -10,7 +11,7 @@ export const runtime="nodejs";
 const back=(code:string)=>propertyRedirect("/admin/cierres/comisiones?error="+code);
 const methods=["transferencia","efectivo","cheque","otro"] as const;
 export async function POST(req:NextRequest){
- if(process.env.NEXUS_STANDALONE==="true")return new Response("Operación financiera no habilitada en modo independiente",{status:403});
+ if(process.env.NEXUS_STANDALONE==="true")return postIndependent(req);
  const user=await requireAdmin();
  if(!await tenantModuleEnabled(user.tenantId,"closings"))return new Response("Módulo desactivado",{status:403});
  if(!user.roles.includes("admin"))return back("permisos");

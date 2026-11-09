@@ -42,7 +42,7 @@ export function StandaloneOperations({properties,leads,agents,agenda}:{propertie
    if(kind==="property.photo.delete")body.photoId=String(form.get("photoId")||"");
    if(kind==="property.update"||kind==="property.create")body.published=form.has("published");
    if(kind==="agenda.create")body.leadId=String(form.get("leadId")||"");
-   const response=await fetch("/api/standalone/manage",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+   const response=await fetch("/api/admin/operaciones",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
    const result:unknown=await response.json();
    const receipt=result&&typeof result==="object"?result as Record<string,unknown>:{};
    if(!response.ok){setMessage("Error al guardar ("+response.status+"): "+String(receipt.error||"No se pudo guardar")+(typeof receipt.requestId==="string"?" · Ref. "+receipt.requestId:""));return;}

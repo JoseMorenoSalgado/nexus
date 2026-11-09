@@ -1,4 +1,4 @@
-import StandaloneAgent from "@/app/admin/_standalone/agentes/[id]/page";
+import StandaloneAgent from "./independent-view";
 import Link from "next/link";
 import {notFound} from "next/navigation";
 import {Building2,ArrowLeft,Mail,UserRound,UsersRound,ExternalLink} from "lucide-react";
