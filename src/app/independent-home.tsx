@@ -7,6 +7,7 @@ import {getStandalonePublicContext} from "@/lib/independent-public-context";
 import {SiteNav} from "@/components/site-nav";
 import {SiteFooter} from "@/components/site-footer";
 import {PropertyCard} from "@/components/property-card";
+import {NexusHomeGuide} from "@/components/nexus-home-guide";
 import {NexusHomeMotion} from "@/components/nexus-home-motion";
 import {getSiteSettings} from "@/lib/site-settings";
 import {PageExtraSections} from "@/components/page-extra-sections";
@@ -18,11 +19,14 @@ export default async function StandaloneHome(){
  const context=await getStandalonePublicContext();
  if(!context)notFound();
  const {tenant,properties}=context;
- const [links,hasHero,settings]=await Promise.all([getSiteMenu("main"),hasSiteAsset("main","hero"),getSiteSettings("main")]);
+ const [pages,hasHero,settings]=await Promise.all([
+  getPageDefinitions("main",{includeSummary:false}),hasSiteAsset("main","hero"),getSiteSettings("main")
+ ]);
+ const links=await getSiteMenu("main",pages);
+ const catalogueVisible=pages.some(page=>page.slug==="propiedades"&&page.published);
+ const contactVisible=pages.some(page=>page.slug==="contacto"&&page.published);
  const featured=settings.featuredIds.flatMap(id=>properties.filter(property=>property.id===id));
  const highlights=featured.length?featured:properties.slice(0,3);
- const catalogueVisible=links.some(link=>link.href==="/propiedades")||
-  (await getPageDefinitions("main",{includeSummary:false})).some(page=>page.slug==="propiedades"&&page.published);
  return <div className="public-site" style={{"--red":tenant.primaryColor,"--red-dark":tenant.primaryColor} as React.CSSProperties}>
   <SiteNav tenant={tenant} links={links} templateKey="real-estate"/>
   <main id="contenido" className="nexus-home" data-nexus-home-motion>
@@ -35,7 +39,10 @@ export default async function StandaloneHome(){
      <p className="nexus-eyebrow-on-dark"><span className="nexus-eyebrow-line"/> {settings.heroEyebrow}</p>
      <h1>{settings.heroHeading} <em>{settings.heroHighlight}</em></h1>
      <p className="nexus-hero-lead">{settings.heroDescription}</p>
-     {catalogueVisible&&<div className="nexus-hero-actions"><Link href="/propiedades" className="btn nexus-hero-primary">{settings.heroButton} <ArrowUpRight size={18}/></Link></div>}
+     <div className="nexus-hero-actions">
+      {catalogueVisible&&<Link href="/propiedades" className="btn nexus-hero-primary">{settings.heroButton} <ArrowUpRight size={18} aria-hidden="true"/></Link>}
+      <a href="#para-propietarios" className="nexus-hero-secondary">Quiero ofrecer mi propiedad <ArrowUpRight size={17} aria-hidden="true"/></a>
+     </div>
     </div></div>
    </section>
    {catalogueVisible&&<><section className="nexus-search-wrap" aria-label="Buscar propiedades"><div className="container">
@@ -43,7 +50,7 @@ export default async function StandaloneHome(){
     <form method="get" action="/propiedades" className="nexus-search-form">
      <label>Operación<select name="operacion"><option value="">Comprar o alquilar</option><option value="venta">Comprar</option><option value="alquiler">Alquilar</option></select></label>
      <label>Tipo<select name="tipo"><option value="">Cualquier tipo</option><option value="Casa">Casa</option><option value="Apartamento">Apartamento</option><option value="Terreno">Terreno</option></select></label>
-     <label>Ubicación<input name="ubicacion" placeholder="Ciudad o sector"/></label>
+     <label>Ubicación<input name="ubicacion" placeholder="Ciudad o sector" maxLength={90}/></label>
      <button type="submit" className="btn btn-red"><Search size={18}/> Buscar inmuebles</button>
     </form>
    </div></section>
@@ -53,6 +60,7 @@ export default async function StandaloneHome(){
     {properties.length?<div className="property-grid nexus-featured-grid">{highlights.map(p=><PropertyCard key={p.id} property={p}/>)}</div>:
      <div className="nexus-empty-listing"><Building2 size={32}/><h3>Próximamente, nuevas oportunidades</h3><p>Estamos preparando nuestro catálogo inmobiliario.</p></div>}
    </div></section></>}
+   <NexusHomeGuide catalogueVisible={catalogueVisible} contactVisible={contactVisible}/>
    <PageExtraSections slug="home"/>
   </main>
   <SiteFooter tenant={tenant} links={links} templateKey="real-estate"/>
