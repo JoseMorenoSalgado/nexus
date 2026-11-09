@@ -19,12 +19,29 @@ export default async function InstallPage({searchParams}:{searchParams:Promise<{
  if (!installerAvailable()) redirect("/admin/acceso");
  const requestHeaders = await headers();
  const hostname = publicRequestHostname(requestHeaders) || "";
+ // Enhance can rewrite both Host and X-Forwarded-Host to the same private
+ // upstream address and set X-Forwarded-Proto=http after TLS termination.
+ // This fallback is only for the read-only installer preflight. Form POST
+ // authorization continues to validate the browser Origin against SITE_URL.
+ const directHost = (requestHeaders.get("host")||"").trim();
+ const forwardedHost = (requestHeaders.get("x-forwarded-host")||"").trim();
+ const forwardedProto = (requestHeaders.get("x-forwarded-proto")||"").trim().toLowerCase();
+ const isPrivateUpstream = (raw:string) => {
+  try {
+   const u=new URL("http://"+raw);
+   if(u.username||u.password||u.pathname!=="/"||u.search||u.hash)return false;
+   const octets=u.hostname.split(".").map(Number);
+   return octets.length===4&&octets.every(n=>Number.isInteger(n)&&n>=0&&n<=255)&&
+    (octets[0]===10||(octets[0]===172&&octets[1]>=16&&octets[1]<=31)||(octets[0]===192&&octets[1]===168));
+  }catch{return false;}
+ };
+ const enhanceInternalProxy = isPrivateUpstream(directHost)&&directHost===forwardedHost&&forwardedProto==="http";
  const checks:{label:string;ok:boolean;detail:string}[]=[];
  const standalone=process.env.NEXUS_STANDALONE==="true";
  checks.push({label:"Modo independiente",ok:standalone,detail:standalone?"Activado":"Configura NEXUS_STANDALONE=true y reinicia Node.js."});
  const siteUrl=(process.env.SITE_URL||"").trim();
  let urlValid=false;
- try{const u=new URL(siteUrl);urlValid=u.protocol==="https:"&&u.hostname.toLowerCase()===hostname&&u.pathname==="/"&&!u.search&&!u.hash&&!u.username&&!u.password&&!u.port;}catch{}
+ try{const u=new URL(siteUrl);urlValid=u.protocol==="https:"&&(u.hostname.toLowerCase()===hostname||enhanceInternalProxy)&&u.pathname==="/"&&!u.search&&!u.hash&&!u.username&&!u.password&&!u.port;}catch{}
  if(!urlValid){
   const diagnostic = (name:string) => (requestHeaders.get(name)||"").slice(0,260).replace(/[^a-zA-Z0-9.:,\[\] -]/g,"?");
   console.warn("[installer] HTTPS domain preflight mismatch",{
