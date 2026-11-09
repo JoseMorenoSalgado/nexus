@@ -118,13 +118,14 @@ async function AgentDashboard({user}:{user:{tenantId:string;userId:string;name:s
 async function StandaloneDashboard(){
  const admin=await requireAdmin();
  const db=getStandalonePrisma();
+ const scope=managesAllLeads(admin)?{}:{assignedAgentId:admin.userId};
  const since=new Date(Date.now()-30*864e5);
  const [total,leadsCount,viewCount,waCount,props,leads]=await Promise.all([
-  db.property.count(),db.lead.count({where:{createdAt:{gte:since}}}),
+  db.property.count({where:scope}),db.lead.count({where:{...scope,createdAt:{gte:since}}}),
   db.visitEvent.count({where:{kind:"view",createdAt:{gte:since}}}),
   db.visitEvent.count({where:{kind:"whatsapp",createdAt:{gte:since}}}),
-  db.property.findMany({take:4,orderBy:{createdAt:"desc"},select:{id:true,title:true,refCode:true,published:true}}),
-  db.lead.findMany({take:4,orderBy:{createdAt:"desc"},select:{id:true,name:true,createdAt:true,property:{select:{refCode:true}}}})
+  db.property.findMany({where:scope,take:4,orderBy:{createdAt:"desc"},select:{id:true,title:true,refCode:true,published:true}}),
+  db.lead.findMany({where:scope,take:4,orderBy:{createdAt:"desc"},select:{id:true,name:true,createdAt:true,property:{select:{refCode:true}}}})
  ]);
  const cards=[{label:"Propiedades",value:total,Icon:House},{label:"Prospectos (30 días)",value:leadsCount,Icon:Users},{label:"Visitas (30 días)",value:viewCount,Icon:Eye},{label:"WhatsApp (30 días)",value:waCount,Icon:MessageCircle}];
  return <><div className="admin-heading"><div><h1>Resumen</h1><p>Lo más importante de tu inmobiliaria en un solo lugar.</p></div>{admin.roles.some(role=>["admin","editor"].includes(role))&&<Link href="/admin/propiedades/nueva" className="btn btn-red"><Plus size={17}/> Nueva propiedad</Link>}</div>

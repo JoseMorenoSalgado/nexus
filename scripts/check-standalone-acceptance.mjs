@@ -68,6 +68,12 @@ try {
  location(await request("/standalone/acceso",{status:307}),/^\/admin\/acceso$/);
  location(await request("/api/admin/session",{method:"POST",origin:"https://untrusted.example",form:{email:adminEmail,password},status:303}),/error=origen$/);
  const admin = await login(adminEmail);
+ location(await request("/standalone/admin",{cookie:admin,status:307}),/^\/admin$/);
+ const dashboard = await (await request("/standalone/admin",{cookie:admin,follow:true})).text();
+ assert.match(dashboard,/admin-mobile-trigger/);
+ assert.match(dashboard,/Menú de administración/);
+ assert.match(dashboard,/Propiedades recientes/);
+ location(await request("/admin",{status:307}),/^\/admin\/acceso$/);
  assert.match(await (await request("/admin/personalizar/identidad",{cookie:admin})).text(),/Identidad visual/);
  location(await request("/api/admin/site-section",{method:"POST",cookie:admin,form:{
   section:"identidad",tagline:"Nexus de prueba",primaryColor:"#CB2027",whatsapp:"+50588887777",contactEmail:"contact@example.invalid"
@@ -86,6 +92,8 @@ try {
  console.log("PASS admin and agent login, profile edit, revocation and role separation");
 
  const lead = await (await request("/api/admin/leads",{method:"POST",cookie:admin,json:{name:"Prospecto de prueba",phone:"88887777",consent:true},status:201})).json();
+ const agentDashboard = await (await request("/admin",{cookie:agentSession})).text();
+ assert.doesNotMatch(agentDashboard,/Prospecto de prueba/);
  await request("/api/admin/leads/"+lead.id,{method:"PATCH",cookie:agentSession,json:{status:"contactado"},status:404});
  await request("/api/admin/leads/"+lead.id,{method:"PATCH",cookie:admin,json:{assignedAgentId:agent.id,status:"seguimiento",note:"Nota de prueba"}});
  const persistedLead = await db.lead.findUniqueOrThrow({where:{id:lead.id},include:{crm:true,assignmentHistory:true,notes:true}});
@@ -99,6 +107,7 @@ try {
  assert.equal(editedLead.name,"Prospecto editado");
  assert.equal(editedLead.phone,"88889999");
  assert.equal(editedLead.assignedAgentId,agent.id);
+ assert.match(await (await request("/admin",{cookie:agentSession})).text(),/Prospecto editado/);
 
  const fields = {title:"Casa de aceptación",city:"Managua",neighborhood:"Centro",description:"Propiedad de aceptación funcional",type:"Casa",operation:"venta",price:"250000",bedrooms:"3",bathrooms:"2",areaM2:"160"};
  const created = await Promise.all([fields,{...fields,title:"Casa de prueba concurrente"}].map(form=>request("/api/admin/properties",{method:"POST",cookie:admin,form,status:303})));
