@@ -101,7 +101,7 @@ export function validPublicMutationOrigin(headers:RequestHeaders,env:PublicEnv=p
    if(actual.origin!==originHeader||actual.pathname!=="/"||actual.search||actual.hash)return false;
   }else if(refererHeader){
    const referer=new URL(refererHeader);
-   if(referer.username||referer.password||referer.pathname!=="/admin/acceso")return false;
+   if(referer.username||referer.password||!referer.pathname.startsWith("/admin/"))return false;
    actual=new URL(referer.origin);
   }else return false;
  }catch{return false;}
