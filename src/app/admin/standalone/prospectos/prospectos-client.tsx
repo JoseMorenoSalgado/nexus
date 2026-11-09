@@ -20,7 +20,7 @@ export default function ProspectosClient({agents,canAssign,properties}:{agents:A
    const response=await fetch("/api/admin/leads?page="+page,{cache:"no-store"});
    const data=await response.json();
    if(!response.ok)throw new Error(data.error||"No se pudieron cargar los prospectos");
-   setLeads(data.leads);setTotal(data.total);
+   setLeads(Array.isArray(data.leads)?data.leads:[]);setTotal(Number.isFinite(data.total)?data.total:0);
   }catch(e){setError(e instanceof Error?e.message:"Error de conexión");}
   finally{setLoading(false);}
  },[page]);
