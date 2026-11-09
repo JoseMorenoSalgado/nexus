@@ -1,3 +1,4 @@
+import {isStandaloneMode} from "@/lib/standalone/mode";
 import {notFound} from "next/navigation";
 import Link from "next/link";
 import {Building2,Users,CalendarDays,Contact,ArrowUpRight} from "lucide-react";
@@ -5,7 +6,7 @@ import {requireStandaloneRole} from "@/lib/standalone/auth";
 import {listStandaloneAdminProperties,listStandaloneLeads,listStandaloneAgents,listStandaloneAgenda,getStandaloneSiteConfig} from "@/lib/standalone/repositories";
 export const dynamic="force-dynamic";
 export default async function StandaloneDashboard(){
- if(process.env.NEXUS_STANDALONE_MODE!=="true")notFound();
+ if(!isStandaloneMode())notFound();
  const admin=await requireStandaloneRole(["admin","superadmin","editor","agente"]);
  const [site,properties,leads,agents,agenda]=await Promise.all([getStandaloneSiteConfig(),listStandaloneAdminProperties(),listStandaloneLeads(),listStandaloneAgents(),listStandaloneAgenda()]);
  const metrics=[{title:"Propiedades",count:properties.length,Icon:Building2},{title:"Prospectos",count:leads.length,Icon:Contact},{title:"Agentes",count:agents.length,Icon:Users},{title:"Agenda",count:agenda.length,Icon:CalendarDays}];

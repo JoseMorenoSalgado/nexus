@@ -1,9 +1,10 @@
+import {isStandaloneMode} from "@/lib/standalone/mode";
 import {notFound,redirect} from "next/navigation";
 import {authenticateStandalone,currentStandaloneAdmin} from "@/lib/standalone/auth";
 export const dynamic="force-dynamic";
 async function login(formData:FormData){
  "use server";
- if(process.env.NEXUS_STANDALONE_MODE!=="true")notFound();
+ if(!isStandaloneMode())notFound();
  const email=String(formData.get("email")||"").slice(0,254);
  const password=String(formData.get("password")||"");
  if(password.length>1024)redirect("/standalone/acceso?error=1");
@@ -12,7 +13,7 @@ async function login(formData:FormData){
  redirect("/standalone/admin");
 }
 export default async function StandaloneLogin({searchParams}:{searchParams:Promise<{error?:string}>}){
- if(process.env.NEXUS_STANDALONE_MODE!=="true")notFound();
+ if(!isStandaloneMode())notFound();
  if(await currentStandaloneAdmin())redirect("/standalone/admin");
  const {error}=await searchParams;
  return <main className="mx-auto max-w-md px-5 py-16">
