@@ -15,13 +15,28 @@ const defaults:Values={
 export default function InstallerForm({domain,environmentReady=true}:{domain:string;environmentReady?:boolean}){
  const [step,setStep]=useState<1|2>(1),[values,setValues]=useState(defaults);
  const [error,setError]=useState(""),[busy,setBusy]=useState(false),[complete,setComplete]=useState(false);
+ const [checking,setChecking]=useState(false),[dbReady,setDbReady]=useState(false);
+ const [dbChecks,setDbChecks]=useState<Array<{key:string;label:string;ok:boolean;detail:string}>>([]);
+ async function checkDatabase(){
+  setChecking(true);setError("");setDbReady(false);setDbChecks([]);
+  try{
+   const response=await fetch("/api/install/preflight",{method:"POST",headers:{"Content-Type":"application/json"},cache:"no-store",body:JSON.stringify({dbHost:values.dbHost,dbPort:values.dbPort,dbName:values.dbName,dbUser:values.dbUser,dbPassword:values.dbPassword})});
+   const result=await response.json();
+   if(!response.ok)throw Error(result.error||"No se pudo realizar la comprobación");
+   setDbChecks(result.checks||[]);setDbReady(Boolean(result.ready));
+  }catch(e){setError(e instanceof Error?e.message:"No se pudo verificar PostgreSQL");}
+  finally{setChecking(false);}
+ }
  const availableModules=modulesForSector(values.templateKey);
  const moduleCount=availableModules.filter(x=>x.implemented&&values.modules.includes(x.key)).length;
- function change(name:Exclude<keyof Values,"modules">,value:string){setValues(v=>({...v,[name]:value}));}
+ function change(name:Exclude<keyof Values,"modules">,value:string){
+  setValues(v=>({...v,[name]:value}));
+  if(["dbType","dbHost","dbPort","dbName","dbUser","dbPassword"].includes(name)){setDbReady(false);setDbChecks([]);}
+ }
  async function submit(event:FormEvent<HTMLFormElement>){
   event.preventDefault();setError("");
   if(!environmentReady){setError("Corrige los problemas de la comprobación previa y actualiza la página.");return;}
-  if(step===1){setStep(2);return;}
+  if(step===1){if(!dbReady){setError("Comprueba la conexión PostgreSQL antes de continuar.");return;}setStep(2);return;}
   if(values.adminPassword.length<14){setError("La contraseña administrativa debe tener al menos 14 caracteres.");return;}
   setBusy(true);
   try{
@@ -62,7 +77,15 @@ export default function InstallerForm({domain,environmentReady=true}:{domain:str
     {input("dbUser","Usuario de la base de datos")}
     {input("dbPassword","Contraseña de la base de datos",{type:"password",autoComplete:"new-password"})}
     <p className="wizard-warning"><ShieldCheck size={18}/> Tu sesión inicial se autorizó automáticamente en este navegador. El usuario SQL necesita permisos para crear tablas en una base vacía. No reutilices la base de datos de Edvorya.</p>
-    <button className="btn btn-red" type="submit" disabled={!environmentReady}>Continuar <ArrowRight size={16}/></button>
+    <div className="wizard-actions">
+     <button className="btn wizard-back" type="button" disabled={checking||!environmentReady||busy} onClick={checkDatabase}>{checking?"Comprobando...":"Comprobar conexión PostgreSQL"} <Database size={16}/></button>
+     <button className="btn btn-red" type="submit" disabled={!environmentReady||!dbReady||checking}>Continuar <ArrowRight size={16}/></button>
+    </div>
+    {dbChecks.length>0&&<section aria-label="Diagnóstico PostgreSQL" aria-live="polite">
+      <h3>Diagnóstico previo de la base de datos</h3>
+      <ul>{dbChecks.map(check=><li key={check.key}><strong>{check.ok?"✓":"⚠"} {check.label}:</strong> {check.detail}</li>)}</ul>
+      <p>{dbReady?"Todas las comprobaciones pasaron. Puedes continuar.":"Corrige las advertencias y vuelve a comprobar la conexión."}</p>
+     </section>}
   </section>:<section>
     <h2>Configura tu espacio de trabajo</h2>
     <p>Esta instalación es exclusivamente inmobiliaria. Configura tu agencia y las herramientas para propiedades, clientes y agentes.</p>
