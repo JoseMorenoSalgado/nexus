@@ -1,3 +1,5 @@
+import {PropertyMap} from "@/components/property-map";
+import {getPropertyMapPoints} from "@/lib/property-map";
 import Link from "next/link";
 import {notFound} from "next/navigation";
 import {Search,ArrowLeft} from "lucide-react";
@@ -24,6 +26,7 @@ export default async function StandaloneCatalog({searchParams}:{searchParams:Pro
  const order=raw.orden==="precio-asc"||raw.orden==="precio-desc"?raw.orden:"recientes";
  const matches=context.properties.filter(p=>(!operation||p.operation===operation)&&(!type||p.type.toLocaleLowerCase()===type.toLocaleLowerCase())&&(!location||`${p.city} ${p.neighborhood}`.toLocaleLowerCase().includes(location)));
  if(order!=="recientes")matches.sort((a,b)=>order==="precio-asc"?a.price-b.price:b.price-a.price);
+ const mapPoints=await getPropertyMapPoints(matches);
  const pageSize=12,pages=Math.max(1,Math.ceil(matches.length/pageSize));
  const page=Math.min(pages,/^[1-9]\d{0,4}$/.test(raw.pagina||"")?Number(raw.pagina):1);
  const pageHref=(n:number)=>"/propiedades?"+new URLSearchParams({...(operation?{operacion:operation}:{}),...(type?{tipo:type}:{}),...(location?{ubicacion:location}:{}),...(order!=="recientes"?{orden:order}:{}),pagina:String(n)}).toString();
@@ -45,8 +48,12 @@ export default async function StandaloneCatalog({searchParams}:{searchParams:Pro
     <button type="submit" className="btn btn-red"><Search size={17}/> Buscar</button>
    </form>
    <p>{matches.length} {matches.length===1?"propiedad encontrada":"propiedades encontradas"}</p>
+   <div className={mapPoints.length?"catalog-map-layout":undefined}><div>
    {matches.length?<div className="property-grid" style={{marginTop:20}}>{matches.slice((page-1)*pageSize,page*pageSize).map(p=><PropertyCard key={p.id} property={p}/>)}</div>:<div className="nexus-empty-listing"><h2>No encontramos propiedades con esos filtros</h2><Link href="/propiedades">Ver todas las propiedades</Link></div>}
    {pages>1&&<nav aria-label="Paginación" style={{display:"flex",gap:14,marginTop:30}}>{page>1&&<Link href={pageHref(page-1)}>Anterior</Link>}<span>Página {page} de {pages}</span>{page<pages&&<Link href={pageHref(page+1)}>Siguiente</Link>}</nav>}
+   </div>
+   {mapPoints.length>0&&<PropertyMap points={mapPoints}/>}
+   </div>
    </section>
    <PageExtraSections slug="propiedades"/>
   </main><SiteFooter tenant={tenant} links={links}/></div>;

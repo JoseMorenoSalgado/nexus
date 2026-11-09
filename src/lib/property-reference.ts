@@ -5,6 +5,8 @@ import type {Prisma as StandalonePrisma} from "@/generated/standalone-postgres";
 import {propertySlug} from "@/lib/property-form";
 import type {Prisma} from "@prisma/client";
 
+import {savePropertyLocation,type PropertyLocation} from "@/lib/property-map";
+
 export const DEFAULT_REFERENCE_PREFIX="NRE";
 export function validReferencePrefix(value:string){
  return /^[A-Z][A-Z0-9-]{0,10}[A-Z0-9]$/.test(value);
@@ -49,7 +51,7 @@ export async function createPropertyWithReference(tenantId:string, data:Omit<Pri
 }
 
 /** Independent-site reference allocator; never queries Tenant or tenantId. */
-export async function createStandalonePropertyWithReference(data:Omit<StandalonePrisma.PropertyUncheckedCreateInput,"refCode"|"slug">){
+export async function createStandalonePropertyWithReference(data:Omit<StandalonePrisma.PropertyUncheckedCreateInput,"refCode"|"slug">,location?:PropertyLocation|null){
  const db=getStandalonePrisma();
  for(let attempt=0;attempt<6;attempt++){
   try{
@@ -62,7 +64,11 @@ export async function createStandalonePropertyWithReference(data:Omit<Standalone
      const refCode=formatPropertyReference(counter.prefix,counter.nextNumber-1);
      if(!refCode)throw new Error("REFERENCE_EXHAUSTED");
      const used=await tx.property.findUnique({where:{refCode},select:{id:true}});
-     if(!used)return tx.property.create({data:{...data,refCode,slug:propertySlug(data.title,refCode)}});
+     if(!used){
+      const property=await tx.property.create({data:{...data,refCode,slug:propertySlug(data.title,refCode)}});
+      await savePropertyLocation(tx,property.id,location);
+      return property;
+     }
      counter=await tx.propertySequence.update({where:{id:"main"},data:{nextNumber:{increment:1}}});
     }
     throw new Error("REFERENCE_EXHAUSTED");

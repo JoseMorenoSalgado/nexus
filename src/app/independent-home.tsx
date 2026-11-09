@@ -1,3 +1,5 @@
+import {PropertyMap} from "@/components/property-map";
+import {getPropertyMapPoints} from "@/lib/property-map";
 import {hasSiteAsset} from "@/lib/site-assets";
 import Link from "next/link";
 import {notFound,redirect} from "next/navigation";
@@ -23,6 +25,7 @@ export default async function StandaloneHome(){
  const highlights=featured.length?featured:properties.slice(0,3);
  const catalogueVisible=links.some(link=>link.href==="/propiedades")||
   (await getPageDefinitions("main",{includeSummary:false})).some(page=>page.slug==="propiedades"&&page.published);
+ const mapPoints=catalogueVisible?await getPropertyMapPoints(properties):[];
  return <div className="public-site" style={{"--red":tenant.primaryColor,"--red-dark":tenant.primaryColor} as React.CSSProperties}>
   <SiteNav tenant={tenant} links={links} templateKey="real-estate"/>
   <main id="contenido" className="nexus-home" data-nexus-home-motion>
@@ -52,7 +55,8 @@ export default async function StandaloneHome(){
      <Link href="/propiedades" className="nexus-text-link">Ver catálogo completo <ArrowUpRight size={19}/></Link></div>
     {properties.length?<div className="property-grid nexus-featured-grid">{highlights.map(p=><PropertyCard key={p.id} property={p}/>)}</div>:
      <div className="nexus-empty-listing"><Building2 size={32}/><h3>Próximamente, nuevas oportunidades</h3><p>Estamos preparando nuestro catálogo inmobiliario.</p></div>}
-   </div></section></>}
+   </div></section>
+   <div className="container nexus-section"><PropertyMap points={mapPoints} showCatalogLink/></div></>}
    <PageExtraSections slug="home"/>
   </main>
   <SiteFooter tenant={tenant} links={links} templateKey="real-estate"/>

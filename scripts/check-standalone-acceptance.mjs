@@ -1,6 +1,7 @@
 /** Run only against a disposable, empty PostgreSQL database and a local Nexus process. */
 import assert from "node:assert/strict";
 import {createHash,randomUUID} from "node:crypto";
+import ExcelJS from "exceljs";
 import sharp from "sharp";
 import {PDFDocument} from "pdf-lib";
 import {PrismaClient} from "../src/generated/standalone-postgres/index.js";
@@ -283,8 +284,13 @@ try {
  await request(detail,{status:404,follow:true});
  location(await request(edit,{method:"POST",cookie:agentSession,form:{intent:"publish"},status:303}),/error=noexiste$/);
  const title = "Casa editada de aceptación";
- location(await request(edit,{method:"POST",cookie:admin,form:{...fields,title,intent:"save"},status:303}),/saved=1$/);
+ const mapFields={mapLatitude:"12.136389",mapLongitude:"-86.251389",mapAddress:"Sector de prueba para el mapa"};
+ location(await request(edit,{method:"POST",cookie:admin,form:{...fields,title,mapLatitude:"91",intent:"save"},status:303}),/error=ubicacion$/);
+ assert.equal((await db.property.findUniqueOrThrow({where:{id:property.id}})).title,fields.title);
+ location(await request(edit,{method:"POST",cookie:admin,form:{...fields,...mapFields,title,intent:"save"},status:303}),/saved=1$/);
  assert.equal((await db.property.findUniqueOrThrow({where:{id:property.id}})).title,title);
+ assert.match(await (await request(editorUrl,{cookie:admin})).text(),/Sector de prueba para el mapa/);
+ assert.doesNotMatch(await (await request("/")).text(),/Sector de prueba para el mapa/);
 
  const pixels = Buffer.from(Array.from({length:80*80*3},(_,i)=>(i*13)%251));
  const image = await sharp(pixels,{raw:{width:80,height:80,channels:3}}).png().toBuffer();
@@ -317,6 +323,7 @@ try {
  await request(edit+"/photos/"+importedPhoto.id,{method:"POST",cookie:admin});
  assert.equal(await db.photo.count({where:{id:importedPhoto.id}}),0);
  await request(photo.url,{status:404});
+ assert.doesNotMatch(await (await request("/")).text(),/Sector de prueba para el mapa/);
  await request(photo.url,{cookie:agentSession,status:404});
  assert.equal((await request(photo.url,{cookie:admin})).headers.get("content-type"),"image/webp");
  location(await request(edit,{method:"POST",cookie:admin,form:{intent:"publish"},status:303}),/updated=1$/);
@@ -359,6 +366,25 @@ try {
  assert.equal(await db.lead.count({where:{propertyId:property.id,source:"web"}}),1);
  await request("/api/events",{method:"POST",json:{kind:"whatsapp",path:detail},status:201});
  assert.equal(await db.visitEvent.count({where:{kind:"whatsapp",path:detail}}),1);
+ assert.match(await (await request("/")).text(),/Sector de prueba para el mapa/);
+ assert.match(await (await request("/propiedades?operacion=venta")).text(),/Sector de prueba para el mapa/);
+ assert.doesNotMatch(await (await request("/propiedades?operacion=alquiler")).text(),/Sector de prueba para el mapa/);
+ const excel="/api/admin/reportes/excel?tipo=";
+ await request(excel+"prospectos",{status:401});
+ await request(excel+"prospectos",{cookie:agentSession,status:403});
+ await request(excel+"desconocido",{cookie:admin,status:400});
+ await db.lead.create({data:{name:"Prospecto fuera del período",phone:"88880000",createdAt:new Date(2020,0,1)}});
+ for(const [kind,sheetName,expected] of [["propiedades","Propiedades",title],["prospectos","Prospectos",inquiry.name]]){
+  const response=await request(excel+kind+"&periodo=7",{cookie:admin});
+  assert.match(response.headers.get("content-disposition"),/\.xlsx"$/);
+  assert.match(response.headers.get("cache-control"),/no-store/);
+  const workbook=new ExcelJS.Workbook();
+  await workbook.xlsx.load(await response.arrayBuffer());
+  const rows=workbook.getWorksheet(sheetName).getSheetValues();
+  assert.ok(rows.some(row=>row.includes(expected)));
+  assert.ok(!rows.some(row=>row.includes("Prospecto fuera del período")));
+ }
+ console.log("PASS published map addresses and filters, Excel contents, date range and access control");
  console.log("PASS prospect persistence and assignment, concurrent references, upload, publication, public pages, PDF and contact");
 
  location(await request(edit,{method:"POST",cookie:admin,form:{intent:"unpublish"},status:303}),/updated=1$/);
@@ -367,6 +393,7 @@ try {
  location(await request(edit,{method:"POST",cookie:admin,form:{intent:"delete",confirmation:"incorrect"},status:303}),/error=confirmacion$/);
  location(await request(edit,{method:"POST",cookie:admin,form:{intent:"delete",confirmation:property.refCode},status:303}),/deleted=1$/);
  assert.equal(await db.property.count({where:{id:property.id}}),0);
+ assert.equal(await db.sitePage.count({where:{slug:"_property-location-"+property.id}}),0);
  assert.equal(await db.photo.count({where:{id:photo.id}}),0);
  assert.equal(await db.lead.count({where:{source:"web",name:"Contacto de prueba",propertyId:null}}),1);
  location(await request("/api/admin/logout",{method:"POST",cookie:agentSession,status:303}),/^\/admin\/acceso$/);

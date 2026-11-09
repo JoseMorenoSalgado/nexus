@@ -7,6 +7,7 @@ import EditorMedia from "./editor-media";
 
 export const dynamic="force-dynamic";
 const errors:Record<string,string>={
+ ubicacion:"Ingresa ambas coordenadas válidas con hasta seis decimales, o deja vacíos los tres campos.",
  datos:"Revisa los campos del formulario y vuelve a guardar.",
  precio:"El precio no es válido.",
  duplicado:"Ya existe una propiedad con la misma referencia.",
@@ -20,7 +21,7 @@ export default async function EditProperty({params,searchParams}:{
  params:Promise<{id:string}>;searchParams:Promise<{error?:string;created?:string;saved?:string}>;
 }){
  const [{id},notice]=await Promise.all([params,searchParams]);
- const {property,photos,agents,canAssign,canDelete,siteId}=await loadPropertyEditor(id);
+ const {property,photos,agents,canAssign,canDelete,siteId,mapLocation}=await loadPropertyEditor(id);
  const endpoint="/api/admin/properties/"+encodeURIComponent(property.id);
  const publicUrl="/propiedades/"+encodeURIComponent(property.slug);
  return <section className="property-editor-page" aria-labelledby="property-editor-title">
@@ -45,7 +46,7 @@ export default async function EditProperty({params,searchParams}:{
   </nav>
   <form id="editar-datos" action={endpoint} method="post" className="admin-form property-editor">
    <input type="hidden" name="intent" value="save"/>
-   <AdminPropertyFields property={property} agents={agents} allowAssignment={canAssign}/>
+   <AdminPropertyFields mapLocation={mapLocation} property={property} agents={agents} allowAssignment={canAssign}/>
    <div className="property-editor-actions">
     <button type="submit" className="btn btn-red"><Save size={17}/> Guardar cambios</button>
     {property.published&&<Link className="btn wizard-back" href={publicUrl} target="_blank" rel="noopener noreferrer">Ver publicada <ExternalLink size={15}/></Link>}
