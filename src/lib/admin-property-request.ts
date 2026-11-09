@@ -7,9 +7,9 @@ export const MAX_PROPERTY_FORM_BYTES=128*1024;
 export function propertyRedirect(path:string){
  return new NextResponse(null,{status:303,headers:{"Location":path,"Cache-Control":"no-store"}});
 }
-export function validMutationOrigin(req:NextRequest){
+export function validMutationOrigin(req:NextRequest,referrerRoot="/admin/propiedades"){
  return validPublicMutationOrigin(req.headers,process.env,
-  path=>path==="/admin/propiedades"||path.startsWith("/admin/propiedades/")
+  path=>path===referrerRoot||path.startsWith(referrerRoot+"/")
  );
 }
 export function propertyErrorPath(code:string,id?:string){

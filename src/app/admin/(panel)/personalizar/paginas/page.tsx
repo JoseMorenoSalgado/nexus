@@ -6,14 +6,14 @@ import {type PageDefinition} from "@/lib/site-pages";
 import {requireAdmin} from "@/lib/auth";
 import {getPageDefinitions} from "@/lib/site-pages";
 export const dynamic="force-dynamic";
-type Query={saved?:string;error?:string;estado?:string;buscar?:string};
+type Query={saved?:string;error?:string;estado?:string;buscar?:string|string[]};
 export default async function PagesAdmin({searchParams}:{searchParams:Promise<Query>}){
  const admin=await requireAdmin(),q=await searchParams;
  const pages=await getPageDefinitions(admin.tenantId);
  const editingLocation=(page:PageDefinition)=>"/admin/personalizar/paginas/"+page.slug;
  const advisory=pages.find(p=>p.id==="asesoria-empresarial");
  const canEdit=admin.roles.some(r=>["admin","editor"].includes(r));
- const search=(q.buscar||"").trim().slice(0,90).toLocaleLowerCase("es");
+ const search=(typeof q.buscar==="string"?q.buscar:"").trim().slice(0,90).toLocaleLowerCase("es");
  const status=q.estado==="publicadas"?"publicadas":q.estado==="borradores"?"borradores":"todas";
  const results=pages.filter(p=>(status==="todas"||(status==="publicadas"?p.published:!p.published))&&
   (!search||[p.title,p.href,p.summary].join(" ").toLocaleLowerCase("es").includes(search)));

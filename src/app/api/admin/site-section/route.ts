@@ -8,7 +8,7 @@ export async function POST(req:NextRequest){
  const admin=await requireAdmin();
  const root="/admin/personalizar/paginas/";
  if(!admin.roles.some(r=>["admin","editor"].includes(r)))return propertyRedirect(root+"?error=permisos");
- if(!validMutationOrigin(req))return propertyRedirect(root+"?error=origen");
+ if(!validMutationOrigin(req,"/admin/personalizar"))return propertyRedirect(root+"?error=origen");
  const length=Number(req.headers.get("content-length")||0);
  if(!Number.isSafeInteger(length)||length<1||length>16000)return propertyRedirect(root+"?error=datos");
  let form:FormData;

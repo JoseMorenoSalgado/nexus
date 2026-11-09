@@ -6,7 +6,7 @@ export const runtime="nodejs";
 export async function POST(req:NextRequest){
  const admin=await requireAdmin();
  if(!admin.roles.some(r=>["admin","editor"].includes(r)))return propertyRedirect("/admin/personalizar/menu?error=permisos");
- if(!validMutationOrigin(req))return propertyRedirect("/admin/personalizar/menu?error=origen");
+ if(!validMutationOrigin(req,"/admin/personalizar"))return propertyRedirect("/admin/personalizar/menu?error=origen");
  const size=Number(req.headers.get("content-length")||0);
  if(!Number.isSafeInteger(size)||size<1||size>12000)return propertyRedirect("/admin/personalizar/menu?error=datos");
  try{

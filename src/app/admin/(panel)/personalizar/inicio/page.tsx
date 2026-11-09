@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {ArrowUpRight,CheckCircle2,CircleAlert,FileText,ImageIcon,ListTree,Plus} from "lucide-react";
 import {requireRole} from "@/lib/auth";
-import {prisma} from "@/lib/prisma";
+import {getSiteContact} from "@/lib/site-settings";
 import {getPageDefinitions,getSiteMenu} from "@/lib/site-pages";
 import {hasSiteAsset} from "@/lib/site-assets";
 import {SiteCustomizerNav} from "@/components/site-customizer-nav";
@@ -12,13 +12,14 @@ export const dynamic="force-dynamic";
 /** A single starting point for editing NEXUS, with tenant-scoped setup indicators. */
 export default async function SiteHub(){
  const user=await requireRole(["admin","editor"]);
- const [pages,hasLogo,tenant]=await Promise.all([
+ const [pages,hasUploadedLogo,tenant]=await Promise.all([
   getPageDefinitions(user.tenantId),
   hasSiteAsset(user.tenantId,"logo"),
-  prisma.tenant.findUniqueOrThrow({where:{id:user.tenantId},select:{contactEmail:true,whatsapp:true}})
+  getSiteContact(user.tenantId)
  ]);
  const menu=await getSiteMenu(user.tenantId,pages);
  const totalPublished=pages.filter(page=>page.published).length;
+ const hasLogo=hasUploadedLogo||Boolean(tenant.logoUrl);
  const hasContact=Boolean(tenant.contactEmail?.trim()||tenant.whatsapp?.trim());
  const checks=[
   {name:"Marca y contacto",ready:hasLogo&&hasContact,

@@ -1,6 +1,8 @@
 import "server-only";
 import {readdir,stat} from "node:fs/promises";
 import {join} from "node:path";
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
+import {isStandaloneMode} from "@/lib/installation-mode";
 import {prisma} from "@/lib/prisma";
 import {getPageDefinitions} from "@/lib/site-pages";
 import {configDir} from "@/lib/server-config";
@@ -18,7 +20,9 @@ export type TrashedMedia={id:string;slug:string;pageTitle:string;canPurge:boolea
 /** Checks *all* stored sections, including drafts, inactive templates and unpublished pages.
  * A section being absent from public navigation does NOT mean its image is unused. */
 export async function referencedTenantImages(tenantId:string):Promise<Set<string>>{
- const pages=await prisma.sitePage.findMany({where:{tenantId},select:{blocks:true}});
+ const select={blocks:true} as const;
+ const pages=isStandaloneMode()?await getStandalonePrisma().sitePage.findMany({select}):
+  await prisma.sitePage.findMany({where:{tenantId},select});
  const used=new Set<string>();
  for(const page of pages){
   const raw=page.blocks;

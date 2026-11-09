@@ -1,4 +1,6 @@
 import {NextRequest} from "next/server";
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
+import {isStandaloneMode} from "@/lib/installation-mode";
 import {prisma} from "@/lib/prisma";
 import {requireAdmin} from "@/lib/auth";
 import {propertyRedirect,validMutationOrigin} from "@/lib/admin-property-request";
@@ -12,7 +14,7 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{slug:string
  const admin=await requireAdmin();
  const {slug}=await params;
  if(!admin.roles.some(r=>["admin","editor"].includes(r)))return propertyRedirect("/admin/personalizar/paginas?error=permisos");
- if(!validMutationOrigin(req))return propertyRedirect("/admin/personalizar/paginas?error=origen");
+ if(!validMutationOrigin(req,"/admin/personalizar"))return propertyRedirect("/admin/personalizar/paginas?error=origen");
  const size=Number(req.headers.get("content-length")||0);
  if(!Number.isSafeInteger(size)||size<1||size>48000)return propertyRedirect("/admin/personalizar/paginas?error=datos");
  if(!builtins.includes(slug)&&!validCustomSlug(slug))return propertyRedirect("/admin/personalizar/paginas?error=datos");
@@ -22,19 +24,22 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{slug:string
  const builtin=builtins.includes(slug);
  const dbSlug=builtin?slug:CUSTOM_PAGE_PREFIX+slug;
  const destination=builtin?"/admin/personalizar/paginas":"/admin/personalizar/paginas/"+encodeURIComponent(slug);
+ const db=isStandaloneMode()?getStandalonePrisma():null;
+ const legacyWhere={tenantId_slug:{tenantId:admin.tenantId,slug:dbSlug}};
+ const where={slug:dbSlug};
  try{
   if(builtin){
    const titles:Record<string,string>={propiedades:"Propiedades",nosotros:"Nosotros",servicios:"Servicios",contacto:"Contacto","asesoria-empresarial":"Asesoría Empresarial"};
-   await prisma.sitePage.upsert({
-    where:{tenantId_slug:{tenantId:admin.tenantId,slug:dbSlug}},
-    create:{tenantId:admin.tenantId,slug:dbSlug,title:titles[slug],blocks:{} as Prisma.InputJsonValue,published},
-    update:{published}
-   });
+   const create={slug:dbSlug,title:titles[slug],blocks:{} as Prisma.InputJsonValue,published};
+   if(db)await db.sitePage.upsert({where,create,update:{published}});
+   else await prisma.sitePage.upsert({where:legacyWhere,create:{...create,tenantId:admin.tenantId},update:{published}});
   }else{
-   const existing=await prisma.sitePage.findUnique({where:{tenantId_slug:{tenantId:admin.tenantId,slug:dbSlug}},select:{id:true,blocks:true}});
+   const select={blocks:true} as const;
+   const existing=db?await db.sitePage.findUnique({where,select}):await prisma.sitePage.findUnique({where:legacyWhere,select});
    if(!existing)return propertyRedirect("/admin/personalizar/paginas?error=noexiste");
    if(form.get("intent")==="status"){
-    await prisma.sitePage.update({where:{tenantId_slug:{tenantId:admin.tenantId,slug:dbSlug}},data:{published}});
+    if(db)await db.sitePage.update({where,data:{published}});
+    else await prisma.sitePage.update({where:legacyWhere,data:{published}});
     return propertyRedirect("/admin/personalizar/paginas?saved=1");
    }
    const title=form.get("title"),summary=form.get("summary"),body=form.get("body");
@@ -53,10 +58,9 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{slug:string
     if(section.type==="image"&&!(await hasPageImage(admin.tenantId,slug,section.imageId)))
      return propertyRedirect(destination+"?error=imagenes");
    }
-   await prisma.sitePage.update({
-    where:{tenantId_slug:{tenantId:admin.tenantId,slug:dbSlug}},
-    data:{title:title.trim(),published,blocks:{summary:summary.trim(),body:body.trim(),sections} as Prisma.InputJsonValue}
-   });
+   const data={title:title.trim(),published,blocks:{summary:summary.trim(),body:body.trim(),sections} as Prisma.InputJsonValue};
+   if(db)await db.sitePage.update({where,data});
+   else await prisma.sitePage.update({where:legacyWhere,data});
   }
   return propertyRedirect(destination+"?saved=1");
  }catch(e){

@@ -58,7 +58,7 @@ export async function checkPropertiesInBrowser({app,canonical,db,adminEmail,agen
    headless:true,executablePath:process.env.NEXUS_TEST_CHROMIUM,
    proxy:{server:"http://127.0.0.1:"+tunnel.address().port}
   });
-  const context=await browser.newContext({ignoreHTTPSErrors:true,viewport:{width:1440,height:900}});
+  const context=await browser.newContext({ignoreHTTPSErrors:true,viewport:{width:1440,height:900},reducedMotion:"reduce"});
   // Prevent the test browser from making requests beyond its ephemeral HTTPS proxy.
   await context.route("**/*",route=>new URL(route.request().url()).origin===canonical.origin?route.continue():route.abort());
   const page=await context.newPage();
@@ -103,7 +103,30 @@ export async function checkPropertiesInBrowser({app,canonical,db,adminEmail,agen
    }
   }
 
+  for(const path of ["/","/propiedades","/nosotros","/servicios","/contacto"]){
+   await open(page,path);
+   const logo=page.locator("header .nexus-brand img");
+   assert.ok(await logo.evaluate(image=>image.decode().then(()=>image.naturalWidth>0)),path+" logo");
+   await responsive(page);
+   if(path==="/"&&process.env.NEXUS_TEST_SCREENSHOT_DIR){
+    for(const width of [375,1440]){
+     await page.setViewportSize({width,height:900});
+     await page.screenshot({path:join(process.env.NEXUS_TEST_SCREENSHOT_DIR,"nexus-home-"+width+".png")});
+    }
+   }
+  }
+
   await login(page,adminEmail);
+  await open(page,"/admin/personalizar/paginas/home");
+  await page.getByRole("heading",{name:"Editar: Página de inicio"}).waitFor();
+  await open(page,"/admin/clientes-agentes");
+  const passwordToggle=page.getByRole("button",{name:"Mostrar contraseñas"});
+  await page.waitForLoadState("networkidle");
+  await passwordToggle.click();
+  assert.equal(await page.locator('input[name="password"]').getAttribute("type"),"text");
+  await page.getByRole("button",{name:"Ocultar contraseñas"}).click();
+  assert.equal(await page.locator('input[name="password"]').getAttribute("type"),"password");
+  console.log("PASS Chromium: public branding, responsive pages, page editor and password visibility");
   await open(page,"/admin/propiedades");
   await page.getByRole("link",{name:"Nueva propiedad",exact:true}).first().click();
   await page.getByRole("heading",{name:"Nueva propiedad",exact:true}).waitFor();
