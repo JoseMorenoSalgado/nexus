@@ -1,7 +1,9 @@
 import {NextRequest} from "next/server";
 import {requireAdmin} from "@/lib/auth";
+import {getStandalonePrisma} from "@/lib/prisma-standalone";
+import {isStandaloneMode} from "@/lib/installation-mode";
 import {prisma} from "@/lib/prisma";
-import {validMutationOrigin,propertyRedirect} from "@/lib/admin-property-request";
+import {validMutationOrigin,propertyRedirect,logPropertyError} from "@/lib/admin-property-request";
 import {validReferencePrefix} from "@/lib/property-reference";
 export const runtime="nodejs";
 export async function POST(req:NextRequest){
@@ -15,9 +17,19 @@ export async function POST(req:NextRequest){
  if(typeof raw!=="string"||raw.length>32)return propertyRedirect("/admin/propiedades?error=datos");
  const prefix=raw.trim().toUpperCase();
  if(!validReferencePrefix(prefix))return propertyRedirect("/admin/propiedades?error=datos");
- await prisma.propertySequence.upsert({where:{tenantId:admin.tenantId},
-  create:{tenantId:admin.tenantId,prefix,nextNumber:1},
-  update:{prefix}
- });
- return propertyRedirect("/admin/propiedades?updated=1");
+ try{
+  if(isStandaloneMode()){
+   await getStandalonePrisma().propertySequence.upsert({
+    where:{id:"main"},create:{id:"main",prefix,nextNumber:1},update:{prefix}
+   });
+  }else{
+   await prisma.propertySequence.upsert({
+    where:{tenantId:admin.tenantId},create:{tenantId:admin.tenantId,prefix,nextNumber:1},update:{prefix}
+   });
+  }
+  return propertyRedirect("/admin/propiedades?referenceSaved=1");
+ }catch(error){
+  logPropertyError("reference-settings",error);
+  return propertyRedirect("/admin/propiedades?error=servidor");
+ }
 }

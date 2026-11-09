@@ -18,10 +18,11 @@ const agentEmail = "agent-acceptance@example.invalid";
 const password = "Nexus-Acceptance-12345";
 
 async function request(path, options = {}){
- const {method = "GET", origin = canonical.origin, cookie, json, form, multipart, status = 200, follow = false, rsc = false} = options;
+ const {method = "GET", origin = canonical.origin, referer, cookie, json, form, multipart, status = 200, follow = false, rsc = false} = options;
  const headers = new Headers({"X-Forwarded-Host":canonical.host,"X-Forwarded-Proto":"https"});
  if(rsc)headers.set("RSC","1");
- if(method !== "GET") headers.set("Origin",origin);
+ if(method !== "GET"&&origin!==null) headers.set("Origin",origin);
+ if(referer) headers.set("Referer",referer);
  if(cookie) headers.set("Cookie",cookie);
  if(json) headers.set("Content-Type","application/json");
  const body = json ? JSON.stringify(json) : form ? new URLSearchParams(form) : multipart;
@@ -147,12 +148,26 @@ try {
  assert.equal((await db.agendaEvent.findUniqueOrThrow({where:{id:appointment.id}})).status,"realizada");
  assert.match(await (await request("/admin",{cookie:agentSession})).text(),/Prospecto editado/);
 
+ await request("/admin/propiedades?q=casa&q=centro",{cookie:admin});
+ await request("/api/admin/operaciones",{method:"POST",cookie:admin,json:{action:"property.create"},status:410});
+ const referenceSettings="/api/admin/properties/reference-settings";
+ const newPropertyReferer=canonical.origin+"/admin/propiedades/nueva";
+ location(await request(referenceSettings,{method:"POST",cookie:admin,form:{prefix:"NIC"},status:303}),/referenceSaved=1$/);
+ assert.equal((await db.propertySequence.findUniqueOrThrow({where:{id:"main"}})).prefix,"NIC");
  const fields = {title:"Casa de aceptación",city:"Managua",neighborhood:"Centro",description:"Propiedad de aceptación funcional",type:"Casa",operation:"venta",price:"250000",bedrooms:"3",bathrooms:"2",areaM2:"160"};
- const created = await Promise.all([fields,{...fields,title:"Casa de prueba concurrente"}].map(form=>request("/api/admin/properties",{method:"POST",cookie:admin,form,status:303})));
+ location(await request("/api/admin/properties",{method:"POST",cookie:admin,form:fields,
+  origin:"https://untrusted.example",referer:newPropertyReferer,status:303}),/error=origen$/);
+ const created = await Promise.all([
+  request("/api/admin/properties",{method:"POST",cookie:admin,form:fields,origin:null,referer:newPropertyReferer,status:303}),
+  request("/api/admin/properties",{method:"POST",cookie:admin,form:{...fields,title:"Casa de prueba concurrente"},status:303})
+ ]);
  const ids = created.map(response=>location(response,/\/editar\?created=1$/).split("/")[3]);
  const [property,second] = await Promise.all(ids.map(id=>db.property.findUniqueOrThrow({where:{id}})));
- assert.match(property.refCode,/^NRE-\d{6}$/);
+ assert.match(property.refCode,/^NIC-\d{6}$/);
  assert.notEqual(property.refCode,second.refCode);
+ const nextNumber=(await db.propertySequence.findUniqueOrThrow({where:{id:"main"}})).nextNumber;
+ location(await request(referenceSettings,{method:"POST",cookie:admin,form:{prefix:"NRE"},status:303}),/referenceSaved=1$/);
+ assert.equal((await db.propertySequence.findUniqueOrThrow({where:{id:"main"}})).nextNumber,nextNumber);
  const closingLead=await (await request("/api/admin/leads",{method:"POST",cookie:admin,status:201,json:{
   name:"Prospecto financiero",phone:"88881111",propertyId:second.id,consent:true
  }})).json();
@@ -196,6 +211,10 @@ try {
  assert.match(editorPayload,/Fotografía importada/);
  assert.doesNotMatch(editorPayload,/NEXT_HTTP_ERROR_FALLBACK|Identificador de archivo inválido/);
  await request(editorUrl,{cookie:agentSession,status:404});
+ location(await request("/api/admin/properties/"+second.id,{method:"POST",cookie:admin,
+  form:{intent:"delete",confirmation:second.refCode},status:303}),/error=vinculada$/);
+ assert.equal(await db.property.count({where:{id:second.id}}),1);
+ assert.equal((await db.lead.findUniqueOrThrow({where:{id:closingLead.id}})).propertyId,second.id);
  const detail = "/propiedades/"+property.slug;
  await request(detail,{status:404,follow:true});
  location(await request(edit,{method:"POST",cookie:agentSession,form:{intent:"publish"},status:303}),/error=noexiste$/);
@@ -262,6 +281,11 @@ try {
  const tokenHash = createHash("sha256").update(agentSession.split("=")[1]).digest("hex");
  assert.equal(await db.adminSession.count({where:{tokenHash}}),0);
  location(await request("/api/admin/session",{cookie:agentSession,status:303}),/error=sesion$/);
+
+ if(process.env.NEXUS_TEST_BROWSER==="1"){
+  const {checkPropertiesInBrowser}=await import("./check-properties-browser.mjs");
+  await checkPropertiesInBrowser({app,canonical,db,adminEmail,agentEmail,password});
+ }
 
  // Remove a table in this disposable schema to prove health detects incompatible deployments.
  await db.$executeRaw`DROP TABLE "PropertySequence"`;

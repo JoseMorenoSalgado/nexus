@@ -49,7 +49,7 @@ export async function createPropertyWithReference(tenantId:string, data:Omit<Pri
 }
 
 /** Independent-site reference allocator; never queries Tenant or tenantId. */
-export async function createStandalonePropertyWithReference(data:Omit<StandalonePrisma.PropertyUncheckedCreateInput,"refCode"|"slug">,slug?:string){
+export async function createStandalonePropertyWithReference(data:Omit<StandalonePrisma.PropertyUncheckedCreateInput,"refCode"|"slug">){
  const db=getStandalonePrisma();
  for(let attempt=0;attempt<6;attempt++){
   try{
@@ -62,7 +62,7 @@ export async function createStandalonePropertyWithReference(data:Omit<Standalone
      const refCode=formatPropertyReference(counter.prefix,counter.nextNumber-1);
      if(!refCode)throw new Error("REFERENCE_EXHAUSTED");
      const used=await tx.property.findUnique({where:{refCode},select:{id:true}});
-     if(!used)return tx.property.create({data:{...data,refCode,slug:slug??propertySlug(data.title,refCode)}});
+     if(!used)return tx.property.create({data:{...data,refCode,slug:propertySlug(data.title,refCode)}});
      counter=await tx.propertySequence.update({where:{id:"main"},data:{nextNumber:{increment:1}}});
     }
     throw new Error("REFERENCE_EXHAUSTED");

@@ -89,19 +89,22 @@ export function publicRequestHostname(headers:RequestHeaders,env:PublicEnv=proce
  * when a browser omits Origin; neither proxy Host nor X-Forwarded-* is trusted.
  * The configured HTTPS SITE_URL remains the canonical allowlist.
  */
-export function validPublicMutationOrigin(headers:RequestHeaders,env:PublicEnv=process.env):boolean{
+export function validPublicMutationOrigin(
+ headers:RequestHeaders,env:PublicEnv=process.env,
+ acceptsRefererPath:(pathname:string)=>boolean=pathname=>pathname==="/admin/acceso"
+):boolean{
  if(configuredInvalid(env))return false;
  const canonical=configuredOrigin(env);
  const originHeader=headers.get("origin");
  const refererHeader=headers.get("referer");
  let actual:URL;
  try{
-  if(originHeader){
+  if(originHeader!==null){
    actual=new URL(originHeader);
    if(actual.origin!==originHeader||actual.pathname!=="/"||actual.search||actual.hash)return false;
   }else if(refererHeader){
    const referer=new URL(refererHeader);
-   if(referer.username||referer.password||referer.pathname!=="/admin/acceso")return false;
+   if(referer.username||referer.password||!acceptsRefererPath(referer.pathname))return false;
    actual=new URL(referer.origin);
   }else return false;
  }catch{return false;}
