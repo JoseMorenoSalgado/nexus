@@ -1,3 +1,4 @@
+import {getPropertyDisplay} from "@/lib/property-display-settings";
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {isStandaloneMode} from "@/lib/installation-mode";
 import {hasDatabaseConfig} from "@/lib/server-config";
@@ -64,7 +65,8 @@ export async function GET(req:NextRequest,{params}:{params:Promise<{slug:string}
  const scheme=req.headers.get("x-forwarded-proto")==="https"?"https":
   req.headers.get("x-forwarded-proto")==="http"?"http":req.nextUrl.protocol.replace(":","");
  const publicUrl=new URL("/propiedades/"+encodeURIComponent(property.slug),(isStandaloneMode()&&process.env.SITE_URL)||scheme+"://"+hostname).toString();
- const {bytes}=await buildPropertyPdf(property,{mode,photoIds:selected,tenantName,primaryColor,publicUrl});
+ const display=isStandaloneMode()&&hasDatabaseConfig()?await getPropertyDisplay():null;
+ const {bytes}=await buildPropertyPdf(property,{mode,photoIds:selected,tenantName,primaryColor,publicUrl,...(display?{showName:display.showPdfName,showQr:display.showPdfQr,useNexusLogo:true}:{})});
  const filename="nexus-"+property.refCode.replace(/[^A-Za-z0-9-]/g,"")+
   (mode==="resumida"?"-resumida":"-ampliada")+".pdf";
  return new NextResponse(bytes,{headers:{

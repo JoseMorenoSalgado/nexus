@@ -73,7 +73,8 @@ export function AdminNav({role="admin",roles=[role],userId,userName,notification
   .map(x=>!realEstate&&x.href==="/admin/leads"?{...x,label:"Consultas"}:x);
  const tools=secondary.filter(x=>realEstate&&(manager||(agent&&x.href==="/admin/notificaciones"))).filter(allowed);
  if(manager)tools.unshift({href:"/admin/personalizar/inicio",label:"Mi sitio web",Icon:FileText});
- if(standalone&&has("admin")){tools.push({href:"/admin/clientes-agentes",label:"Equipo y usuarios",Icon:ShieldCheck});tools.push({href:"/admin/sistema",label:"Estado técnico",Icon:Settings});}
+ if(standalone){tools.push({href:"/admin/perfil",label:"Mi perfil y seguridad",Icon:UserRound});}
+ if(standalone&&has("admin")){tools.push({href:"/admin/personalizar/propiedades",label:"Presentación de propiedades",Icon:Settings});tools.push({href:"/admin/clientes-agentes",label:"Equipo y usuarios",Icon:ShieldCheck});tools.push({href:"/admin/sistema",label:"Estado técnico",Icon:Settings});}
  if(has("admin")&&!standalone){
   if(realEstate&&enabled.has("properties"))tools.push({href:"/admin/clientes-agentes",label:"Equipo y usuarios",Icon:ShieldCheck});
   tools.push({href:"/admin/modulos",label:"Módulos",Icon:Settings});

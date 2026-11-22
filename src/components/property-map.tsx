@@ -35,6 +35,12 @@ export function PropertyMap({points,showCatalogLink=false}:{points:PropertyMapPo
     const position=L.latLng(point.latitude,point.longitude);
     bounds.extend(position);
     const popup=document.createElement("div");
+    popup.className="property-map-preview";
+    if(point.image&&/^\/api\/media\/[a-zA-Z0-9_-]+$/.test(point.image)){
+     const photo=document.createElement("img");
+     photo.src=point.image;photo.alt=point.title;photo.loading="lazy";photo.decoding="async";
+     popup.append(photo);
+    }
     const name=document.createElement("strong");
     name.textContent=point.title;
     const address=document.createElement("div");
@@ -42,10 +48,20 @@ export function PropertyMap({points,showCatalogLink=false}:{points:PropertyMapPo
     const link=document.createElement("a");
     link.href="/propiedades/"+encodeURIComponent(point.slug);
     link.textContent="Ver ficha";
-    popup.append(name,address,link);
-    L.marker(position,{title:point.title,alt:point.title,
+    popup.append(name);
+    if(typeof point.price==="number"){
+     const price=document.createElement("strong");price.className="property-map-price";
+     price.textContent="US$ "+new Intl.NumberFormat("en-US",{maximumFractionDigits:2}).format(point.price)+(point.operation==="alquiler"?"/mes":"");
+     popup.append(price);
+    }
+    const stats=document.createElement("span");
+    stats.textContent=[point.bedrooms?point.bedrooms+" hab.":"",point.bathrooms?point.bathrooms+" baños":"",point.areaM2?point.areaM2+" m²":""].filter(Boolean).join(" · ");
+    popup.append(address,stats,link);
+    const marker=L.marker(position,{title:point.title,alt:point.title,
      icon:L.divIcon({className:"property-map-pin",iconSize:[22,22],iconAnchor:[11,11]})
-    }).bindPopup(popup).addTo(map);
+    }).bindPopup(popup,{minWidth:220,maxWidth:260}).addTo(map);
+    // Keep the preview open so its link remains accessible; a tap or keyboard activation also opens it.
+    marker.on("mouseover",()=>marker.openPopup());
    }
    map.fitBounds(bounds,{padding:[30,30],maxZoom:15,animate:false});
   }

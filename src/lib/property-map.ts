@@ -4,7 +4,7 @@ import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {PropertyFormError} from "@/lib/property-form";
 
 export type PropertyLocation={latitude:number;longitude:number;address:string};
-export type PropertyMapPoint=PropertyLocation & {id:string;slug:string;title:string};
+export type PropertyMapPoint=PropertyLocation & {id:string;slug:string;title:string;image?:string;price?:number;operation?:string;bedrooms?:number;bathrooms?:number;areaM2?:number};
 const prefix="_property-location-";
 const slug=(id:string)=>prefix+id;
 
@@ -51,12 +51,12 @@ export async function getPropertyLocation(id:string){
  return row?decode(row.blocks):null;
 }
 
-export async function getPropertyMapPoints(properties:{id:string;slug:string;title:string;city:string;neighborhood:string}[]):Promise<PropertyMapPoint[]>{
+export async function getPropertyMapPoints(properties:{id:string;slug:string;title:string;city:string;neighborhood:string;image?:string;price?:number;operation?:string;bedrooms?:number;bathrooms?:number;areaM2?:number}[]):Promise<PropertyMapPoint[]>{
  if(!properties.length)return [];
  const rows=await getStandalonePrisma().sitePage.findMany({where:{slug:{startsWith:prefix}},select:{slug:true,blocks:true}});
  const locations=new Map(rows.map(row=>[row.slug,decode(row.blocks)]));
- return properties.flatMap(({id,slug:propertySlug,title,city,neighborhood})=>{
+ return properties.flatMap(({id,slug:propertySlug,title,city,neighborhood,...preview})=>{
   const location=locations.get(slug(id));
-  return location?[{...location,id,slug:propertySlug,title,address:location.address||[neighborhood,city].filter(Boolean).join(", ")}]:[];
+  return location?[{...location,...preview,id,slug:propertySlug,title,address:location.address||[neighborhood,city].filter(Boolean).join(", ")}]:[];
  });
 }
