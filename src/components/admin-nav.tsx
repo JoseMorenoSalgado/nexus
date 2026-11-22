@@ -24,7 +24,7 @@ const secondary:Entry[]=[
  {href:"/admin/reportes",label:"Reportes",Icon:ChartNoAxesCombined}
 ];
 function selectedLink(pathname:string,href:string){
- return href==="/admin"?pathname===href:href==="/admin/personalizar/inicio"?pathname.startsWith("/admin/personalizar"):pathname===href||pathname.startsWith(href+"/");
+ return href==="/admin"?pathname===href:href==="/admin/personalizar/inicio"?pathname.startsWith("/admin/personalizar")&&!pathname.startsWith("/admin/personalizar/propiedades"):pathname===href||pathname.startsWith(href+"/");
 }
 export function AdminNav({role="admin",roles=[role],userId,userName,notificationCount=0,templateKey="real-estate",enabledModules,standalone=false}:{
  role?:string;roles?:string[];userId?:string;userName:string;notificationCount?:number;templateKey?:SiteTemplateKey;enabledModules?:ModuleKey[];standalone?:boolean

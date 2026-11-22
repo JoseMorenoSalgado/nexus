@@ -11,7 +11,7 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
  if(!admin)return fail("No autorizado",401);
  const manager=admin.roles.includes("admin")||admin.roles.includes("editor");
  if(!manager&&!admin.roles.includes("agente"))return fail("Sin permisos",403);
- if(!validMutationOrigin(req))return fail("Origen no permitido",403);
+ if(!validMutationOrigin(req,"/admin/agenda"))return fail("Origen no permitido",403);
  let body:Record<string,unknown>;
  try{body=await readJsonObjectLimited(req,8192);}catch(e){return fail(e instanceof RequestPayloadError?e.message:"Datos inválidos",e instanceof RequestPayloadError?e.status:400);}
  const keys=Object.keys(body);

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {createHash,randomUUID} from "node:crypto";
 import ExcelJS from "exceljs";
 import sharp from "sharp";
-import {PDFDocument} from "pdf-lib";
+import {PDFDocument,PDFName} from "pdf-lib";
 import {PrismaClient} from "../src/generated/standalone-postgres/index.js";
 
 const app = new URL(process.env.NEXUS_TEST_URL || "http://127.0.0.1:3100");
@@ -208,6 +208,9 @@ try {
  }})).json();
  await request("/api/admin/agenda/"+appointment.id,{method:"POST",cookie:agentSession,json:{status:"realizada"}});
  assert.equal((await db.agendaEvent.findUniqueOrThrow({where:{id:appointment.id}})).status,"realizada");
+ const currentMonth=new Date().toISOString().slice(0,7);
+ assert.ok((await (await request("/api/admin/agenda?mes="+currentMonth,{cookie:agentSession})).json()).events.some(e=>e.id===appointment.id));
+ assert.ok(!(await (await request("/api/admin/agenda?mes=2000-01",{cookie:agentSession})).json()).events.some(e=>e.id===appointment.id));
  assert.match(await (await request("/admin",{cookie:agentSession})).text(),/Prospecto editado/);
 
  await request("/admin/propiedades?q=casa&q=centro",{cookie:admin});
@@ -333,7 +336,14 @@ try {
  assert.match(page,/Casa editada de aceptación/);
  assert.match(await (await request("/propiedades?operacion=venta")).text(),new RegExp("href=\""+detail+"\""));
  assert.match(page,/wa\.me\/50588887777/);
- assert.match(page,/Enviar consulta/);
+ assert.doesNotMatch(page,/Enviar consulta/);
+ assert.match(page,/Características del inmueble/);
+ await request("/api/admin/property-display",{method:"POST",cookie:agentSession,form:{showInquiry:"on"},status:403});
+ await request("/api/admin/property-display",{method:"POST",cookie:admin,origin:"https://untrusted.example",form:{showInquiry:"on"},status:403});
+ location(await request("/api/admin/property-display",{method:"POST",cookie:admin,form:{showInquiry:"on"},status:303}),/saved=1$/);
+ assert.match(await (await request(detail)).text(),/Enviar consulta/);
+ location(await request("/api/admin/property-display",{method:"POST",cookie:admin,form:{},status:303}),/saved=1$/);
+ assert.doesNotMatch(await (await request(detail)).text(),/Enviar consulta/);
  assert.match(await (await request("/contacto")).text(),/Enviar consulta/);
  await request(photo.url+"?variant=card");
  const document = await PDFDocument.create();
@@ -350,7 +360,9 @@ try {
  assert.equal(customPdf.headers.get("content-type"),"application/pdf");
  const pdf = await request("/api/propiedades/"+property.slug+"/pdf");
  assert.equal(pdf.headers.get("content-type"),"application/pdf");
- assert.equal((await PDFDocument.load(await pdf.arrayBuffer())).getPageCount(),1);
+ const branded=await PDFDocument.load(await pdf.arrayBuffer());
+ assert.equal(branded.getPageCount(),2);
+ assert.ok(branded.getPages()[0].node.Resources()?.get(PDFName.of("XObject")),"First page must contain the logo image");
  const longDescription="Primera línea de la propiedad.\n"+("Descripción de la propiedad y sus servicios. ".repeat(55));
  await db.property.update({where:{id:property.id},data:{description:longDescription}});
  const extended=await request("/api/propiedades/"+property.slug+"/pdf");
@@ -405,6 +417,18 @@ try {
   const {checkPropertiesInBrowser}=await import("./check-properties-browser.mjs");
   await checkPropertiesInBrowser({app,canonical,db,adminEmail,agentEmail,password});
  }
+
+ // Password rotation and session revocation.
+ const extraAdmin=await login(adminEmail);
+ const nextPassword="Nexus-Acceptance-Changed-12345";
+ const passwordForm={currentPassword:password,password:nextPassword,confirmPassword:nextPassword};
+ await request("/api/admin/change-password",{method:"POST",cookie:admin,origin:"https://untrusted.example",form:passwordForm,status:403});
+ location(await request("/api/admin/change-password",{method:"POST",cookie:admin,form:{...passwordForm,currentPassword:"incorrect"},status:303}),/error=1$/);
+ location(await request("/api/admin/change-password",{method:"POST",cookie:admin,form:passwordForm,status:303}),/^\/admin\/acceso$/);
+ for(const cookie of [admin,extraAdmin])location(await request("/api/admin/session",{cookie,status:303}),/error=sesion$/);
+ const fresh=await request("/api/admin/session",{method:"POST",form:{email:adminEmail,password:nextPassword},status:303});
+ assert.match(fresh.headers.get("set-cookie")||"",/webappecloud_session=[a-f0-9]{64}/);
+ console.log("PASS property appearance controls, branded PDF, calendar month scope and password rotation");
 
  // Remove a table in this disposable schema to prove health detects incompatible deployments.
  await db.$executeRaw`DROP TABLE "PropertySequence"`;

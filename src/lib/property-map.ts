@@ -55,8 +55,8 @@ export async function getPropertyMapPoints(properties:{id:string;slug:string;tit
  if(!properties.length)return [];
  const rows=await getStandalonePrisma().sitePage.findMany({where:{slug:{startsWith:prefix}},select:{slug:true,blocks:true}});
  const locations=new Map(rows.map(row=>[row.slug,decode(row.blocks)]));
- return properties.flatMap(({id,slug:propertySlug,title,city,neighborhood,...preview})=>{
+ return properties.flatMap(({id,slug:propertySlug,title,city,neighborhood,image,price,operation,bedrooms,bathrooms,areaM2})=>{
   const location=locations.get(slug(id));
-  return location?[{...location,...preview,id,slug:propertySlug,title,address:location.address||[neighborhood,city].filter(Boolean).join(", ")}]:[];
+  return location?[{...location,image,price,operation,bedrooms,bathrooms,areaM2,id,slug:propertySlug,title,address:location.address||[neighborhood,city].filter(Boolean).join(", ")}]:[];
  });
 }

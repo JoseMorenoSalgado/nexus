@@ -9,7 +9,9 @@ export async function POST(req:NextRequest){
  const admin=await currentAdmin();
  if(!admin||!validMutationOrigin(req,"/admin/perfil"))return new NextResponse(null,{status:403});
  try{
-  const form=await req.formData();
+  const length=Number(req.headers.get("content-length")||0);
+ if(!Number.isSafeInteger(length)||length>8192)return new NextResponse(null,{status:413});
+ const form=await req.formData();
   const current=form.get("currentPassword"),next=form.get("password"),confirm=form.get("confirmPassword");
   if(typeof current!=="string"||current.length>256||typeof next!=="string"||next.length<12||next.length>256||next!==confirm||next===current||!/[a-z]/i.test(next)||!/\d/.test(next)||/[\x00-\x1f]/.test(next))return failed();
   const db=getStandalonePrisma();
