@@ -10,7 +10,7 @@ import {propertyRedirect,validMutationOrigin} from "@/lib/admin-property-request
 import {notifyAgendaEmail} from "@/lib/smtp-notifications";
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
-export async function GET(){return getIndependentAgenda();}
+export async function GET(req:NextRequest){return getIndependentAgenda(req);}
 const back=(code:string)=>propertyRedirect("/admin/agenda?error="+encodeURIComponent(code));
 export async function POST(req:NextRequest){
  if(isStandaloneMode())return postIndependent(req);

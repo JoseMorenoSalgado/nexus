@@ -1,3 +1,4 @@
+import {getPropertyDisplay} from "@/lib/property-display-settings";
 import {hasCustomPdf} from "@/lib/property-document";
 import {ContactForm} from "@/components/contact-form";
 import {WhatsAppButton} from "@/components/traffic-events";
@@ -21,7 +22,7 @@ export default async function StandaloneProperty({params}:{params:Promise<{slug:
  const p=record?{...record,price:Number(record.price),operation:record.operation==="alquiler"?"alquiler" as const:"venta" as const,neighborhood:record.neighborhood||"",bedrooms:record.bedrooms||0,bathrooms:record.bathrooms||0,areaM2:record.areaM2||0,photos:record.photos.map(photo=>photo.url),image:record.photos[0]?.url||""}:null;
  if(!p)notFound();
  const {tenant}=context;
- const [links,modules,customPdfAvailable]=await Promise.all([getSiteMenu("main"),getStandaloneModules("real-estate"),hasCustomPdf("main",p.id)]);
+ const [links,modules,customPdfAvailable,display]=await Promise.all([getSiteMenu("main"),getStandaloneModules("real-estate"),hasCustomPdf("main",p.id),getPropertyDisplay()]);
  return <div className="public-site" style={{"--red":tenant.primaryColor,"--red-dark":tenant.primaryColor} as React.CSSProperties}>
   <SiteNav tenant={tenant} links={links}/>
   <main className="container property-detail-page" id="contenido">
@@ -42,12 +43,12 @@ export default async function StandaloneProperty({params}:{params:Promise<{slug:
      {customPdfAvailable&&<a className="btn property-detail-pdf property-detail-pdf-outline" href={`/api/propiedades/${encodeURIComponent(p.slug)}/pdf-personalizado`}>Descargar ficha corporativa</a>}
     </section>
    </div>
-    <aside className="property-detail-sidebar" aria-label="Solicitar información sobre esta propiedad">
+    <aside className="property-detail-sidebar" aria-label="Información de la propiedad">
      <div className="property-contact-card">
-      <div className="property-contact-top"><h2>¿Te interesa esta propiedad?</h2><p>Consulta disponibilidad y características del inmueble.</p></div>
+      <div className="property-contact-top"><h2>{display.showInquiry?"¿Te interesa esta propiedad?":"Características del inmueble"}</h2><p>{display.showInquiry?"Consulta disponibilidad y características del inmueble.":formatPrice(p)}</p></div>
       <div className="property-contact-reference"><span>Referencia</span><strong>{p.refCode}</strong></div>
       {tenant.whatsapp&&<div className="property-contact-whatsapp"><WhatsAppButton tenant={tenant} property={p}/></div>}
-      {modules.includes("inquiries")&&<ContactForm propertyId={p.id}/>}
+      {display.showInquiry&&modules.includes("inquiries")?<ContactForm propertyId={p.id}/>:<dl><dt>Tipo</dt><dd>{p.type}</dd><dt>Habitaciones</dt><dd>{p.bedrooms}</dd><dt>Baños</dt><dd>{p.bathrooms}</dd><dt>Área</dt><dd>{p.areaM2} m²</dd><dt>Ubicación</dt><dd>{[p.neighborhood,p.city].filter(Boolean).join(", ")}</dd></dl>}
      </div>
     </aside>
    </div>

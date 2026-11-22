@@ -1,9 +1,10 @@
 "use client";
+import {AgendaCalendar,type AgendaView} from "@/components/agenda-calendar";
 import {readAdminJson} from "@/lib/admin-json-response";
 import {useCallback,useEffect,useState,type FormEvent} from "react";
 type Lead={id:string;name:string};
-type Event={id:string;title:string;type:string;startsAt:string;durationMinutes:number;status:string;location:string|null;meetingUrl:string|null;lead:{name:string}};
-export default function AgendaClient(){
+type Event={id:string;title:string;type:string;startsAt:string;durationMinutes:number;status:string;location:string|null;meetingUrl:string|null;leadId:string;lead:{name:string}};
+export default function AgendaClient({month,view,date}:{month:string;view:AgendaView;date?:string}){
  const [events,setEvents]=useState<Event[]>([]);
  const [leads,setLeads]=useState<Lead[]>([]);
  const [error,setError]=useState("");
@@ -12,8 +13,8 @@ export default function AgendaClient(){
  const [updating,setUpdating]=useState<string|null>(null);
  const load=useCallback(async()=>{
   setLoading(true);setError("");
-  try{const response=await fetch("/api/admin/agenda",{cache:"no-store"});const data=await readAdminJson<{events:Event[];leads:Lead[]}>(response,"No se pudo cargar la agenda");setEvents(Array.isArray(data.events)?data.events:[]);setLeads(Array.isArray(data.leads)?data.leads:[]);}catch(e){setError(e instanceof Error?e.message:"Error de conexión");}finally{setLoading(false);}
- },[]);
+  try{const response=await fetch("/api/admin/agenda?mes="+encodeURIComponent(month),{cache:"no-store"});const data=await readAdminJson<{events:Event[];leads:Lead[]}>(response,"No se pudo cargar la agenda");setEvents(Array.isArray(data.events)?data.events:[]);setLeads(Array.isArray(data.leads)?data.leads:[]);}catch(e){setError(e instanceof Error?e.message:"Error de conexión");}finally{setLoading(false);}
+ },[month]);
  useEffect(()=>{void load();},[load]);
  async function create(e:FormEvent<HTMLFormElement>){
   e.preventDefault();setSaving(true);setError("");
@@ -41,8 +42,9 @@ export default function AgendaClient(){
     <button className="btn btn-red" disabled={saving}>{saving?"Guardando…":"Programar actividad"}</button>
    </form>:<p>Registra un prospecto antes de programar actividades.</p>}
   </details>
+  {!loading&&<AgendaCalendar month={month} view={view} date={date} events={events.map(e=>({id:e.id,title:e.title,type:e.type,status:e.status,startsAt:e.startsAt,leadName:e.lead.name,leadId:e.leadId}))}/>}
   <div className="admin-panel"><h2>Actividades programadas</h2>
-   {loading?<p>Cargando agenda…</p>:events.length===0?<p>No hay actividades registradas.</p>:<div className="agenda-event-list">{events.map(event=><article key={event.id} className="agenda-event"><div className="agenda-event-main"><strong>{event.title}</strong><p>{event.lead.name} · {event.type} · {new Date(event.startsAt).toLocaleString("es-NI")} · {event.durationMinutes} minutos</p><p>Estado: {event.status}{event.location?" · "+event.location:""}</p>{event.status==="pendiente"&&<div className="agenda-event-controls"><button type="button" className="btn wizard-back" disabled={updating===event.id} onClick={()=>void updateEvent(event.id,{status:"realizada"})}>Marcar realizada</button><button type="button" className="btn wizard-back" disabled={updating===event.id} onClick={()=>void updateEvent(event.id,{status:"cancelada"})}>Cancelar actividad</button><form onSubmit={e=>{e.preventDefault();const input=e.currentTarget.elements.namedItem("startsAt") as HTMLInputElement;if(input.value)void updateEvent(event.id,{startsAt:new Date(input.value).toISOString()});}}><label>Reprogramar <input name="startsAt" type="datetime-local" required disabled={updating===event.id}/></label><button className="btn wizard-back" disabled={updating===event.id}>Guardar fecha</button></form></div>}</div></article>)}</div>}
+   {loading?<p>Cargando agenda…</p>:events.length===0?<p>No hay actividades registradas.</p>:<div className="agenda-event-list">{events.map(event=><article key={event.id} id={"agenda-"+event.id} className="agenda-event"><div className="agenda-event-main"><strong>{event.title}</strong><p>{event.lead.name} · {event.type} · {new Date(event.startsAt).toLocaleString("es-NI")} · {event.durationMinutes} minutos</p><p>Estado: {event.status}{event.location?" · "+event.location:""}</p>{event.status==="pendiente"&&<div className="agenda-event-controls"><button type="button" className="btn wizard-back" disabled={updating===event.id} onClick={()=>void updateEvent(event.id,{status:"realizada"})}>Marcar realizada</button><button type="button" className="btn wizard-back" disabled={updating===event.id} onClick={()=>void updateEvent(event.id,{status:"cancelada"})}>Cancelar actividad</button><form onSubmit={e=>{e.preventDefault();const input=e.currentTarget.elements.namedItem("startsAt") as HTMLInputElement;if(input.value)void updateEvent(event.id,{startsAt:new Date(input.value).toISOString()});}}><label>Reprogramar <input name="startsAt" type="datetime-local" required disabled={updating===event.id}/></label><button className="btn wizard-back" disabled={updating===event.id}>Guardar fecha</button></form></div>}</div></article>)}</div>}
   </div>
  </section>;
 }

@@ -11,15 +11,18 @@ async function access(){
  if(!admin)return null;
  return admin.roles.some(role=>["admin","editor","agente"].includes(role))?admin:null;
 }
-export async function GET(){
+export async function GET(req:NextRequest){
  if(process.env.NEXUS_STANDALONE!=="true")return fail("No disponible",404);
  const admin=await access();
  if(!admin)return fail("No autorizado",403);
  const manager=admin.roles.includes("admin")||admin.roles.includes("editor");
  const scope=manager?{}:{lead:{is:{assignedAgentId:admin.userId}}};
  const db=getStandalonePrisma();
+ const month=req.nextUrl.searchParams.get("mes");
+ const [year,mm]=month&&/^\d{4}-(0[1-9]|1[0-2])$/.test(month)?month.split("-").map(Number):[0,0];
+ const range=year>=1000&&year<=9999?{startsAt:{gte:new Date(Date.UTC(year,mm-1,1)-10*86400e3),lt:new Date(Date.UTC(year,mm,1)+10*86400e3)}}:{};
  const [events,leads]=await Promise.all([
-  db.agendaEvent.findMany({where:scope,orderBy:{startsAt:"asc"},take:250,select:{id:true,title:true,type:true,startsAt:true,durationMinutes:true,status:true,location:true,meetingUrl:true,leadId:true,lead:{select:{name:true}}}}),
+  db.agendaEvent.findMany({where:{...scope,...range},orderBy:{startsAt:"asc"},take:250,select:{id:true,title:true,type:true,startsAt:true,durationMinutes:true,status:true,location:true,meetingUrl:true,leadId:true,lead:{select:{name:true}}}}),
   db.lead.findMany({where:manager?{}:{assignedAgentId:admin.userId},orderBy:{createdAt:"desc"},take:200,select:{id:true,name:true}})
  ]);
  return NextResponse.json({events,leads},{headers:{"Cache-Control":"private, no-store"}});
@@ -28,7 +31,7 @@ export async function POST(req:NextRequest){
  if(process.env.NEXUS_STANDALONE!=="true")return fail("No disponible",404);
  const admin=await access();
  if(!admin)return fail("No autorizado",403);
- if(!validMutationOrigin(req))return fail("Origen no permitido",403);
+ if(!validMutationOrigin(req,"/admin/agenda"))return fail("Origen no permitido",403);
  let body:Record<string,unknown>;
  try{body=await readJsonObjectLimited(req,8192);}catch(e){return fail(e instanceof RequestPayloadError?e.message:"Datos inválidos",e instanceof RequestPayloadError?e.status:400);}
  const permitted=["leadId","title","type","startsAt","durationMinutes","location","meetingUrl","notes"];

@@ -1,7 +1,9 @@
 import {readFile} from "node:fs/promises";
 import sharp from "sharp";
+import {join} from "node:path";
+import {readSiteAsset} from "@/lib/site-assets";
 import QRCode from "qrcode";
-import {PDFDocument,PDFPage,PDFFont,StandardFonts,rgb} from "pdf-lib";
+import {PDFDocument,PDFPage,PDFFont,PDFImage,StandardFonts,rgb} from "pdf-lib";
 import {isPhotoId,mediaFilePath} from "@/lib/property-media";
 
 export type PropertyPdfInput={
@@ -39,18 +41,23 @@ function wrapped(text:string,font:PDFFont,size:number,width:number){
 function drawParagraph(page:PDFPage,lines:string[],x:number,y:number,font:PDFFont,size:number,limit:number){
  lines.slice(0,limit).forEach((line,i)=>page.drawText(line,{x,y:y-i*(size+4),size,font,color:muted}));
 }
-function header(page:PDFPage,title:string,code:string,color:ReturnType<typeof rgb>,bold:PDFFont,regular:PDFFont,pageNumber:number){
+function header(page:PDFPage,title:string,code:string,color:ReturnType<typeof rgb>,bold:PDFFont,regular:PDFFont,pageNumber:number,logo:PDFImage|undefined,showName:boolean){
  page.drawRectangle({x:0,y:750,width:PAGE_W,height:92,color:ink});
- const brandLines=wrapped(title,bold,19,505);
- page.drawText(brandLines[0]||"NEXUS REAL ESTATE",{x:40,y:794,size:19,font:bold,color:paper});
- page.drawText("FICHA TÉCNICA INMOBILIARIA",{x:40,y:772,size:10,font:regular,color:paper});
+ if(logo){
+  const scale=Math.min(150/logo.width,54/logo.height);
+  const width=logo.width*scale,height=logo.height*scale;
+  page.drawRectangle({x:39,y:765,width:160,height:65,color:paper});
+  page.drawImage(logo,{x:44+(150-width)/2,y:770+(54-height)/2,width,height});
+ }
+ if(showName){const brandLines=wrapped(title,bold,17,330);page.drawText(brandLines[0]||"NEXUS REAL ESTATE",{x:logo?215:40,y:801,size:17,font:bold,color:paper});}
+ page.drawText("FICHA TÉCNICA INMOBILIARIA",{x:logo?215:40,y:772,size:10,font:regular,color:paper});
  page.drawRectangle({x:0,y:744,width:PAGE_W,height:6,color});
  page.drawText("REFERENCIA  "+safe(code),{x:40,y:723,size:10,font:bold,color});
  page.drawText("Página "+pageNumber,{x:506,y:723,size:9,font:regular,color:muted});
 }
 function footer(page:PDFPage,regular:PDFFont,label:string){
  page.drawRectangle({x:40,y:70,width:515,height:1,color:light});
- page.drawText(safe(label).slice(0,66)+" · Documento informativo",{x:40,y:52,size:8,font:regular,color:muted});
+ page.drawText((label?safe(label).slice(0,66)+" · ":"")+"Documento informativo",{x:40,y:52,size:8,font:regular,color:muted});
 }
 async function drawPhoto(pdf:PDFDocument,page:PDFPage,tenantId:string,photo:{id:string;url:string}|undefined,rect:{x:number;y:number;width:number;height:number},regular:PDFFont){
  page.drawRectangle({...rect,color:light});
@@ -70,7 +77,7 @@ async function drawPhoto(pdf:PDFDocument,page:PDFPage,tenantId:string,photo:{id:
  }
 }
 export async function buildPropertyPdf(property:PropertyPdfInput,options:{
- mode:"resumida"|"ampliada";photoIds:string[];tenantName:string;primaryColor:string;publicUrl:string;
+ mode:"resumida"|"ampliada";photoIds:string[];tenantName:string;primaryColor:string;publicUrl:string;showName?:boolean;showQr?:boolean;useNexusLogo?:boolean;
 }){
  const pdf=await PDFDocument.create();
  pdf.setTitle(safe(property.title)+" - "+safe(property.refCode));
@@ -78,13 +85,23 @@ export async function buildPropertyPdf(property:PropertyPdfInput,options:{
  const regular=await pdf.embedFont(StandardFonts.Helvetica);
  const bold=await pdf.embedFont(StandardFonts.HelveticaBold);
  const accent=brand(options.primaryColor);
+ const showName=options.showName??true;
+ let logo:PDFImage|undefined;
+ if(options.useNexusLogo){
+  const custom=await readSiteAsset("main","logo");
+  const candidates=[custom,await readFile(join(process.cwd(),"public","brand","nexus-icon.webp")).catch(()=>null)];
+  for(const candidate of candidates){
+   if(!candidate)continue;
+   try{logo=await pdf.embedPng(await sharp(candidate,{limitInputPixels:40_000_000}).resize({width:600,height:240,fit:"inside",withoutEnlargement:true}).png().toBuffer());break;}catch{/* fallback to bundled logo */}
+  }
+ }
  const images=property.photos.filter(p=>isPhotoId(p.id)&&p.url==="/api/media/"+p.id);
  const selected=options.photoIds.length?
   [...new Set(options.photoIds)].map(id=>images.find(p=>p.id===id)).filter((p):p is {id:string;url:string}=>Boolean(p)).slice(0,5):
   images.slice(0,5);
  const photos=selected.length?selected:images.slice(0,5);
  const page=pdf.addPage([PAGE_W,PAGE_H]);
- header(page,options.tenantName,property.refCode,accent,bold,regular,1);
+ header(page,options.tenantName,property.refCode,accent,bold,regular,1,logo,showName);
  const titleLines=wrapped(property.title,bold,17,505);
  drawParagraph(page,titleLines.slice(0,2),40,692,bold,17,2);
  const place=safe([property.neighborhood,property.city].filter(Boolean).join(", "));
@@ -95,42 +112,33 @@ export async function buildPropertyPdf(property:PropertyPdfInput,options:{
  const stats=property.type+" · "+(property.operation==="alquiler"?"Alquiler":"Venta")+" · "+
   (property.bedrooms||0)+" hab. · "+(property.bathrooms||0)+" baños · "+(property.areaM2||0)+" m²";
  page.drawText(wrapped(stats,regular,9,490)[0]||"",{x:54,y:580,font:regular,size:9,color:ink});
- if(photos.length)await drawPhoto(pdf,page,property.tenantId,photos[0],{x:40,y:284,width:515,height:267},regular);
- const descriptionY=photos.length?262:544;
- page.drawText("DESCRIPCIÓN",{x:40,y:descriptionY,size:11,font:bold,color:ink});
- const lines=property.description.trim().split(/\r?\n/).flatMap(line=>wrapped(line,regular,10,515));
- const descriptionStart=descriptionY-21;
- const page1Limit=Math.floor((descriptionStart-140)/14)+1;
- const page1Lines=lines.slice(0,page1Limit);
- drawParagraph(page,page1Lines,40,descriptionStart,regular,10,page1Limit);
- footer(page,regular,options.tenantName);
- let remaining=lines.slice(page1Lines.length);
- const extraPhotos=options.mode==="ampliada"?photos.slice(1,5):[];
- if(options.mode==="ampliada"&&(extraPhotos.length||remaining.length)){
+ const descriptionY=544;
+ page.drawText("DESCRIPCIÓN Y CARACTERÍSTICAS",{x:40,y:descriptionY,size:11,font:bold,color:ink});
+ const descriptionStart=descriptionY-22;
+ const linesAt=(size:number)=>property.description.trim().split(/\r?\n/).flatMap(line=>wrapped(line,regular,size,515));
+ let size=11,lines=linesAt(size);
+ while(size>8&&lines.length>Math.floor((descriptionStart-91)/(size+4))+1){size-=0.5;lines=linesAt(size);}
+ const page1Limit=Math.floor((descriptionStart-91)/(size+4))+1;
+ const remaining=lines.slice(page1Limit);
+ const visible=remaining.length?lines.slice(0,page1Limit-1).concat("Descripción extensa: consulta el texto completo en la ficha web."):lines;
+ drawParagraph(page,visible,40,descriptionStart,regular,size,page1Limit);
+ footer(page,regular,showName?options.tenantName:"");
+ const gallery=options.mode==="ampliada"?photos:[];
+ if(gallery.length){
   const page2=pdf.addPage([PAGE_W,PAGE_H]);
-  header(page2,options.tenantName,property.refCode,accent,bold,regular,2);
-  if(extraPhotos.length){
-   page2.drawText("GALERÍA DESTACADA",{x:40,y:704,font:bold,size:11,color:ink});
-   for(let i=0;i<extraPhotos.length;i++){
-    const col=i%2,row=Math.floor(i/2);
-    await drawPhoto(pdf,page2,property.tenantId,extraPhotos[i],{
-     x:40+col*265,y:500-row*187,width:250,height:178
-    },regular);
-   }
+  header(page2,options.tenantName,property.refCode,accent,bold,regular,2,logo,showName);
+  page2.drawText("GALERÍA FOTOGRÁFICA",{x:40,y:704,font:bold,size:11,color:ink});
+  for(let i=0;i<gallery.length;i++){
+   const first=gallery.length===1;
+   const col=i%2,row=Math.floor(i/2);
+   await drawPhoto(pdf,page2,property.tenantId,gallery[i],first?{x:40,y:145,width:515,height:540}:{x:40+col*265,y:501-row*191,width:250,height:180},regular);
   }
-  const textY=extraPhotos.length>2?286:extraPhotos.length?475:687;
-  if(remaining.length){
-   page2.drawText("MÁS INFORMACIÓN",{x:40,y:textY,font:bold,size:11,color:ink});
-   const lineCount=Math.max(0,Math.floor((textY-140)/14));
-   drawParagraph(page2,remaining,40,textY-22,regular,10,lineCount);
-   remaining=remaining.slice(lineCount);
-  }
-  footer(page2,regular,options.tenantName);
+  footer(page2,regular,showName?options.tenantName:"");
  }
  // The full description and all non-selected photographs remain on the public property page.
- const shown=options.mode==="resumida"?Math.min(1,photos.length):Math.min(photos.length,5);
+ const shown=options.mode==="resumida"?0:Math.min(photos.length,5);
  const hasExtraImages=property.photos.length>shown;
- if(hasExtraImages||remaining.length||titleLines.length>2){
+ if((options.showQr??true)&&(hasExtraImages||remaining.length||titleLines.length>2)){
   const png=await QRCode.toBuffer(options.publicUrl,{type:"png",width:180,margin:1,errorCorrectionLevel:"M"});
   const qr=await pdf.embedPng(png);
   const last=pdf.getPages()[pdf.getPageCount()-1];
