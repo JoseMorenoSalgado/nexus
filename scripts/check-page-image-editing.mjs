@@ -4,6 +4,9 @@ import {readFileSync} from "node:fs";
 
 const origin=process.env.TEST_ORIGIN||"http://localhost:3000";
 assert.equal(new URL(origin).hostname,"localhost","Image editing tests only run against local CI.");
+const imageManager=readFileSync("src/components/site-asset-manager.tsx","utf8");
+assert.match(imageManager,/readAdminJson/,"Upload errors must handle non-JSON responses");
+assert.match(imageManager,/prepareSiteImage/,"Large photos should be optimized before upload");
 const imageSlot=readFileSync("src/lib/site-assets.ts","utf8");
 assert.match(imageSlot,/hero-asesoria-empresarial/);
 assert.match(readFileSync("src/components/page-image-editor.tsx","utf8"),/SiteAssetManager/);
