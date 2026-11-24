@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import {execFileSync} from "node:child_process";
+import {randomBytes} from "node:crypto";
 import {mkdtemp,readFile,rm} from "node:fs/promises";
 import {createServer as createHttpServer,request} from "node:http";
 import {createServer} from "node:https";
@@ -127,6 +128,31 @@ export async function checkPropertiesInBrowser({app,canonical,db,adminEmail,agen
   await login(page,adminEmail);
   await open(page,"/admin/personalizar/paginas/home");
   await page.getByRole("heading",{name:"Editar: Página de inicio"}).waitFor();
+  // Reproduce the HTML 413 response seen by customers and verify the editor does not parse it as JSON.
+  const largePixels=randomBytes(1200*800*3);
+  const largeBanner=await sharp(largePixels,{raw:{width:1200,height:800,channels:3}}).png().toBuffer();
+  assert.ok(largeBanner.length>1024*1024,"Test image must exceed a typical proxy limit");
+  const heroInput=page.locator(".site-image-manager input[type=file]").first();
+  const heroRoute="**/api/admin/site-media/hero";
+  await page.route(heroRoute,async route=>{
+   if(route.request().method()==="POST")return route.fulfill({status:413,contentType:"text/html",body:"<html><body>Request too large</body></html>"});
+   return route.continue();
+  });
+  await heroInput.setInputFiles({name:"banner-large.png",mimeType:"image/png",buffer:largeBanner});
+  await page.getByRole("alert").getByText(/HTTP 413/).waitFor();
+  await page.unroute(heroRoute);
+  const [bannerResponse]=await Promise.all([
+   page.waitForResponse(response=>response.request().method()==="POST"&&
+    new URL(response.url()).pathname==="/api/admin/site-media/hero"),
+   heroInput.setInputFiles({name:"banner-large.png",mimeType:"image/png",buffer:largeBanner})
+  ]);
+  assert.equal(bannerResponse.status(),200,await bannerResponse.text());
+  assert.ok((bannerResponse.request().postDataBuffer()?.length||0)<1024*1024,"Optimized image should fit a 1 MiB proxy limit");
+  await page.getByText("Imagen actualizada correctamente.").waitFor();
+  page.once("dialog",dialog=>dialog.accept());
+  await page.getByRole("button",{name:"Restablecer"}).first().click();
+  await page.getByText("Imagen predeterminada restaurada.").waitFor();
+  console.log("PASS Chromium: HTML 413 message, compressed banner upload and image reset");
   await open(page,"/admin/clientes-agentes");
   const passwordToggle=page.getByRole("button",{name:"Mostrar contraseñas"});
   await page.waitForLoadState("networkidle");
