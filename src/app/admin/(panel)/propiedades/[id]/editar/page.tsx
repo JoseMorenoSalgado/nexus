@@ -37,7 +37,7 @@ export default async function EditProperty({params,searchParams}:{
     <Link href="/admin/propiedades" className="inline-link">← Propiedades</Link>
    </div>
   </div>
-  {sale&&<p className="property-success" role="status">Venta confirmada: {sale.closedAt.toISOString().slice(0,10)} · importe registrado US$ {Number(sale.amount).toLocaleString("en-US")}. La ficha se conserva internamente para estudios de mercado. <Link href="/admin/cierres">Consultar cierre</Link>.</p>}
+  {sale&&<p className="property-success" role="status">Venta confirmada: {sale.closedAt.toISOString().slice(0,10)} · importe registrado US$ {Number(sale.amount).toLocaleString("en-US")}. La ficha se conserva internamente para estudios de mercado y no puede cambiar de tipo de operación mientras el cierre esté confirmado. <Link href="/admin/cierres">Consultar cierre</Link>.</p>}
   {notice.created&&<p className="property-success" role="status">Propiedad creada correctamente. Ahora puedes añadir fotografías.</p>}
   {notice.saved&&<p className="property-success" role="status">Cambios guardados correctamente.</p>}
   {notice.error&&<p className="admin-error" role="alert">{errors[notice.error]||errors.servidor}</p>}

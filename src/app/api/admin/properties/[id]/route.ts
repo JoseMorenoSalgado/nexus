@@ -24,7 +24,7 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
  const standaloneScope={id,...(!admin.canManageAll?{assignedAgentId:admin.userId}:{})};
  const legacyScope={id,...propertyWhere(admin)};
  try{
-  const select={id:true,refCode:true,assignedAgentId:true,photos:{select:{id:true,url:true}}} as const;
+  const select={id:true,refCode:true,operation:true,assignedAgentId:true,photos:{select:{id:true,url:true}}} as const;
   const property=standaloneDb
    ?await standaloneDb.property.findFirst({where:standaloneScope,select})
    :await prisma.property.findFirst({where:legacyScope,select});
@@ -70,7 +70,7 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
   const data=parseProperty(form);
   // An archived sale cannot reappear through the edit form.
   const hasConfirmedSale=standaloneDb?await standaloneDb.property.count({where:{...standaloneScope,closings:{some:CONFIRMED_SALE}}})>0:false;
-  if(hasConfirmedSale&&data.published)return propertyRedirect(propertyErrorPath("vendida",id));
+  if(hasConfirmedSale&&(data.published||data.operation!==property.operation))return propertyRedirect(propertyErrorPath("vendida",id));
   if(hasConfirmedSale)data.featured=false;
   const assignedAgentId=admin.canManageAll?await validateAssignedAgent(admin.tenantId,form.get("assignedAgentId")):property.assignedAgentId;
   const changed=standaloneDb

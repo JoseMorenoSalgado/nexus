@@ -259,7 +259,7 @@ try {
  location(await request("/api/admin/properties/"+second.id,{method:"POST",cookie:admin,form:{intent:"publish"},status:303}),/error=vendida$/);
  const duplicateLead=await (await request("/api/admin/leads",{method:"POST",cookie:admin,status:201,json:{name:"Segundo interesado",phone:"88882222",propertyId:second.id,consent:true}})).json();
  await request("/api/admin/cierres",{method:"POST",cookie:admin,status:409,form:{
-  leadId:duplicateLead.id,kind:"venta",amount:"21000",commissionAmount:"0",closedAt:today,agentId:""
+  leadId:duplicateLead.id,kind:"venta",amount:"21000",commissionAmount:"0",closedAt:today,agentId:"",notes:""
  }});
  // Defensive: even an obsolete published flag must not expose a confirmed sale.
  await db.property.update({where:{id:second.id},data:{published:true}});
