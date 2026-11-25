@@ -59,10 +59,12 @@ export async function RealEstateHome(){
    {visible("propiedades")&&<section className="nexus-search-wrap" aria-label="Buscador de inmuebles">
     <div className="container">
      <div className="nexus-search-header"><strong>Encuentra tu próxima propiedad</strong><span>Busca entre las opciones disponibles</span></div>
-     <form method="get" action="/propiedades" className="nexus-search-form">
+     <form method="get" action="/propiedades" className="nexus-search-form nexus-search-with-prices">
       <label>Operación<select name="operacion" defaultValue=""><option value="">Comprar o alquilar</option><option value="venta">Comprar</option><option value="alquiler">Alquilar</option></select></label>
       <label>Tipo de inmueble<select name="tipo" defaultValue=""><option value="">Cualquier tipo</option><option value="Casa">Casa</option><option value="Apartamento">Apartamento</option><option value="Terreno">Terreno</option></select></label>
       <label>Ubicación<input name="ubicacion" placeholder="Ciudad o sector" maxLength={90}/></label>
+      <label>Precio mínimo (US$)<input name="precioMin" type="number" min="0" max="9999999999" step="0.01" inputMode="decimal" placeholder="Mínimo"/></label>
+      <label>Precio máximo (US$)<input name="precioMax" type="number" min="0" max="9999999999" step="0.01" inputMode="decimal" placeholder="Máximo"/></label>
       <button className="btn btn-red" type="submit"><Search size={19}/> Buscar inmuebles</button>
      </form>
     </div>

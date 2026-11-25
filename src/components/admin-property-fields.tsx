@@ -9,7 +9,7 @@ type Data={
 /** The initial view keeps all required fields visible for native form validation.
  * Only optional commercial/promotion settings live in a disclosure.
  */
-export function AdminPropertyFields({property,agents=[],allowAssignment=true,mapLocation}:{property?:Data;agents?:{id:string;name:string;email:string}[];allowAssignment?:boolean;mapLocation?:PropertyLocation|null}){
+export function AdminPropertyFields({property,agents=[],allowAssignment=true,allowPublication=true,mapLocation}:{property?:Data;agents?:{id:string;name:string;email:string}[];allowAssignment?:boolean;allowPublication?:boolean;mapLocation?:PropertyLocation|null}){
  const value=(key:keyof Data,fallback:string|number=""):string|number=>{
   const x=property?.[key];
   return typeof x==="string"||typeof x==="number"?x:fallback;
@@ -43,8 +43,8 @@ export function AdminPropertyFields({property,agents=[],allowAssignment=true,map
     <label>Habitaciones<input name="bedrooms" type="number" min="0" max="10000000" defaultValue={value("bedrooms",0)} required/></label>
     <label>Baños<input name="bathrooms" type="number" min="0" max="10000000" defaultValue={value("bathrooms",0)} required/></label>
    </div>
-   <label className="property-check"><input type="checkbox" name="published" defaultChecked={Boolean(property?.published)}/> Publicar en la página web</label>
-   <p className="property-help">Si queda en borrador, no aparecerá en el catálogo ni se podrá descargar su ficha pública.</p>
+   <label className="property-check"><input type="checkbox" name="published" defaultChecked={Boolean(property?.published)&&allowPublication} disabled={!allowPublication}/> Publicar en la página web</label>
+   <p className="property-help">{allowPublication?"Si queda en borrador, no aparecerá en el catálogo ni se podrá descargar su ficha pública.":"La venta confirmada mantiene este inmueble fuera del catálogo. Para volver a publicarlo, primero se debe anular el cierre comercial."}</p>
   </section>
   {mapLocation!==undefined&&<section className="property-form-section" aria-labelledby="property-map-heading">
    <h2 id="property-map-heading">Ubicación en el mapa público</h2>
@@ -59,7 +59,7 @@ export function AdminPropertyFields({property,agents=[],allowAssignment=true,map
    <summary><span><strong>Más opciones</strong><small>Agente responsable y propiedad destacada</small></span><span className="editor-chevron" aria-hidden="true">⌄</span></summary>
    <div className="editor-disclosure-body">
     {allowAssignment&&<label>Agente responsable<select name="assignedAgentId" defaultValue={property?.assignedAgentId||""}><option value="">Sin asignar</option>{agents.map(agent=><option key={agent.id} value={agent.id}>{agent.name} — {agent.email}</option>)}</select></label>}
-    <label className="property-check"><input type="checkbox" name="featured" defaultChecked={Boolean(property?.featured)}/> Destacar en la página principal</label>
+    <label className="property-check"><input type="checkbox" name="featured" defaultChecked={Boolean(property?.featured)&&allowPublication} disabled={!allowPublication}/> Destacar en la página principal</label>
     <p className="property-help">Estas opciones son opcionales y podrás modificarlas después.</p>
    </div>
   </details>

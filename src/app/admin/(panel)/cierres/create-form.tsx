@@ -15,7 +15,7 @@ export default function CreateClosingForm({leads}:{leads:Lead[]}){
  }
  return <form onSubmit={submit} className="admin-panel admin-form commercial-entry-form">
   <h2>Registrar cierre comercial</h2>
-  <p>Solo para operaciones confirmadas. Cada prospecto puede tener un cierre.</p>
+  <p>Solo para operaciones confirmadas. Cada prospecto puede tener un cierre. Al registrar una venta se oculta automáticamente la propiedad de la página pública; el registro y el inmueble permanecen disponibles para estudios de mercado.</p>
   <div className="admin-form-grid">
    <label>Prospecto y propiedad<select name="leadId" required defaultValue=""><option value="" disabled>Seleccionar prospecto</option>{leads.map(l=><option key={l.id} value={l.id}>{l.name} · {l.ref} ({l.operation})</option>)}</select></label>
    <label>Operación<select name="kind" required><option value="venta">Venta</option><option value="alquiler">Alquiler</option></select></label>
