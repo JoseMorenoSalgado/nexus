@@ -239,6 +239,9 @@ try {
  const closingLead=await (await request("/api/admin/leads",{method:"POST",cookie:admin,status:201,json:{
   name:"Prospecto financiero",phone:"88881111",propertyId:second.id,consent:true
  }})).json();
+ // A published property must disappear automatically once a sale is confirmed.
+ await db.property.update({where:{id:second.id},data:{published:true}});
+ assert.ok((await (await request("/api/propiedades")).json()).properties.some(p=>p.id===second.id));
  const byReference=await (await request("/api/admin/leads?q="+encodeURIComponent(second.refCode),{cookie:admin})).json();
  assert.equal(byReference.total,1);
  assert.equal(byReference.leads[0].id,closingLead.id);
@@ -246,6 +249,23 @@ try {
  const closing=await (await request("/api/admin/cierres",{method:"POST",cookie:admin,status:201,form:{
   leadId:closingLead.id,kind:"venta",amount:"20000",commissionAmount:"100",closedAt:today,notes:"",agentId:""
  }})).json();
+ const sold=await db.property.findUniqueOrThrow({where:{id:second.id}});
+ assert.equal(sold.published,false,"Confirmed sale must hide the property");
+ assert.equal(await db.commercialClosing.count({where:{propertyId:second.id,status:"confirmado",kind:"venta"}}),1);
+ assert.ok(!(await (await request("/api/propiedades")).json()).properties.some(p=>p.id===second.id));
+ await request("/propiedades/"+second.slug,{status:404,follow:true});
+ await request("/api/propiedades/"+second.slug+"/pdf",{status:404});
+ assert.match(await (await request("/admin/propiedades?status=vendida",{cookie:admin})).text(),new RegExp(second.refCode));
+ location(await request("/api/admin/properties/"+second.id,{method:"POST",cookie:admin,form:{intent:"publish"},status:303}),/error=vendida$/);
+ const duplicateLead=await (await request("/api/admin/leads",{method:"POST",cookie:admin,status:201,json:{name:"Segundo interesado",phone:"88882222",propertyId:second.id,consent:true}})).json();
+ await request("/api/admin/cierres",{method:"POST",cookie:admin,status:409,form:{
+  leadId:duplicateLead.id,kind:"venta",amount:"21000",commissionAmount:"0",closedAt:today,agentId:""
+ }});
+ // Defensive: even an obsolete published flag must not expose a confirmed sale.
+ await db.property.update({where:{id:second.id},data:{published:true}});
+ await request("/propiedades/"+second.slug,{status:404,follow:true});
+ assert.ok(!(await (await request("/api/propiedades")).json()).properties.some(p=>p.id===second.id));
+ await db.property.update({where:{id:second.id},data:{published:false}});
  await request("/api/admin/comisiones",{method:"POST",cookie:admin,status:201,form:{
   closingId:closing.id,amount:"25",paidAt:today,method:"transferencia",reference:"",notes:""
  }});
@@ -255,6 +275,8 @@ try {
  await request("/api/admin/comisiones/"+payment.id,{method:"POST",cookie:admin,form:voidForm});
  await request("/api/admin/cierres/"+closing.id,{method:"POST",cookie:admin,form:voidForm});
  assert.equal((await db.commercialClosing.findUniqueOrThrow({where:{id:closing.id}})).status,"anulado");
+ assert.equal((await db.property.findUniqueOrThrow({where:{id:second.id}})).published,false,"Voided sale remains hidden until manually republished");
+ assert.equal(await db.property.count({where:{id:second.id}}),1,"Historical sold property must remain in the database");
  assert.doesNotMatch(await (await request("/admin",{cookie:agentSession})).text(),/Casa de aceptación/);
  assert.match(await (await request("/admin",{cookie:admin})).text(),new RegExp("/admin/propiedades/"+property.id+"/editar"));
  const edit = "/api/admin/properties/"+property.id;
@@ -381,6 +403,14 @@ try {
  assert.match(await (await request("/")).text(),/Sector de prueba para el mapa/);
  assert.match(await (await request("/propiedades?operacion=venta")).text(),/Sector de prueba para el mapa/);
  assert.doesNotMatch(await (await request("/propiedades?operacion=alquiler")).text(),/Sector de prueba para el mapa/);
+ assert.match(await (await request("/")).text(),/name="precioMin"/);
+ assert.match(await (await request("/")).text(),/name="precioMax"/);
+ assert.match(await (await request("/propiedades")).text(),/Precio mínimo/);
+ assert.match(await (await request("/propiedades?precioMin=200000&precioMax=300000")).text(),/Sector de prueba para el mapa/);
+ assert.doesNotMatch(await (await request("/propiedades?precioMin=300000")).text(),/Sector de prueba para el mapa/);
+ assert.doesNotMatch(await (await request("/propiedades?precioMax=10000")).text(),/Sector de prueba para el mapa/);
+ assert.match(await (await request("/propiedades?precioMin=100000&precioMax=100")).text(),/Revisa el rango de precios/);
+ assert.match(await (await request("/propiedades?precioMin=0&precioMax=9999999999&orden=precio-asc")).text(),/Sector de prueba para el mapa/);
  const excel="/api/admin/reportes/excel?tipo=";
  await request(excel+"prospectos",{status:401});
  await request(excel+"prospectos",{cookie:agentSession,status:403});
