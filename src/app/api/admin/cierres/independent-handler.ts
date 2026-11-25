@@ -30,7 +30,8 @@ export async function POST(req:NextRequest){
  const db=getStandalonePrisma();
  const lead=await db.lead.findUnique({where:{id:leadId},select:{id:true,name:true,assignedAgentId:true,property:{select:{id:true,refCode:true,operation:true}}}});
  if(!lead?.property)return fail("Prospecto sin propiedad",404);
- const operation=lead.property.operation.toLowerCase();
+ const property=lead.property;
+ const operation=property.operation.toLowerCase();
  if((operation==="venta"&&kind!=="venta")||(["alquiler","renta"].includes(operation)&&kind!=="alquiler"))return fail("Operación incompatible con la propiedad",400);
  const selectedId=agentChoice==="auto"?lead.assignedAgentId:agentChoice||null;
  let agentId:string|null=null,agentName="Sin agente";
@@ -44,12 +45,12 @@ export async function POST(req:NextRequest){
   const record=await db.$transaction(async tx=>{
    if(kind==="venta"){
     // Lock the row before counting other sales so two buyers cannot simultaneously close.
-    const locked=await tx.property.updateMany({where:{id:lead.property.id,operation:"venta"},data:{published:false,featured:false}});
+    const locked=await tx.property.updateMany({where:{id:property.id,operation:"venta"},data:{published:false,featured:false}});
     if(!locked.count)throw new Error("SALE_PROPERTY_MISSING");
-    const prior=await tx.commercialClosing.count({where:{propertyId:lead.property.id,...CONFIRMED_SALE}});
+    const prior=await tx.commercialClosing.count({where:{propertyId:property.id,...CONFIRMED_SALE}});
     if(prior)throw new Error("SALE_ALREADY_CONFIRMED");
    }
-   return tx.commercialClosing.create({data:{leadId:lead.id,propertyId:lead.property.id,agentId,agentName,propertyRefCode:lead.property.refCode,clientName:lead.name,kind:kind!,currency:"USD",amount,commissionAmount,closedAt,notes:notes||null,createdByName:admin.name.slice(0,120)},select:{id:true}});
+   return tx.commercialClosing.create({data:{leadId:lead.id,propertyId:property.id,agentId,agentName,propertyRefCode:property.refCode,clientName:lead.name,kind:kind!,currency:"USD",amount,commissionAmount,closedAt,notes:notes||null,createdByName:admin.name.slice(0,120)},select:{id:true}});
   },{isolationLevel:"Serializable"});
   return NextResponse.json({ok:true,id:record.id},{status:201,headers:{"Cache-Control":"no-store"}});
  }catch(e){

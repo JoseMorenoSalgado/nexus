@@ -69,11 +69,13 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
   if(intent!=="save")return propertyRedirect(propertyErrorPath("datos",id));
   const data=parseProperty(form);
   // An archived sale cannot reappear through the edit form.
-  if(standaloneDb&&data.published&&await standaloneDb.property.count({where:{...standaloneScope,closings:{some:CONFIRMED_SALE}}}))return propertyRedirect(propertyErrorPath("vendida",id));
+  const hasConfirmedSale=standaloneDb?await standaloneDb.property.count({where:{...standaloneScope,closings:{some:CONFIRMED_SALE}}})>0:false;
+  if(hasConfirmedSale&&data.published)return propertyRedirect(propertyErrorPath("vendida",id));
+  if(hasConfirmedSale)data.featured=false;
   const assignedAgentId=admin.canManageAll?await validateAssignedAgent(admin.tenantId,form.get("assignedAgentId")):property.assignedAgentId;
   const changed=standaloneDb
    ?await standaloneDb.$transaction(async tx=>{
-    const result=await tx.property.updateMany({where:{...standaloneScope,...(data.published?{closings:{none:CONFIRMED_SALE}}:{})},data:{...data,assignedAgentId,...(!data.published?{featured:false}:{})}});
+    const result=await tx.property.updateMany({where:{...standaloneScope,...(data.published?{closings:{none:CONFIRMED_SALE}}:{})},data:{...data,assignedAgentId}});
     if(result.count)await savePropertyLocation(tx,id,parsePropertyLocation(form));
     return result;
    })

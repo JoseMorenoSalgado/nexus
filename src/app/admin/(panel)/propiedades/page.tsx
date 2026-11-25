@@ -67,7 +67,7 @@ export default async function AdminProperties({searchParams}:{searchParams:Promi
   </nav>
   <form method="get" className="property-filters" action="/admin/propiedades">
    <label><span>Buscar inmuebles</span><div className="property-search"><Search size={17}/><input name="q" placeholder="Referencia, nombre o ciudad" defaultValue={q}/></div></label>
-   <label><span>Estado</span><select name="status" defaultValue={status}><option value="">Todos</option><option value="publicada">Publicadas</option><option value="borrador">Borradores</option></select></label>
+   <label><span>Estado</span><select name="status" defaultValue={status}><option value="">Todos</option><option value="publicada">Publicadas</option><option value="borrador">Borradores</option>{standalone&&<option value="vendida">Vendidas</option>}</select></label>
    <label><span>Operación</span><select name="operation" defaultValue={operation}><option value="">Todas</option><option value="venta">Venta</option><option value="alquiler">Alquiler</option></select></label>
    <div className="admin-filter-actions"><button className="btn btn-dark" type="submit">Buscar</button>{isFiltered&&<Link href="/admin/propiedades" className="admin-clear-filters"><X size={15}/> Limpiar</Link>}</div>
   </form>
@@ -79,7 +79,7 @@ export default async function AdminProperties({searchParams}:{searchParams:Promi
    return <article key={item.id} className="property-admin-card">
     <div className="property-admin-photo">{photo?<img loading="lazy" src={photo.url} alt={item.title}/>:<div className="property-photo-placeholder"><ImageIcon size={23}/><span>Sin foto</span></div>}</div>
     <div className="property-admin-content">
-     <div className="property-admin-code"><strong>{item.refCode}</strong><span className={"property-admin-status "+(item.published?"is-published":"is-draft")}>{sold?"Vendida":item.published?"Publicada":"Borrador"}</span></div>
+     <div className="property-admin-code"><strong>{item.refCode}</strong><span className={"property-admin-status "+(sold?"is-draft":item.published?"is-published":"is-draft")}>{sold?"Vendida":item.published?"Publicada":"Borrador"}</span></div>
      <h2><Link href={"/admin/propiedades/"+encodeURIComponent(item.id)+"/editar"}>{item.title}</Link></h2>
      <div className="property-admin-location"><MapPin size={14}/>{[item.neighborhood,item.city].filter(Boolean).join(", ")||"Ubicación por completar"}</div>
      {label&&<small className="property-admin-specs">{label}</small>}
