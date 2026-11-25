@@ -1,17 +1,18 @@
 import "server-only";
+import {AVAILABLE_PROPERTY} from "@/lib/sold-properties";
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
 
 /** Public catalogue for fresh standalone installations: no tenant/domain lookup. */
 export async function listStandalonePublishedProperties(){
  return getStandalonePrisma().property.findMany({
-  where:{published:true},
+  where:AVAILABLE_PROPERTY,
   include:{photos:{orderBy:{sortOrder:"asc"}}},
   orderBy:{createdAt:"desc"}
  });
 }
 export async function findStandalonePublishedProperty(slug:string){
  return getStandalonePrisma().property.findFirst({
-  where:{slug,published:true},
+  where:{slug,...AVAILABLE_PROPERTY},
   include:{photos:{orderBy:{sortOrder:"asc"}}}
  });
 }

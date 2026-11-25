@@ -1,6 +1,7 @@
 import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {NextRequest} from "next/server";
 import {prisma} from "@/lib/prisma";
+import {CONFIRMED_SALE} from "@/lib/sold-properties";
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {validateAssignedAgent} from "@/lib/property-agent";
 import {parseProperty,PropertyFormError} from "@/lib/property-form";
@@ -32,9 +33,9 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
   const intent=String(form.get("intent")||"save");
   if(intent==="publish"||intent==="unpublish"){
    const changed=standaloneDb
-    ?await standaloneDb.property.updateMany({where:standaloneScope,data:{published:intent==="publish"}})
+    ?await standaloneDb.property.updateMany({where:{...standaloneScope,...(intent==="publish"?{closings:{none:CONFIRMED_SALE}}:{})},data:{published:intent==="publish"}})
     :await prisma.property.updateMany({where:legacyScope,data:{published:intent==="publish"}});
-   if(!changed.count)return propertyRedirect("/admin/propiedades?error=permisos");
+   if(!changed.count)return propertyRedirect("/admin/propiedades?error="+(standaloneDb&&intent==="publish"&&await standaloneDb.property.count({where:{...standaloneScope,closings:{some:CONFIRMED_SALE}}})?"vendida":"permisos"));
    return propertyRedirect("/admin/propiedades?updated=1");
   }
   if(intent==="delete"){
@@ -67,15 +68,17 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
   }
   if(intent!=="save")return propertyRedirect(propertyErrorPath("datos",id));
   const data=parseProperty(form);
+  // An archived sale cannot reappear through the edit form.
+  if(standaloneDb&&data.published&&await standaloneDb.property.count({where:{...standaloneScope,closings:{some:CONFIRMED_SALE}}}))return propertyRedirect(propertyErrorPath("vendida",id));
   const assignedAgentId=admin.canManageAll?await validateAssignedAgent(admin.tenantId,form.get("assignedAgentId")):property.assignedAgentId;
   const changed=standaloneDb
    ?await standaloneDb.$transaction(async tx=>{
-    const result=await tx.property.updateMany({where:standaloneScope,data:{...data,assignedAgentId}});
+    const result=await tx.property.updateMany({where:{...standaloneScope,...(data.published?{closings:{none:CONFIRMED_SALE}}:{})},data:{...data,assignedAgentId,...(!data.published?{featured:false}:{})}});
     if(result.count)await savePropertyLocation(tx,id,parsePropertyLocation(form));
     return result;
    })
    :await prisma.property.updateMany({where:legacyScope,data:{...data,assignedAgentId}});
-  if(!changed.count)return propertyRedirect("/admin/propiedades?error=permisos");
+  if(!changed.count)return propertyRedirect(propertyErrorPath("vendida",id));
   return propertyRedirect("/admin/propiedades/"+encodeURIComponent(id)+"/editar?saved=1");
  }catch(error){
   if(error instanceof Error&&error.message==="AGENT_INVALID")return propertyRedirect(propertyErrorPath("datos",id));

@@ -1,4 +1,5 @@
 import {getPropertyDisplay} from "@/lib/property-display-settings";
+import {AVAILABLE_PROPERTY} from "@/lib/sold-properties";
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {isStandaloneMode} from "@/lib/installation-mode";
 import {hasDatabaseConfig} from "@/lib/server-config";
@@ -30,7 +31,7 @@ export async function GET(req:NextRequest,{params}:{params:Promise<{slug:string}
  }else if(isStandaloneMode()){
   const db=getStandalonePrisma();
   const [record,site]=await Promise.all([
-   db.property.findUnique({where:{slug,published:true},include:{photos:{orderBy:{sortOrder:"asc"},take:15}}}),
+   db.property.findFirst({where:{slug,...AVAILABLE_PROPERTY},include:{photos:{orderBy:{sortOrder:"asc"},take:15}}}),
    db.siteConfig.findUnique({where:{id:"main"},select:{name:true,primaryColor:true}})
   ]);
   if(record&&site){

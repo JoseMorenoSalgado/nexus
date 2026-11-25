@@ -1,5 +1,6 @@
 import {NextRequest,NextResponse} from "next/server";
 import {currentAdmin} from "@/lib/auth";
+import {CONFIRMED_SALE} from "@/lib/sold-properties";
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {validMutationOrigin} from "@/lib/admin-property-request";
 export const runtime="nodejs";
@@ -39,9 +40,22 @@ export async function POST(req:NextRequest){
   agentId=agent.id;agentName=agent.name;
  }
  try{
-  const record=await db.commercialClosing.create({data:{leadId:lead.id,propertyId:lead.property.id,agentId,agentName,propertyRefCode:lead.property.refCode,clientName:lead.name,kind:kind!,currency:"USD",amount,commissionAmount,closedAt,notes:notes||null,createdByName:admin.name.slice(0,120)},select:{id:true}});
+  // Keep the listing, photos and prospect history. Confirmed sales must be private.
+  const record=await db.$transaction(async tx=>{
+   if(kind==="venta"){
+    // Lock the row before counting other sales so two buyers cannot simultaneously close.
+    const locked=await tx.property.updateMany({where:{id:lead.property.id,operation:"venta"},data:{published:false,featured:false}});
+    if(!locked.count)throw new Error("SALE_PROPERTY_MISSING");
+    const prior=await tx.commercialClosing.count({where:{propertyId:lead.property.id,...CONFIRMED_SALE}});
+    if(prior)throw new Error("SALE_ALREADY_CONFIRMED");
+   }
+   return tx.commercialClosing.create({data:{leadId:lead.id,propertyId:lead.property.id,agentId,agentName,propertyRefCode:lead.property.refCode,clientName:lead.name,kind:kind!,currency:"USD",amount,commissionAmount,closedAt,notes:notes||null,createdByName:admin.name.slice(0,120)},select:{id:true}});
+  },{isolationLevel:"Serializable"});
   return NextResponse.json({ok:true,id:record.id},{status:201,headers:{"Cache-Control":"no-store"}});
  }catch(e){
+  if(e instanceof Error&&e.message==="SALE_ALREADY_CONFIRMED")return fail("Esta propiedad ya tiene una venta confirmada",409);
+  if(e instanceof Error&&e.message==="SALE_PROPERTY_MISSING")return fail("Propiedad no disponible",404);
+  if(e&&typeof e==="object"&&"code" in e&&e.code==="P2034")return fail("Operación concurrente. Verifica el estado y vuelve a intentarlo",409);
   if(e&&typeof e==="object"&&"code" in e&&e.code==="P2002")return fail("Este prospecto ya tiene un cierre",409);
   console.error("[standalone-closings] create",e instanceof Error?e.name:"unknown");
   return fail("No se pudo registrar el cierre",500);

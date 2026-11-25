@@ -1,6 +1,7 @@
 import {readFile} from "node:fs/promises";
 import {NextRequest,NextResponse} from "next/server";
 import {prisma} from "@/lib/prisma";
+import {CONFIRMED_SALE} from "@/lib/sold-properties";
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {currentAdmin} from "@/lib/auth";
 import {tenantFromHost} from "@/lib/tenant";
@@ -12,9 +13,9 @@ export async function GET(req:NextRequest,{params}:{params:Promise<{id:string}>}
  const {id}=await params;
  if(!isPhotoId(id))return new NextResponse(null,{status:404});
  if(process.env.NEXUS_STANDALONE==="true"){
-  const photo=await getStandalonePrisma().photo.findUnique({where:{id},select:{id:true,url:true,property:{select:{published:true,assignedAgentId:true}}}});
+  const photo=await getStandalonePrisma().photo.findUnique({where:{id},select:{id:true,url:true,property:{select:{published:true,assignedAgentId:true,closings:{where:CONFIRMED_SALE,select:{id:true},take:1}}}}});
   if(!photo||photo.url!=="/api/media/"+id)return new NextResponse(null,{status:404});
-  if(!photo.property.published){
+  if(!photo.property.published||photo.property.closings.length>0){
    const admin=await currentAdmin();
    if(!admin||(!admin.roles.some(role=>role==="admin"||role==="editor")&&photo.property.assignedAgentId!==admin.userId))return new NextResponse(null,{status:404});
   }

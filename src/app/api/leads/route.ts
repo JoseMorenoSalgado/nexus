@@ -3,6 +3,7 @@ import {validPublicMutationOrigin} from "@/lib/public-request-origin";
 import {hasDatabaseConfig} from "@/lib/server-config";
 import {NextResponse,type NextRequest} from "next/server";
 import {prisma} from "@/lib/prisma";
+import {AVAILABLE_PROPERTY} from "@/lib/sold-properties";
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {parseRoles} from "@/lib/roles";
 import {tenantFromHost} from "@/lib/tenant";
@@ -31,7 +32,7 @@ export async function POST(req:NextRequest){
    let propertyId:string|undefined;
    let assignedAgentId:string|null=null;
    if(typeof b.propertyId==="string"&&b.propertyId){
-    const property=await db.property.findFirst({where:{id:b.propertyId,published:true},select:{id:true,assignedAgentId:true,assignedAgent:{select:{active:true,role:true}}}});
+    const property=await db.property.findFirst({where:{id:b.propertyId,...AVAILABLE_PROPERTY},select:{id:true,assignedAgentId:true,assignedAgent:{select:{active:true,role:true}}}});
     if(!property)return NextResponse.json({error:"Propiedad no encontrada"},{status:400});
     propertyId=property.id;
     if(property.assignedAgentId&&property.assignedAgent?.active&&parseRoles(property.assignedAgent.role).includes("agente"))assignedAgentId=property.assignedAgentId;

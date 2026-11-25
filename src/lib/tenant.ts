@@ -6,6 +6,7 @@ import {notFound,redirect} from "next/navigation";
 import {hasDatabaseConfig} from "@/lib/server-config";
 import {isPreviewHost,normalizeSiteHost} from "@/lib/preview";
 import {prisma} from "@/lib/prisma";
+import {AVAILABLE_PROPERTY} from "@/lib/sold-properties";
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {singleInstallationTenantId} from "@/lib/single-installation";
 import {demoTenant,demoProperties,type PublicTenant,type PublicProperty} from "@/lib/demo";
@@ -54,7 +55,7 @@ export async function getPublicContext(options:{loadProperties?:boolean}={}):Pro
    notFound();
   }
   const [props,settings]=await Promise.all([
-   options.loadProperties===false?Promise.resolve([]):db.property.findMany({where:{published:true},select:{id:true,slug:true,refCode:true,title:true,description:true,city:true,neighborhood:true,type:true,operation:true,price:true,bedrooms:true,bathrooms:true,areaM2:true,featured:true,photos:{orderBy:{sortOrder:"asc"},select:{url:true}}},orderBy:{createdAt:"desc"}}),
+   options.loadProperties===false?Promise.resolve([]):db.property.findMany({where:AVAILABLE_PROPERTY,select:{id:true,slug:true,refCode:true,title:true,description:true,city:true,neighborhood:true,type:true,operation:true,price:true,bedrooms:true,bathrooms:true,areaM2:true,featured:true,photos:{orderBy:{sortOrder:"asc"},select:{url:true}}},orderBy:{createdAt:"desc"}}),
    getSiteSettings("main")
   ]);
   const prioritized=[...props].sort((a,b)=>{

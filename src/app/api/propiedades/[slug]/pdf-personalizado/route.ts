@@ -1,3 +1,4 @@
+import {AVAILABLE_PROPERTY} from "@/lib/sold-properties";
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {isStandaloneMode} from "@/lib/installation-mode";
 import {NextRequest,NextResponse} from "next/server";
@@ -13,7 +14,7 @@ export const dynamic="force-dynamic";
 export async function GET(req:NextRequest,{params}:{params:Promise<{slug:string}>}){
  const {slug}=await params;
  if(isStandaloneMode()){
-  const property=await getStandalonePrisma().property.findUnique({where:{slug,published:true},select:{id:true,refCode:true}});
+  const property=await getStandalonePrisma().property.findFirst({where:{slug,...AVAILABLE_PROPERTY},select:{id:true,refCode:true}});
   const pdf=property?await readCustomPdf("main",property.id):null;
   return property&&pdf?pdfDownloadResponse(pdf,"ficha-"+property.refCode+"-personalizada.pdf"):new NextResponse(null,{status:404});
  }
