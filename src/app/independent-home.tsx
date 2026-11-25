@@ -43,10 +43,12 @@ export default async function StandaloneHome(){
    </section>
    {catalogueVisible&&<><section className="nexus-search-wrap" aria-label="Buscar propiedades"><div className="container">
     <div className="nexus-search-header"><strong>Encuentra tu próxima propiedad</strong><span>Explora nuestras opciones disponibles</span></div>
-    <form method="get" action="/propiedades" className="nexus-search-form">
+    <form method="get" action="/propiedades" className="nexus-search-form nexus-search-with-prices">
      <label>Operación<select name="operacion"><option value="">Comprar o alquilar</option><option value="venta">Comprar</option><option value="alquiler">Alquilar</option></select></label>
      <label>Tipo<select name="tipo"><option value="">Cualquier tipo</option><option value="Casa">Casa</option><option value="Apartamento">Apartamento</option><option value="Terreno">Terreno</option></select></label>
      <label>Ubicación<input name="ubicacion" placeholder="Ciudad o sector"/></label>
+     <label>Precio mínimo (US$)<input name="precioMin" type="number" min="0" max="9999999999" step="0.01" inputMode="decimal" placeholder="Mínimo"/></label>
+     <label>Precio máximo (US$)<input name="precioMax" type="number" min="0" max="9999999999" step="0.01" inputMode="decimal" placeholder="Máximo"/></label>
      <button type="submit" className="btn btn-red"><Search size={18}/> Buscar inmuebles</button>
     </form>
    </div></section>

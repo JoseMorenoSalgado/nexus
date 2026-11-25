@@ -1,3 +1,4 @@
+import {parsePriceRange} from "@/lib/price-range";
 import {PropertyMap} from "@/components/property-map";
 import {getPropertyMapPoints} from "@/lib/property-map";
 import Link from "next/link";
@@ -24,12 +25,13 @@ export default async function StandaloneCatalog({searchParams}:{searchParams:Pro
  const type=(raw.tipo||"").slice(0,80);
  const location=(raw.ubicacion||"").trim().slice(0,90).toLocaleLowerCase();
  const order=raw.orden==="precio-asc"||raw.orden==="precio-desc"?raw.orden:"recientes";
- const matches=context.properties.filter(p=>(!operation||p.operation===operation)&&(!type||p.type.toLocaleLowerCase()===type.toLocaleLowerCase())&&(!location||`${p.city} ${p.neighborhood}`.toLocaleLowerCase().includes(location)));
+ const range=parsePriceRange(raw);
+ const matches=range.valid?context.properties.filter(p=>(!operation||p.operation===operation)&&(!type||p.type.toLocaleLowerCase()===type.toLocaleLowerCase())&&(!location||`${p.city} ${p.neighborhood}`.toLocaleLowerCase().includes(location))&&(range.min===undefined||p.price>=range.min)&&(range.max===undefined||p.price<=range.max)):[];
  if(order!=="recientes")matches.sort((a,b)=>order==="precio-asc"?a.price-b.price:b.price-a.price);
  const mapPoints=await getPropertyMapPoints(matches);
  const pageSize=12,pages=Math.max(1,Math.ceil(matches.length/pageSize));
  const page=Math.min(pages,/^[1-9]\d{0,4}$/.test(raw.pagina||"")?Number(raw.pagina):1);
- const pageHref=(n:number)=>"/propiedades?"+new URLSearchParams({...(operation?{operacion:operation}:{}),...(type?{tipo:type}:{}),...(location?{ubicacion:location}:{}),...(order!=="recientes"?{orden:order}:{}),pagina:String(n)}).toString();
+ const pageHref=(n:number)=>"/propiedades?"+new URLSearchParams({...(operation?{operacion:operation}:{}),...(type?{tipo:type}:{}),...(location?{ubicacion:location}:{}),...(order!=="recientes"?{orden:order}:{}),...(range.min!==undefined?{precioMin:String(range.min)}:{}),...(range.max!==undefined?{precioMax:String(range.max)}:{}),pagina:String(n)}).toString();
  return <div className="public-site" style={{"--red":tenant.primaryColor,"--red-dark":tenant.primaryColor} as React.CSSProperties}>
   <SiteNav tenant={tenant} links={links}/>
   <main id="contenido">
@@ -40,13 +42,17 @@ export default async function StandaloneCatalog({searchParams}:{searchParams:Pro
     </div>
    </section>
    <section className="container nexus-section" aria-label="Buscar propiedades">
-   <form action="/propiedades" method="get" className="nexus-search-form" style={{marginBottom:30}}>
+   <form action="/propiedades" method="get" className="nexus-search-form nexus-search-with-prices" style={{marginBottom:30}}>
     <label>Operación<select name="operacion" defaultValue={operation}><option value="">Todas</option><option value="venta">Venta</option><option value="alquiler">Alquiler</option></select></label>
     <label>Tipo<select name="tipo" defaultValue={type}><option value="">Todos</option>{["Casa","Apartamento","Terreno","Local","Oficina"].map(v=><option key={v} value={v}>{v}</option>)}</select></label>
     <label>Ubicación<input name="ubicacion" defaultValue={raw.ubicacion||""} maxLength={90} placeholder="Ciudad o sector"/></label>
+    <label>Precio mínimo (US$)<input type="number" name="precioMin" min="0" max="9999999999" step="0.01" inputMode="decimal" defaultValue={range.minInput} placeholder="Mínimo"/></label>
+    <label>Precio máximo (US$)<input type="number" name="precioMax" min="0" max="9999999999" step="0.01" inputMode="decimal" defaultValue={range.maxInput} placeholder="Máximo"/></label>
     <label>Orden<select name="orden" defaultValue={order}><option value="recientes">Más recientes</option><option value="precio-asc">Menor precio</option><option value="precio-desc">Mayor precio</option></select></label>
     <button type="submit" className="btn btn-red"><Search size={17}/> Buscar</button>
    </form>
+   {!range.valid&&<p role="alert" className="admin-error">Revisa el rango de precios. El mínimo no puede superar al máximo y los importes deben ser válidos.</p>}
+   <Link href="/propiedades" className="inline-link">Limpiar filtros</Link>
    <p>{matches.length} {matches.length===1?"propiedad encontrada":"propiedades encontradas"}</p>
    <div className={mapPoints.length?"catalog-map-layout":undefined}><div>
    {matches.length?<div className="property-grid" style={{marginTop:20}}>{matches.slice((page-1)*pageSize,page*pageSize).map(p=><PropertyCard key={p.id} property={p}/>)}</div>:<div className="nexus-empty-listing"><h2>No encontramos propiedades con esos filtros</h2><Link href="/propiedades">Ver todas las propiedades</Link></div>}

@@ -4,6 +4,7 @@ import {requireRole} from "@/lib/auth";
 import {propertyWhere,managesAllLeads} from "@/lib/agent-scope";
 import {isStandaloneMode} from "@/lib/installation-mode";
 import {prisma} from "@/lib/prisma";
+import {CONFIRMED_SALE} from "@/lib/sold-properties";
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import type {Prisma} from "@/generated/standalone-postgres";
 import {parseRoles} from "@/lib/roles";
@@ -14,7 +15,7 @@ const select={
  id:true,slug:true,refCode:true,title:true,city:true,neighborhood:true,
  type:true,operation:true,price:true,bedrooms:true,bathrooms:true,areaM2:true,
  description:true,featured:true,published:true,assignedAgentId:true,
- photos:{orderBy:[{sortOrder:"asc"},{id:"asc"}],select:{id:true,url:true,alt:true}}
+ photos:{orderBy:[{sortOrder:"asc"},{id:"asc"}],select:{id:true,url:true,alt:true}},closings:{where:CONFIRMED_SALE,take:1,select:{id:true,closedAt:true,amount:true}}
 } satisfies Prisma.PropertySelect;
 
 export async function loadPropertyEditor(id:string){
@@ -32,10 +33,11 @@ export async function loadPropertyEditor(id:string){
   ?await db.adminUser.findMany({where:{active:true},select:userSelect,orderBy:{name:"asc"}})
   :await prisma.adminUser.findMany({where:{tenantId:admin.tenantId,active:true},select:userSelect,orderBy:{name:"asc"}});
  const agents=users.filter(user=>parseRoles(user.role).includes("agente")).map(({id,name,email})=>({id,name,email}));
- const {photos,...fields}=property;
+ const {photos,closings,...fields}=property;
  return {
   property:{...fields,price:Number(fields.price)},photos,agents,canAssign,
   canDelete:admin.roles.includes("admin"),siteId:admin.tenantId,
+  sale:db?closings[0]||null:null,
   mapLocation:db?await getPropertyLocation(id):undefined
  };
 }

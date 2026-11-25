@@ -1,5 +1,6 @@
 import "server-only";
 import {prisma} from "@/lib/prisma";
+import {AVAILABLE_PROPERTY} from "@/lib/sold-properties";
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import type {PublicProperty} from "@/lib/demo";
 import type {Prisma} from "@prisma/client";
@@ -11,7 +12,7 @@ export async function getCatalogPage(tenantId:string,filters:CatalogFilters,page
  if(process.env.NEXUS_STANDALONE==="true"){
   const db=getStandalonePrisma();
   const where={
-   published:true,
+   ...AVAILABLE_PROPERTY,
    ...(filters.operacion==="venta"||filters.operacion==="alquiler"?{operation:filters.operacion}:{}),
    ...(filters.tipo?{type:filters.tipo}:{}),
    ...(filters.ciudad?{city:filters.ciudad}:{}),
@@ -67,8 +68,8 @@ export async function getCatalogLocationSuggestions(tenantId:string):Promise<str
  if(process.env.NEXUS_STANDALONE==="true"){
   const db=getStandalonePrisma();
   const [cities,zones]=await Promise.all([
-   db.property.findMany({where:{published:true},distinct:["city"],select:{city:true},take:20,orderBy:{city:"asc"}}),
-   db.property.findMany({where:{published:true,neighborhood:{not:null}},distinct:["neighborhood"],select:{neighborhood:true},take:20,orderBy:{neighborhood:"asc"}})
+   db.property.findMany({where:AVAILABLE_PROPERTY,distinct:["city"],select:{city:true},take:20,orderBy:{city:"asc"}}),
+   db.property.findMany({where:{...AVAILABLE_PROPERTY,neighborhood:{not:null}},distinct:["neighborhood"],select:{neighborhood:true},take:20,orderBy:{neighborhood:"asc"}})
   ]);
   return [...new Set([...cities.map(p=>p.city),...zones.map(p=>p.neighborhood||"")].map(v=>v.trim()).filter(Boolean))].slice(0,40);
  }

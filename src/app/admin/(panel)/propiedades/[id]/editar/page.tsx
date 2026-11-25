@@ -13,6 +13,7 @@ const errors:Record<string,string>={
  duplicado:"Ya existe una propiedad con la misma referencia.",
  origen:"No se pudo verificar el origen del formulario.",
  vinculada:"La propiedad tiene registros comerciales vinculados. Puedes despublicarla.",
+ vendida:"La propiedad tiene una venta confirmada. Se conserva para estudios de mercado y no puede publicarse hasta anular el cierre.",
  confirmacion:"Para eliminar el inmueble debes confirmar su referencia. Solo un administrador puede hacerlo.",
  servidor:"No fue posible guardar los cambios. Revisa los registros del servidor."
 };
@@ -21,14 +22,14 @@ export default async function EditProperty({params,searchParams}:{
  params:Promise<{id:string}>;searchParams:Promise<{error?:string;created?:string;saved?:string}>;
 }){
  const [{id},notice]=await Promise.all([params,searchParams]);
- const {property,photos,agents,canAssign,canDelete,siteId,mapLocation}=await loadPropertyEditor(id);
+ const {property,photos,agents,canAssign,canDelete,siteId,mapLocation,sale}=await loadPropertyEditor(id);
  const endpoint="/api/admin/properties/"+encodeURIComponent(property.id);
  const publicUrl="/propiedades/"+encodeURIComponent(property.slug);
  return <section className="property-editor-page" aria-labelledby="property-editor-title">
   <div className="admin-heading">
    <div>
     <h1 id="property-editor-title">Editar propiedad</h1>
-    <p>Referencia {property.refCode} · {property.published?"Publicada":"Borrador"}</p>
+    <p>Referencia {property.refCode} · {sale?"Vendida · archivo interno":property.published?"Publicada":"Borrador"}</p>
    </div>
    <div className="admin-context-actions">
     <Link href={"/admin/leads?q="+encodeURIComponent(property.refCode)} className="inline-link"><Users size={16}/> Ver prospectos</Link>
@@ -36,6 +37,7 @@ export default async function EditProperty({params,searchParams}:{
     <Link href="/admin/propiedades" className="inline-link">← Propiedades</Link>
    </div>
   </div>
+  {sale&&<p className="property-success" role="status">Venta confirmada: {sale.closedAt.toISOString().slice(0,10)} · importe registrado US$ {Number(sale.amount).toLocaleString("en-US")}. La ficha se conserva internamente para estudios de mercado y no puede cambiar de tipo de operación mientras el cierre esté confirmado. <Link href="/admin/cierres">Consultar cierre</Link>.</p>}
   {notice.created&&<p className="property-success" role="status">Propiedad creada correctamente. Ahora puedes añadir fotografías.</p>}
   {notice.saved&&<p className="property-success" role="status">Cambios guardados correctamente.</p>}
   {notice.error&&<p className="admin-error" role="alert">{errors[notice.error]||errors.servidor}</p>}
@@ -46,10 +48,10 @@ export default async function EditProperty({params,searchParams}:{
   </nav>
   <form id="editar-datos" action={endpoint} method="post" className="admin-form property-editor">
    <input type="hidden" name="intent" value="save"/>
-   <AdminPropertyFields mapLocation={mapLocation} property={property} agents={agents} allowAssignment={canAssign}/>
+   <AdminPropertyFields mapLocation={mapLocation} property={property} agents={agents} allowAssignment={canAssign} allowPublication={!sale}/>
    <div className="property-editor-actions">
     <button type="submit" className="btn btn-red"><Save size={17}/> Guardar cambios</button>
-    {property.published&&<Link className="btn wizard-back" href={publicUrl} target="_blank" rel="noopener noreferrer">Ver publicada <ExternalLink size={15}/></Link>}
+    {property.published&&!sale&&<Link className="btn wizard-back" href={publicUrl} target="_blank" rel="noopener noreferrer">Ver publicada <ExternalLink size={15}/></Link>}
    </div>
   </form>
   <Suspense fallback={<p className="admin-empty" role="status">Cargando fotografías y ficha PDF…</p>}>

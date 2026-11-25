@@ -1,6 +1,7 @@
 import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {NextRequest} from "next/server";
 import {prisma} from "@/lib/prisma";
+import {CONFIRMED_SALE} from "@/lib/sold-properties";
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import {validateAssignedAgent} from "@/lib/property-agent";
 import {parseProperty,PropertyFormError} from "@/lib/property-form";
@@ -23,7 +24,7 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
  const standaloneScope={id,...(!admin.canManageAll?{assignedAgentId:admin.userId}:{})};
  const legacyScope={id,...propertyWhere(admin)};
  try{
-  const select={id:true,refCode:true,assignedAgentId:true,photos:{select:{id:true,url:true}}} as const;
+  const select={id:true,refCode:true,operation:true,assignedAgentId:true,photos:{select:{id:true,url:true}}} as const;
   const property=standaloneDb
    ?await standaloneDb.property.findFirst({where:standaloneScope,select})
    :await prisma.property.findFirst({where:legacyScope,select});
@@ -32,9 +33,9 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
   const intent=String(form.get("intent")||"save");
   if(intent==="publish"||intent==="unpublish"){
    const changed=standaloneDb
-    ?await standaloneDb.property.updateMany({where:standaloneScope,data:{published:intent==="publish"}})
+    ?await standaloneDb.property.updateMany({where:{...standaloneScope,...(intent==="publish"?{closings:{none:CONFIRMED_SALE}}:{})},data:{published:intent==="publish"}})
     :await prisma.property.updateMany({where:legacyScope,data:{published:intent==="publish"}});
-   if(!changed.count)return propertyRedirect("/admin/propiedades?error=permisos");
+   if(!changed.count)return propertyRedirect("/admin/propiedades?error="+(standaloneDb&&intent==="publish"&&await standaloneDb.property.count({where:{...standaloneScope,closings:{some:CONFIRMED_SALE}}})?"vendida":"permisos"));
    return propertyRedirect("/admin/propiedades?updated=1");
   }
   if(intent==="delete"){
@@ -67,15 +68,19 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
   }
   if(intent!=="save")return propertyRedirect(propertyErrorPath("datos",id));
   const data=parseProperty(form);
+  // An archived sale cannot reappear through the edit form.
+  const hasConfirmedSale=standaloneDb?await standaloneDb.property.count({where:{...standaloneScope,closings:{some:CONFIRMED_SALE}}})>0:false;
+  if(hasConfirmedSale&&(data.published||data.operation!==property.operation))return propertyRedirect(propertyErrorPath("vendida",id));
+  if(hasConfirmedSale)data.featured=false;
   const assignedAgentId=admin.canManageAll?await validateAssignedAgent(admin.tenantId,form.get("assignedAgentId")):property.assignedAgentId;
   const changed=standaloneDb
    ?await standaloneDb.$transaction(async tx=>{
-    const result=await tx.property.updateMany({where:standaloneScope,data:{...data,assignedAgentId}});
+    const result=await tx.property.updateMany({where:{...standaloneScope,...(data.published?{closings:{none:CONFIRMED_SALE}}:{})},data:{...data,assignedAgentId}});
     if(result.count)await savePropertyLocation(tx,id,parsePropertyLocation(form));
     return result;
    })
    :await prisma.property.updateMany({where:legacyScope,data:{...data,assignedAgentId}});
-  if(!changed.count)return propertyRedirect("/admin/propiedades?error=permisos");
+  if(!changed.count)return propertyRedirect(propertyErrorPath("vendida",id));
   return propertyRedirect("/admin/propiedades/"+encodeURIComponent(id)+"/editar?saved=1");
  }catch(error){
   if(error instanceof Error&&error.message==="AGENT_INVALID")return propertyRedirect(propertyErrorPath("datos",id));

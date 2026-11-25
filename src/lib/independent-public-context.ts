@@ -1,5 +1,6 @@
 import "server-only";
 import {hasSiteAsset} from "@/lib/site-assets";
+import {AVAILABLE_PROPERTY} from "@/lib/sold-properties";
 import {getStandalonePrisma} from "@/lib/prisma-standalone";
 import type {PublicProperty,PublicTenant} from "@/lib/demo";
 
@@ -15,7 +16,7 @@ export async function getStandalonePublicContext(options:{loadProperties?:boolea
  const config=await db.siteConfig.findUnique({where:{id:"main"}});
  if(!config)return null;
  const props=options.loadProperties===false?[]:await db.property.findMany({
-  where:{published:true},
+  where:AVAILABLE_PROPERTY,
   select:{
    id:true,slug:true,refCode:true,title:true,description:true,city:true,
    neighborhood:true,type:true,operation:true,price:true,bedrooms:true,
