@@ -66,7 +66,7 @@ export async function GET(req:NextRequest,{params}:{params:Promise<{slug:string}
   req.headers.get("x-forwarded-proto")==="http"?"http":req.nextUrl.protocol.replace(":","");
  const publicUrl=new URL("/propiedades/"+encodeURIComponent(property.slug),(isStandaloneMode()&&process.env.SITE_URL)||scheme+"://"+hostname).toString();
  const display=isStandaloneMode()&&hasDatabaseConfig()?await getPropertyDisplay():null;
- const {bytes}=await buildPropertyPdf(property,{mode,photoIds:selected,tenantName,primaryColor,publicUrl,...(display?{showName:display.showPdfName,showQr:display.showPdfQr,useNexusLogo:true}:{})});
+ const {bytes}=await buildPropertyPdf(property,{mode,photoIds:selected,tenantName,primaryColor,publicUrl,...(display?{showName:display.showPdfName,showQr:display.showPdfQr,useNexusLogo:display.showPdfLogo}:{})});
  const filename="nexus-"+property.refCode.replace(/[^A-Za-z0-9-]/g,"")+
   (mode==="resumida"?"-resumida":"-ampliada")+".pdf";
  return new NextResponse(bytes,{headers:{

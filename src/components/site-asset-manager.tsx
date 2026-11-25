@@ -2,6 +2,8 @@
 import {useRef,useState} from "react";
 import {useRouter} from "next/navigation";
 import {ImagePlus,Trash2,ImageIcon} from "lucide-react";
+import {readAdminJson} from "@/lib/admin-json-response";
+import {prepareSiteImage} from "@/lib/site-image-upload-client";
 type Kind="hero"|"logo"|"about-photo"|"hero-propiedades"|"hero-nosotros"|"hero-servicios"|"hero-contacto"|"hero-asesoria-empresarial";
 export function SiteAssetManager({kind,exists,canEdit}:{kind:Kind;exists:boolean;canEdit:boolean}){
  const router=useRouter(),ref=useRef<HTMLInputElement>(null);
@@ -15,10 +17,14 @@ export function SiteAssetManager({kind,exists,canEdit}:{kind:Kind;exists:boolean
   }
   setBusy(true);
   try{
-   const form=new FormData();form.append("image",file);
+   const prepared=await prepareSiteImage(file,kind);
+   const form=new FormData();form.append("image",prepared);
    const r=await fetch(url,{method:"POST",body:form,credentials:"same-origin",cache:"no-store"});
-   const body=await r.json();
-   if(!r.ok)throw Error(body.error||"No se pudo cargar la imagen.");
+   try{await readAdminJson(r,"No se pudo cargar la imagen.");}
+   catch(cause){
+    if(r.status===413)throw new Error("El servidor rechazó el tamaño del archivo (HTTP 413). La fotografía se optimizó antes de subirla; solicita a soporte revisar el límite de carga en Enhance.");
+    throw cause;
+   }
    setNotice("Imagen actualizada correctamente.");router.refresh();
   }catch(e){setError(e instanceof Error?e.message:"Fallo de conexión.");}
   finally{setBusy(false);if(ref.current)ref.current.value="";}
@@ -28,8 +34,7 @@ export function SiteAssetManager({kind,exists,canEdit}:{kind:Kind;exists:boolean
   setBusy(true);setError("");setNotice("");
   try{
    const r=await fetch(url,{method:"DELETE",credentials:"same-origin",cache:"no-store"});
-   const body=await r.json();
-   if(!r.ok)throw Error(body.error||"No se pudo eliminar la imagen.");
+   await readAdminJson(r,"No se pudo eliminar la imagen.");
    setNotice("Imagen predeterminada restaurada.");router.refresh();
   }catch(e){setError(e instanceof Error?e.message:"Fallo de conexión.");}
   finally{setBusy(false);}
@@ -46,6 +51,7 @@ export function SiteAssetManager({kind,exists,canEdit}:{kind:Kind;exists:boolean
   </div>
   {error&&<p role="alert" className="admin-error">{error}</p>}
   {notice&&<p role="status" className="property-success">{notice}</p>}
+  <p className="property-help">Las imágenes grandes se optimizan en tu dispositivo antes del envío para evitar rechazos del servidor. Se mantiene el original en tu equipo.</p>
   <p className="property-help">{kind==="logo"?"Recomendado: logo PNG con fondo transparente.":"Recomendado: foto horizontal de 1920 × 1080 px."} Máximo 8 MB. WebP de alta calidad: banner hasta 2560 px y logotipo sin pérdida de detalle. Se eliminan metadatos.</p>
  </div>;
 }

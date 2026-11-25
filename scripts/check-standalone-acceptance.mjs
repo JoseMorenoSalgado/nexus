@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {createHash,randomUUID} from "node:crypto";
 import ExcelJS from "exceljs";
 import sharp from "sharp";
-import {PDFDocument,PDFName} from "pdf-lib";
+import {PDFDocument,PDFName,PDFDict} from "pdf-lib";
 import {PrismaClient} from "../src/generated/standalone-postgres/index.js";
 
 const app = new URL(process.env.NEXUS_TEST_URL || "http://127.0.0.1:3100");
@@ -360,9 +360,19 @@ try {
  assert.equal(customPdf.headers.get("content-type"),"application/pdf");
  const pdf = await request("/api/propiedades/"+property.slug+"/pdf");
  assert.equal(pdf.headers.get("content-type"),"application/pdf");
+ // pdf-lib creates the /XObject resources dictionary even on pages without images.
+ // Inspect its entries, rather than only checking whether the dictionary exists.
+ const pageImageCount=page=>page.node.Resources()?.lookup(PDFName.of("XObject"),PDFDict)?.entries().length||0;
  const branded=await PDFDocument.load(await pdf.arrayBuffer());
  assert.equal(branded.getPageCount(),2);
- assert.ok(branded.getPages()[0].node.Resources()?.get(PDFName.of("XObject")),"First page must contain the logo image");
+ assert.equal(pageImageCount(branded.getPages()[0]),0,"Logo must be hidden by default");
+ location(await request("/api/admin/property-display",{method:"POST",cookie:admin,form:{showPdfLogo:"on"},status:303}),/saved=1$/);
+ const withLogo=await request("/api/propiedades/"+property.slug+"/pdf");
+ const brandedEnabled=await PDFDocument.load(await withLogo.arrayBuffer());
+ assert.ok(pageImageCount(brandedEnabled.getPages()[0])>0,"Logo should be restored by administrator option");
+ location(await request("/api/admin/property-display",{method:"POST",cookie:admin,form:{},status:303}),/saved=1$/);
+ const withoutLogo=await PDFDocument.load(await (await request("/api/propiedades/"+property.slug+"/pdf")).arrayBuffer());
+ assert.equal(pageImageCount(withoutLogo.getPages()[0]),0,"Logo should disappear after deactivation");
  const longDescription="Primera línea de la propiedad.\n"+("Descripción de la propiedad y sus servicios. ".repeat(55));
  await db.property.update({where:{id:property.id},data:{description:longDescription}});
  const extended=await request("/api/propiedades/"+property.slug+"/pdf");
@@ -428,7 +438,7 @@ try {
  for(const cookie of [admin,extraAdmin])location(await request("/api/admin/session",{cookie,status:303}),/error=sesion$/);
  const fresh=await request("/api/admin/session",{method:"POST",form:{email:adminEmail,password:nextPassword},status:303});
  assert.match(fresh.headers.get("set-cookie")||"",/webappecloud_session=[a-f0-9]{64}/);
- console.log("PASS property appearance controls, branded PDF, calendar month scope and password rotation");
+ console.log("PASS property appearance controls, optional PDF branding, calendar month scope and password rotation");
 
  // Remove a table in this disposable schema to prove health detects incompatible deployments.
  await db.$executeRaw`DROP TABLE "PropertySequence"`;
