@@ -54,11 +54,11 @@ export default async function StandaloneCatalog({searchParams}:{searchParams:Pro
    {!range.valid&&<p role="alert" className="admin-error">Revisa el rango de precios. El mínimo no puede superar al máximo y los importes deben ser válidos.</p>}
    <Link href="/propiedades" className="inline-link">Limpiar filtros</Link>
    <p>{matches.length} {matches.length===1?"propiedad encontrada":"propiedades encontradas"}</p>
-   <div className={mapPoints.length?"catalog-map-layout":undefined}><div>
+   <div className={mapPoints.length?"catalog-map-layout":undefined}><div className="catalog-property-results">
    {matches.length?<div className="property-grid" style={{marginTop:20}}>{matches.slice((page-1)*pageSize,page*pageSize).map(p=><PropertyCard key={p.id} property={p}/>)}</div>:<div className="nexus-empty-listing"><h2>No encontramos propiedades con esos filtros</h2><Link href="/propiedades">Ver todas las propiedades</Link></div>}
    {pages>1&&<nav aria-label="Paginación" style={{display:"flex",gap:14,marginTop:30}}>{page>1&&<Link href={pageHref(page-1)}>Anterior</Link>}<span>Página {page} de {pages}</span>{page<pages&&<Link href={pageHref(page+1)}>Siguiente</Link>}</nav>}
    </div>
-   {mapPoints.length>0&&<PropertyMap points={mapPoints}/>}
+   {mapPoints.length>0&&<PropertyMap points={mapPoints} allowExpand/>}
    </div>
    </section>
    <PageExtraSections slug="propiedades"/>
