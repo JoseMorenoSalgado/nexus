@@ -27,13 +27,55 @@
 .property-map-addresses li { margin-bottom: 10px; }
 .property-map-addresses li span { display: block; color: var(--muted); }
 .property-map-addresses li a { text-decoration: underline; }
-.catalog-map-layout { display: grid; gap: 26px; align-items: start; }
+/* The map is the main exploration surface in the standalone search catalogue. */
+.catalog-map-layout { display:grid;gap:26px;align-items:start;min-width:0; }
+.catalog-map-layout > .catalog-property-results {min-width:0;grid-area:cards;}
+.catalog-map-layout > .property-map {grid-area:map;min-width:0;}
+.catalog-map-layout .property-map-surface {height:clamp(390px,62vh,590px);}
 @media (min-width: 1024px) {
- .catalog-map-layout { grid-template-columns: 1.2fr 1fr; }
- .catalog-map-layout .property-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+ .catalog-map-layout {
+  grid-template-columns:minmax(0,0.78fr) minmax(0,1.22fr);
+  grid-template-areas:"cards map";
+ }
+ .catalog-map-layout > .property-map {position:sticky;top:20px;}
+ .catalog-map-layout .property-map-surface {height:clamp(560px,72vh,760px);}
+ .catalog-map-layout .property-grid {grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media (min-width: 1024px) and (max-width: 1250px) {
+ .catalog-map-layout .property-grid {grid-template-columns:minmax(0,1fr);}
+}
+@media (max-width: 1023px) {
+ .catalog-map-layout {grid-template-columns:minmax(0,1fr);grid-template-areas:"map" "cards";}
+}
+@media (max-width: 610px) {
+ .catalog-map-layout .property-map-surface {height:clamp(360px,54vh,510px);}
 }
 
 .property-map-preview { display:grid; gap:6px; max-width:260px; }
 .property-map-preview img { width:100%; height:125px; object-fit:cover; border-radius:7px; }
 .property-map-preview .property-map-price { color:#a91e2c; font-size:17px; }
 .property-map-preview a { font-weight:700; padding-block:5px; }
+
+.property-map-header {display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.property-map-header > div {min-width:0;}
+.property-map-expand {
+ display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;gap:6px;
+ padding:10px 13px;min-height:44px;border:1px solid var(--border,#d1d5db);
+ border-radius:9px;background:#fff;color:var(--ink,#263449);font:inherit;font-weight:700;
+ cursor:pointer;white-space:nowrap;
+}
+.property-map-expand:hover {border-color:var(--red,#bd202e);color:var(--red,#bd202e);}
+.property-map-expand:focus-visible {outline:3px solid var(--red,#bd202e);outline-offset:3px;}
+/* Full-viewport option keeps the cards and filters mounted for when it is closed. */
+.property-map.is-expanded {
+ position:fixed!important;inset:12px;z-index:3000;max-height:calc(100dvh - 24px);
+ min-width:0;padding:18px;overflow:auto;overscroll-behavior:contain;
+ background:#fff;border:1px solid #e0e5eb;border-radius:15px;
+ box-shadow:0 12px 55px #172a3955;
+}
+.property-map.is-expanded .property-map-surface {height:clamp(360px,76dvh,960px)!important;}
+@media(max-width:610px) {
+ .property-map-header {flex-wrap:wrap;}
+ .property-map.is-expanded {inset:6px;max-height:calc(100dvh - 12px);padding:12px;}
+ .property-map.is-expanded .property-map-surface {height:clamp(340px,69dvh,720px)!important;}
+}

@@ -242,6 +242,28 @@ export async function checkPropertiesInBrowser({app,canonical,db,adminEmail,agen
   }
   await open(page,"/propiedades");
   await responsive(page);
+  const catalogMap=page.getByRole("region",{name:"Mapa interactivo de propiedades"});
+  await catalogMap.scrollIntoViewIfNeeded();
+  await page.setViewportSize({width:1440,height:900});
+  const desktopMap=await catalogMap.boundingBox();
+  const cards=await page.locator(".catalog-map-layout > .catalog-property-results").boundingBox();
+  assert.ok(desktopMap&&cards&&desktopMap.width>cards.width*1.4,"Catalog map must be clearly wider than the card column");
+  assert.ok(desktopMap.height>=550,"Catalog map must be tall enough to explore the properties");
+  const expand=page.getByRole("button",{name:"Ampliar mapa"});
+  await expand.click();
+  assert.equal(await page.getByRole("button",{name:"Reducir mapa"}).getAttribute("aria-expanded"),"true");
+  const fullMap=await catalogMap.boundingBox();
+  assert.ok(fullMap&&desktopMap&&fullMap.width>desktopMap.width,"Expanded map should be wider than the catalog map");
+  await page.keyboard.press("Escape");
+  assert.equal(await page.getByRole("button",{name:"Ampliar mapa"}).getAttribute("aria-expanded"),"false");
+  for(const width of [375,768,1024]){
+   await page.setViewportSize({width,height:900});
+   const mapBounds=await catalogMap.boundingBox();
+   assert.ok(mapBounds&&mapBounds.width<=width+1,"Catalog map overflows "+width+"px viewport");
+   assert.ok((await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth))<=2,"Catalog horizontal overflow "+width+"px");
+  }
+  await page.setViewportSize({width:1440,height:900});
+  console.log("PASS enlarged responsive property search map, expand control and Escape");
   await page.locator('a[href="'+detail+'"]').first().click();
   await page.getByRole("heading",{name:editedTitle,exact:true}).waitFor();
   await responsive(page);

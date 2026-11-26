@@ -7,15 +7,23 @@ import type {PropertyMapPoint} from "@/lib/property-map";
 import "leaflet/dist/leaflet.css";
 import "./property-map.css";
 
-export function PropertyMap({points,showCatalogLink=false}:{points:PropertyMapPoint[];showCatalogLink?:boolean}){
+export function PropertyMap({points,showCatalogLink=false,allowExpand=false}:{points:PropertyMapPoint[];showCatalogLink?:boolean;allowExpand?:boolean}){
  const id=useId();
  const surface=useRef<HTMLDivElement>(null);
  const [failed,setFailed]=useState(false);
+ const [expanded,setExpanded]=useState(false);
+ useEffect(()=>{
+  if(!expanded)return;
+  const handleEscape=(event:KeyboardEvent)=>{if(event.key==="Escape")setExpanded(false);};
+  window.addEventListener("keydown",handleEscape);
+  return ()=>window.removeEventListener("keydown",handleEscape);
+ },[expanded]);
 
  useEffect(()=>{
   const element=surface.current;
   if(!element||!points.length)return;
   let map:LeafletMap|undefined;
+  let resizeObserver:ResizeObserver|undefined;
   let active=true;
 
   async function showMap(){
@@ -64,6 +72,9 @@ export function PropertyMap({points,showCatalogLink=false}:{points:PropertyMapPo
     marker.on("mouseover",()=>marker.openPopup());
    }
    map.fitBounds(bounds,{padding:[30,30],maxZoom:15,animate:false});
+   // Leaflet must remeasure tiles when the visitor expands/collapses the map.
+   resizeObserver=new ResizeObserver(()=>map?.invalidateSize({pan:false,animate:false}));
+   resizeObserver.observe(element);
   }
 
   // Defer the tile requests until the visitor reaches the map.
@@ -74,16 +85,17 @@ export function PropertyMap({points,showCatalogLink=false}:{points:PropertyMapPo
    }
   });
   observer.observe(element);
-  return ()=>{active=false;observer.disconnect();map?.remove();};
+  return ()=>{active=false;observer.disconnect();resizeObserver?.disconnect();map?.remove();};
  },[points]);
 
- return <section className="property-map" aria-labelledby={id}>
-  <header>
-   <h2 id={id}>Propiedades en el mapa</h2>
-   <p>Explora las ubicaciones publicadas y abre la ficha de cada inmueble.</p>
+ return <section className={"property-map"+(expanded?" is-expanded":"")} aria-labelledby={id}>
+  <header className="property-map-header">
+   <div><h2 id={id}>Propiedades en el mapa</h2>
+    <p>Explora las ubicaciones publicadas y abre la ficha de cada inmueble.</p></div>
+   {allowExpand&&points.length>0&&<button type="button" className="property-map-expand" aria-controls={id+"-map"} aria-expanded={expanded} onClick={()=>setExpanded(value=>!value)}>{expanded?"Reducir mapa":"Ampliar mapa"}</button>}
   </header>
   {points.length?<>
-   <div ref={surface} className="property-map-surface" role="region" aria-label="Mapa interactivo de propiedades"/>
+   <div ref={surface} id={id+"-map"} className="property-map-surface" role="region" aria-label="Mapa interactivo de propiedades"/>
    {failed&&<p role="status">El mapa puede estar incompleto. Puedes abrir las fichas desde la lista.</p>}
    <details className="property-map-addresses">
     <summary>Ver direcciones ({points.length})</summary>
